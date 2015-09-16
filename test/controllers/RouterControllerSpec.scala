@@ -16,16 +16,20 @@
 
 package controllers
 
-import uk.gov.hmrc.play.frontend.controller.FrontendController
-import play.api.mvc._
-import views.html.helloworld._
+import play.api.mvc.Result
+import play.api.test.FakeRequest
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+
 import scala.concurrent.Future
 
+class RouterControllerSpec extends UnitSpec with WithFakeApplication {
 
-object HelloWorld extends HelloWorld
-
-trait HelloWorld extends FrontendController {
-  val helloWorld = Action.async { implicit request =>
-		Future.successful(Ok(hello_world()))
+  "router controller" should {
+    "redirect to /account" in {
+      val futureResult: Future[Result] = RouterController.account.apply(FakeRequest())
+      val result = await(futureResult)
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe "/account"
+    }
   }
 }
