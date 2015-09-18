@@ -16,7 +16,6 @@
 
 package controllers
 
-import controllers.ExternalUrls._
 import play.api.mvc._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 
@@ -26,7 +25,44 @@ import scala.concurrent.Future
 object RouterController extends RouterController
 
 trait RouterController extends FrontendController {
+
+  def locationsToGoTo: List[LocationToGoTo] = List(Login, IV, SaPrefs, Pta)
+  val defaultLocation: LocationToGoTo = Yta
+
   val account = Action.async { implicit request =>
-		Future.successful(Redirect(businessTaxAccountUrl))
+
+    val nextLocationToGoTo = locationsToGoTo.find(_.shouldGo).getOrElse(defaultLocation)
+		Future.successful(Redirect(nextLocationToGoTo.location))
+
   }
+}
+
+trait LocationToGoTo {
+  def shouldGo(implicit request: Request[AnyContent]): Boolean
+  val location: String
+}
+
+object Login extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the cookie there?
+  override val location: String = "/account/sign-in?continue=/account"
+}
+
+object IV extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = false // is the iv done?
+  override val location: String = "/account/iv"
+}
+
+object SaPrefs extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the pref there?
+  override val location: String = "/account/sa/print-preference"
+}
+
+object Pta extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ???
+  override val location: String = "/personal-tax"
+}
+
+object Yta extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = true
+  override val location: String = "/business-tax-account"
 }

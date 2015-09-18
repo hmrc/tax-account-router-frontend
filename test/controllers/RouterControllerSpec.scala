@@ -16,7 +16,7 @@
 
 package controllers
 
-import play.api.mvc.Result
+import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -25,11 +25,50 @@ import scala.concurrent.Future
 class RouterControllerSpec extends UnitSpec with WithFakeApplication {
 
   "router controller" should {
-    "redirect to /account" in {
-      val futureResult: Future[Result] = RouterController.account.apply(FakeRequest())
+    "evaluate locations to go to in order skipping locations that should not be visited #1" in {
+      val controller = new RouterController {
+        override def locationsToGoTo: List[LocationToGoTo] = List(
+          new LocationToGoToStub(false, "/first/location"),
+          new LocationToGoToStub(true, "/second/location")
+        )
+      }
+      val futureResult: Future[Result] = controller.account.apply(FakeRequest())
       val result = await(futureResult)
       result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/account"
+      result.header.headers("Location") shouldBe "/second/location"
+    }
+
+    "evaluate locations to go to in order skipping locations that should not be visited #2" in {
+      val controller = new RouterController {
+        override def locationsToGoTo: List[LocationToGoTo] = List(
+          new LocationToGoToStub(true, "/first/location"),
+          new LocationToGoToStub(true, "/second/location")
+        )
+      }
+      val futureResult: Future[Result] = controller.account.apply(FakeRequest())
+      val result = await(futureResult)
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe "/first/location"
+    }
+
+    "evaluate locations to go to in order going to the default location when all the other locations should not be visited" in {
+      val controller = new RouterController {
+        override def locationsToGoTo: List[LocationToGoTo] = List(
+          new LocationToGoToStub(false, "/first/location"),
+          new LocationToGoToStub(false, "/second/location")
+        )
+
+        override val defaultLocation: LocationToGoTo = new LocationToGoToStub(true, "/third/location")
+      }
+      val futureResult: Future[Result] = controller.account.apply(FakeRequest())
+      val result = await(futureResult)
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe "/third/location"
     }
   }
+}
+
+class LocationToGoToStub(expectedShouldGo: Boolean, expectedLocation: String) extends LocationToGoTo {
+  override def shouldGo(implicit request: Request[AnyContent]): Boolean = expectedShouldGo
+  override val location: String = expectedLocation
 }
