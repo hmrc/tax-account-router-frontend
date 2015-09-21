@@ -16,15 +16,18 @@
 
 package controllers
 
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.test.FakeRequest
+import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class RouterControllerSpec extends UnitSpec with WithFakeApplication {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   "router controller" should {
 
@@ -40,8 +43,10 @@ class RouterControllerSpec extends UnitSpec with WithFakeApplication {
       forAll(scenarios) { (scenario: String, destinationList: List[DestinationStub], expectedLocation: String) =>
         val controller = new RouterController {
           override def destinations: List[Destination] = destinationList
+
+          override protected def authConnector: AuthConnector = ???
         }
-        val futureResult: Future[Result] = controller.account.apply(FakeRequest())
+        val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
         val result = await(futureResult)
         result.header.status shouldBe 303
         result.header.headers("Location") shouldBe expectedLocation
@@ -56,8 +61,10 @@ class RouterControllerSpec extends UnitSpec with WithFakeApplication {
         )
 
         override val defaultDestination: Destination = new DestinationStub(true, "/third/location")
+
+        override protected def authConnector: AuthConnector = ???
       }
-      val futureResult: Future[Result] = controller.account.apply(FakeRequest())
+      val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
       val result = await(futureResult)
       result.header.status shouldBe 303
       result.header.headers("Location") shouldBe "/third/location"
@@ -66,7 +73,7 @@ class RouterControllerSpec extends UnitSpec with WithFakeApplication {
 }
 
 class DestinationStub(expectedShouldGo: Boolean, expectedLocation: String) extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = expectedShouldGo
+  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = expectedShouldGo
 
   override val location: String = expectedLocation
 }

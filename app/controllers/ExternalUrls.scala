@@ -23,6 +23,10 @@ object ExternalUrls extends RunMode {
 
   import play.api.Play.current
 
-  val businessTaxAccountHost = Play.configuration.getString(s"$env.microservice.services.bta.host").getOrElse("")
+  val businessTaxAccountHost = Play.configuration.getString(s"$env.microservice.services.business-tax-account.host").getOrElse("")
   val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
+
+  val companyAuthHost = s"${Play.configuration.getString(s"$env.microservice.services.company-auth.host").getOrElse("")}"
+  val loginCallback = Play.configuration.getString(s"$env.login-callback.url").getOrElse(routes.RouterController.account().url)
+  val signIn = s"$companyAuthHost/account/sign-in?continue=$loginCallback"
 }

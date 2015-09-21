@@ -16,54 +16,71 @@
 
 package controllers
 
+import config.WSHttp
 import play.api.mvc._
+import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext, GovernmentGateway}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 
 import scala.concurrent.Future
 
 
-object RouterController extends RouterController
+object RouterController extends RouterController {
+  override protected def authConnector: AuthConnector = FrontendAuthConnector
+}
 
-trait RouterController extends FrontendController {
+object FrontendAuthConnector extends AuthConnector with ServicesConfig {
+  val serviceUrl = baseUrl("auth")
+  lazy val http = WSHttp
+}
 
-  def destinations: List[Destination] = List(Login, IV, SaPrefs, Pta)
+trait RouterController extends FrontendController with Actions {
+
+  def destinations: List[Destination] = List()
 
   val defaultDestination: Destination = Yta
 
-  val account = Action.async { implicit request =>
+  val account = AuthenticatedBy(CompanyAuthGovernmentGateway).async { user => request => route(user, request) }
 
-    val nextDestination = destinations.find(_.shouldGo).getOrElse(defaultDestination)
+  def route(user: AuthContext, request: Request[AnyContent]): Future[Result] = {
+    val nextDestination = destinations.find(_.shouldGo(user, request)).getOrElse(defaultDestination)
     Future.successful(Redirect(nextDestination.location))
-
   }
 }
 
 trait Destination {
-  def shouldGo(implicit request: Request[AnyContent]): Boolean
+  def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean
+
   val location: String
 }
 
-object Login extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the cookie there?
-  override val location: String = "/account/sign-in?continue=/account"
-}
-
 object IV extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = false // is the iv done?
+  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = false
+
+  // is the iv done?
   override val location: String = "/account/iv"
 }
 
 object SaPrefs extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the pref there?
+  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = ???
+
+  // is the pref there?
   override val location: String = "/account/sa/print-preference"
 }
 
 object Pta extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = ???
+  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = ???
+
   override val location: String = "/personal-tax"
 }
 
 object Yta extends Destination {
-  override def shouldGo(implicit request: Request[AnyContent]): Boolean = true
-  override val location: String = "/business-tax-account"
+  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = true
+
+  override val location: String = ExternalUrls.businessTaxAccountUrl
+}
+
+object CompanyAuthGovernmentGateway extends GovernmentGateway {
+  lazy val login: String = ExternalUrls.signIn
 }
