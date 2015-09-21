@@ -26,43 +26,44 @@ object RouterController extends RouterController
 
 trait RouterController extends FrontendController {
 
-  def locationsToGoTo: List[LocationToGoTo] = List(Login, IV, SaPrefs, Pta)
-  val defaultLocation: LocationToGoTo = Yta
+  def destinations: List[Destination] = List(Login, IV, SaPrefs, Pta)
+
+  val defaultDestination: Destination = Yta
 
   val account = Action.async { implicit request =>
 
-    val nextLocationToGoTo = locationsToGoTo.find(_.shouldGo).getOrElse(defaultLocation)
-		Future.successful(Redirect(nextLocationToGoTo.location))
+    val nextDestination = destinations.find(_.shouldGo).getOrElse(defaultDestination)
+    Future.successful(Redirect(nextDestination.location))
 
   }
 }
 
-trait LocationToGoTo {
+trait Destination {
   def shouldGo(implicit request: Request[AnyContent]): Boolean
   val location: String
 }
 
-object Login extends LocationToGoTo {
+object Login extends Destination {
   override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the cookie there?
   override val location: String = "/account/sign-in?continue=/account"
 }
 
-object IV extends LocationToGoTo {
+object IV extends Destination {
   override def shouldGo(implicit request: Request[AnyContent]): Boolean = false // is the iv done?
   override val location: String = "/account/iv"
 }
 
-object SaPrefs extends LocationToGoTo {
+object SaPrefs extends Destination {
   override def shouldGo(implicit request: Request[AnyContent]): Boolean = ??? // is the pref there?
   override val location: String = "/account/sa/print-preference"
 }
 
-object Pta extends LocationToGoTo {
+object Pta extends Destination {
   override def shouldGo(implicit request: Request[AnyContent]): Boolean = ???
   override val location: String = "/personal-tax"
 }
 
-object Yta extends LocationToGoTo {
+object Yta extends Destination {
   override def shouldGo(implicit request: Request[AnyContent]): Boolean = true
   override val location: String = "/business-tax-account"
 }
