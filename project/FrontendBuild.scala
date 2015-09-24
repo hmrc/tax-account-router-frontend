@@ -24,7 +24,8 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-health" % "1.1.0",
     "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
     "uk.gov.hmrc" %% "play-ui" % "4.0.0",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "3.1.0"
+    "uk.gov.hmrc" %% "play-authorised-frontend" % "3.1.0",
+    "uk.gov.hmrc" %% "http-caching-client" % "5.0.0"
   )
 
   abstract class TestDependencies(scope: String) {
@@ -33,7 +34,9 @@ private object AppDependencies {
       "org.pegdown" % "pegdown" % "1.5.0" % scope,
       "org.jsoup" % "jsoup" % "1.8.3" % scope,
       "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-      "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % scope
+      "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % scope,
+      "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
+      "org.scalatestplus" %% "play" % "1.2.0" % scope
     )
   }
 

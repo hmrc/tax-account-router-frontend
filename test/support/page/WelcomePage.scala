@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package controllers
+package support.page
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import support.Env
 
-object ExternalUrls extends RunMode {
+object WelcomePage extends WebPage {
+  override val url: String = s"${Env.host}/tax-account-router/welcome"
 
-  import play.api.Play.current
+  override def isCurrentPage: Boolean = {
+    bodyText contains "Welcome to the new HMRC online"
+  }
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
-
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  def clickContinue() = {
+    click on id("continue-button")
+  }
 }

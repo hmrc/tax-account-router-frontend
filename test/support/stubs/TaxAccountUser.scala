@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package controllers
+package support.stubs
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean)
+  extends Stub {
 
-object ExternalUrls extends RunMode {
+  def create() = {
+    if (loggedIn) {
+      LoggedInSessionUser(firstTimeLoggedIn).create
 
-  import play.api.Play.current
+    } else {
+      LoggedOutSessionUser.create
+    }
+  }
+}
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
+object TaxAccountUser {
 
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  def apply(loggedIn: Boolean = true, firstTimeLoggedIn: Boolean = false) = {
+    new TaxAccountUser(loggedIn, firstTimeLoggedIn)
+  }
 }

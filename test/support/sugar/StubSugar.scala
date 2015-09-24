@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package controllers
+package support.sugar
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import com.github.tomakehurst.wiremock.client.WireMock._
 
-object ExternalUrls extends RunMode {
+trait StubSugar {
 
-  import play.api.Play.current
+  def callUrlAndReturnPayload(url: String)(payload: String, headers: Seq[(String, String)] = Nil) = {
+    def response = headers.foldLeft(aResponse()
+      .withStatus(200)
+      .withBody(payload)) { (response, header) =>
+      response.withHeader(header._1, header._2)
+    }
+    stubFor(get(urlEqualTo(url)).willReturn(response))
+  }
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
+  def callUrlAndFailWithStatus(url: String, status: Int) = {
+    stubFor(get(urlEqualTo(url))
+      .willReturn(
+        aResponse()
+          .withStatus(status)))
+  }
 
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
 }

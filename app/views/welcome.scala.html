@@ -1,0 +1,14 @@
+@()(implicit authContext: uk.gov.hmrc.play.frontend.auth.AuthContext, request: Request[_])
+
+    @import uk.gov.hmrc.play.views.html.helpers.form
+
+    @main_template(title = "Your tax account", bodyClasses = Some("business-tax")) {
+        <h1>Welcome to the new HMRC online</h1>
+        <h2>Your tax account</h2>
+        <p>HMRC online is changing. You'll find all the tools and services you use here in your tax account.</p>
+        <p>The changes don’t affect how your services operate, they just make them more consistent with the GOV.UK website. Your feedback will help improve the site further.</p>
+
+        @form(action = routes.RouterController.account(), 'class -> "form") {
+            <input id="continue-button" type="submit" class="button" value="Continue" data-journey-click="welcome:Click:Continue"/>
+        }
+    }

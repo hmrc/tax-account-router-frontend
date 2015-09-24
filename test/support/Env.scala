@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package controllers
+package support
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
 
-object ExternalUrls extends RunMode {
+object Env {
 
-  import play.api.Play.current
+  var host = "http://localhost:9000"
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
+  val stubPort = 11111
+  val stubHost = "localhost"
+  val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  val driver = {
+    val profile: FirefoxProfile = new FirefoxProfile
+    profile.setPreference("javascript.enabled", true)
+    profile.setAcceptUntrustedCertificates(true)
+    new FirefoxDriver(profile)
+  }
 }

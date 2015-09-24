@@ -16,69 +16,44 @@
 
 package controllers
 
-import config.WSHttp
+import connector.FrontendAuthConnector
+import model.{Destination, Welcome}
 import play.api.mvc._
-import uk.gov.hmrc.play.config.ServicesConfig
+import services.WelcomePageService
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext, GovernmentGateway}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 
 import scala.concurrent.Future
 
-
 object RouterController extends RouterController {
   override protected def authConnector: AuthConnector = FrontendAuthConnector
-}
 
-object FrontendAuthConnector extends AuthConnector with ServicesConfig {
-  val serviceUrl = baseUrl("auth")
-  lazy val http = WSHttp
+  override val welcomePageService: WelcomePageService = WelcomePageService
+
+  override val defaultLocation = ExternalUrls.businessTaxAccountUrl
+
+  override val destinations: List[Destination] = List(Welcome)
 }
 
 trait RouterController extends FrontendController with Actions {
 
-  def destinations: List[Destination] = List()
+  val welcomePageService: WelcomePageService
 
-  val defaultDestination: Destination = Yta
+  def defaultLocation: String
 
-  val account = AuthenticatedBy(CompanyAuthGovernmentGateway).async { user => request => route(user, request) }
+  def destinations: List[Destination]
 
-  def route(user: AuthContext, request: Request[AnyContent]): Future[Result] = {
-    val nextDestination = destinations.find(_.shouldGo(user, request)).getOrElse(defaultDestination)
-    Future.successful(Redirect(nextDestination.location))
+  val account = AuthenticatedBy(CompanyAuthGovernmentGateway).async { implicit user => request => route(user, request) }
+
+  def route(implicit user: AuthContext, request: Request[AnyContent]): Future[Result] = {
+
+    val nextLocation: Future[Option[String]] = destinations.foldLeft(Future[Option[String]](None)) {
+      (location, destination) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else destination.getLocation)
+    }
+
+    nextLocation.map(location => Redirect(location.getOrElse(defaultLocation)))
   }
-}
-
-trait Destination {
-  def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean
-
-  val location: String
-}
-
-object IV extends Destination {
-  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = false
-
-  // is the iv done?
-  override val location: String = "/account/iv"
-}
-
-object SaPrefs extends Destination {
-  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = ???
-
-  // is the pref there?
-  override val location: String = "/account/sa/print-preference"
-}
-
-object Pta extends Destination {
-  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = ???
-
-  override val location: String = "/personal-tax"
-}
-
-object Yta extends Destination {
-  override def shouldGo(user: AuthContext, request: Request[AnyContent]): Boolean = true
-
-  override val location: String = ExternalUrls.businessTaxAccountUrl
 }
 
 object CompanyAuthGovernmentGateway extends GovernmentGateway {

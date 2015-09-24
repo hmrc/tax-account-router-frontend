@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package controllers
+package connector
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import config.WSHttp
+import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 
-object ExternalUrls extends RunMode {
-
-  import play.api.Play.current
-
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
-
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+object FrontendAuthConnector extends AuthConnector with ServicesConfig {
+  val serviceUrl = baseUrl("auth")
+  lazy val http = WSHttp
 }

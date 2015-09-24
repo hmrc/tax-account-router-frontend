@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package controllers
+package support.sugar
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import org.scalatest.ShouldMatchers
 
-object ExternalUrls extends RunMode {
 
-  import play.api.Play.current
+trait AssertionSugar extends ShouldMatchers {
+  def assertContentPresent(actualContent: Option[String], expectedContent: String): Unit = {
+    actualContent match {
+      case Some(ac) => ac shouldBe expectedContent
+      case _ => fail(s"$actualContent is different from $expectedContent")
+    }
+  }
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
-
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  def assertNoContentPresent(actualContent: Option[String]) = actualContent shouldBe None
 }

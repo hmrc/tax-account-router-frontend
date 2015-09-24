@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package controllers
+package support.page
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import com.github.tomakehurst.wiremock.client.WireMock._
+import support.Env
+import support.stubs.{Stub, StubbedPage}
 
-object ExternalUrls extends RunMode {
+object YtaHomeStubPage extends Stub with StubbedPage {
+  override def create = {
+    stubOut(urlMatching("/account"), "YTA Home Page")
+  }
+}
 
-  import play.api.Play.current
+object YtaHomePage extends WebPage {
+  override val url: String = Env.host + "/account"
 
-  val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
-
-  val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "YTA Home Page")
 }
