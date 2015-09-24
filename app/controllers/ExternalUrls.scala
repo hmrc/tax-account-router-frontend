@@ -27,7 +27,7 @@ object ExternalUrls extends RunMode {
   val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
 
   val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
+  val taxAccountRouterHost = Play.configuration.getString("tax-account-router.host").getOrElse("")
 
-  val loginCallback = Play.configuration.getString("login-callback.url").getOrElse("")
-  val signIn = s"$companyAuthHost/tax-account-router/sign-in?continue=$loginCallback"
+  val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/tax-account-router"
 }

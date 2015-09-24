@@ -31,7 +31,7 @@ trait StubApplicationConfiguration {
     "business-tax-account.host" -> s"http://$stubHost:$stubPort",
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
-    "login-callback.url" -> "/tax-account-router"
+    "tax-account-router.host" -> ""
   )
 
 

@@ -61,7 +61,7 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean) extends Stub with SessionC
     )
 
 
-    stubFor(get(urlEqualTo("/tax-account-router/sign-in?continue=/tax-account-router"))
+    stubFor(get(urlEqualTo("/account/sign-in?continue=/tax-account-router"))
       .willReturn(aResponse()
       .withStatus(303)
       .withHeader(HeaderNames.SET_COOKIE, cookieValue(data))
