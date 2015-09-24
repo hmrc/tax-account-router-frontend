@@ -15,6 +15,7 @@ object FrontendBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
+
   import play.core.PlayVersion
 
   val compile = Seq(
@@ -25,11 +26,12 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
     "uk.gov.hmrc" %% "play-ui" % "4.0.0",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "3.1.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "5.0.0"
+    "uk.gov.hmrc" %% "http-caching-client" % "5.0.0",
+    "com.codeborne" % "phantomjsdriver" % "1.2.1"
   )
 
   abstract class TestDependencies(scope: String) {
-    lazy val test : Seq[ModuleID] = Seq(
+    lazy val test: Seq[ModuleID] = Seq(
       "org.scalatest" %% "scalatest" % "2.2.4" % scope,
       "org.pegdown" % "pegdown" % "1.5.0" % scope,
       "org.jsoup" % "jsoup" % "1.8.3" % scope,
@@ -41,6 +43,7 @@ private object AppDependencies {
   }
 
   object Test extends TestDependencies("test")
+
   object IntegrationTest extends TestDependencies("it")
 
   def apply() = compile ++ Test.test ++ IntegrationTest.test
