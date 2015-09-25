@@ -26,20 +26,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait Destination {
-  final def getLocation(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Option[String]] = shouldGo.map {
-    case true => Some(url)
+  final def getLocation(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Destination]] = shouldGo.map {
+    case true => Some(this)
     case _ => None
   }
 
   protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 
-  protected val url: String
+  val url: String
+
+  val name: String
 }
 
 object Welcome extends Destination {
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = WelcomePageService.shouldShowWelcomePage
 
-  override protected val url: String = routes.WelcomeController.welcome().url
+  override val url: String = routes.WelcomeController.welcome().url
+
+  override val name: String = "welcome"
 }
 
 /**

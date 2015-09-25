@@ -16,10 +16,13 @@
 
 package controllers
 
+import com.codahale.metrics.MetricRegistry
+import com.kenshoo.play.metrics.MetricsRegistry
 import connector.FrontendAuthConnector
-import model.{Destination, Welcome}
+import model.{Welcome, Destination}
 import play.api.mvc._
 import services.WelcomePageService
+import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext, GovernmentGateway}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
@@ -31,16 +34,24 @@ object RouterController extends RouterController {
 
   override val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultLocation = ExternalUrls.businessTaxAccountUrl
+  override val defaultLocation = new Destination {
+    override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
+
+    override val url: String = ExternalUrls.businessTaxAccountUrl
+    override val name: String = "business-tax-account"
+  }
 
   override val destinations: List[Destination] = List(Welcome)
+  override val controllerMetrics: ControllerMetrics = ControllerMetrics
 }
 
 trait RouterController extends FrontendController with Actions {
 
+  val controllerMetrics: ControllerMetrics
+
   val welcomePageService: WelcomePageService
 
-  def defaultLocation: String
+  def defaultLocation: Destination
 
   def destinations: List[Destination]
 
@@ -48,14 +59,32 @@ trait RouterController extends FrontendController with Actions {
 
   def route(implicit user: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val nextLocation: Future[Option[String]] = destinations.foldLeft(Future[Option[String]](None)) {
+    val nextDestination: Future[Option[Destination]] = destinations.foldLeft(Future[Option[Destination]](None)) {
       (location, destination) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else destination.getLocation)
     }
 
-    nextLocation.map(location => Redirect(location.getOrElse(defaultLocation)))
+    nextDestination.map(maybeDestination => {
+      val destination: Destination = maybeDestination.getOrElse(defaultLocation)
+      controllerMetrics.registerRedirectFor(destination.name)
+      Redirect(destination.url)
+    })
   }
 }
 
 object CompanyAuthGovernmentGateway extends GovernmentGateway {
   lazy val login: String = ExternalUrls.signIn
+}
+
+
+trait ControllerMetrics {
+
+  val registry: MetricRegistry
+
+  def registerRedirectFor(name: String) = {
+    registry.meter(s"routing-to-$name").mark()
+  }
+}
+
+object ControllerMetrics extends ControllerMetrics {
+  override val registry = MetricsRegistry.defaultRegistry
 }
