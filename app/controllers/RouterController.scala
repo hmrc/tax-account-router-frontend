@@ -16,10 +16,8 @@
 
 package controllers
 
-import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.MetricsRegistry
 import connector.FrontendAuthConnector
-import model.{Welcome, Destination}
+import model.{Destination, Welcome}
 import play.api.mvc._
 import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
@@ -73,18 +71,4 @@ trait RouterController extends FrontendController with Actions {
 
 object CompanyAuthGovernmentGateway extends GovernmentGateway {
   lazy val login: String = ExternalUrls.signIn
-}
-
-
-trait ControllerMetrics {
-
-  val registry: MetricRegistry
-
-  def registerRedirectFor(name: String) = {
-    registry.meter(s"routing-to-$name").mark()
-  }
-}
-
-object ControllerMetrics extends ControllerMetrics {
-  override val registry = MetricsRegistry.defaultRegistry
 }

@@ -16,8 +16,7 @@
 
 package controllers
 
-import com.codahale.metrics.{Meter, MetricRegistry}
-import com.kenshoo.play.metrics.MetricsRegistry
+import com.codahale.metrics.MetricRegistry
 import model.{Destination, Welcome}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -35,7 +34,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
-
 
   "router controller" should {
 
@@ -93,7 +91,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       RouterController.destinations shouldBe List(Welcome)
     }
 
-    "generate a metric when on redirect" in {
+    "generate a metric on redirect" in {
       val mockControllerMetrics = mock[ControllerMetrics]
 
       val controller = new TestRouteController(
