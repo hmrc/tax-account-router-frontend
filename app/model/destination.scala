@@ -16,7 +16,7 @@
 
 package model
 
-import controllers.routes
+import controllers.{ExternalUrls, routes}
 import play.api.mvc.{AnyContent, Request}
 import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
@@ -25,25 +25,42 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+case class Location(url: String, name: String)
+
 trait Destination {
-  final def getLocation(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Destination]] = shouldGo.map {
-    case true => Some(this)
+  final def getLocation(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = shouldGo.map {
+    case true => Some(location)
     case _ => None
   }
 
   protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 
-  val url: String
-
-  val name: String
+  val location: Location
 }
 
 object Welcome extends Destination {
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = WelcomePageService.shouldShowWelcomePage
 
-  override val url: String = routes.WelcomeController.welcome().url
+  override val location: Location = Location(routes.WelcomeController.welcome().url, "welcome")
+}
 
-  override val name: String = "welcome"
+object BTA extends Destination {
+  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
+
+  override val location: Location = Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+}
+
+object PTA extends Destination {
+  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    val data: Map[String, String] = request.session.data
+    val token: Option[String] = data.get("token")
+    token match {
+      case Some(_) => Future(false)
+      case None => Future(true)
+    }
+  }
+
+  override val location: Location = Location(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
 }
 
 /**

@@ -17,7 +17,7 @@
 package controllers
 
 import com.codahale.metrics.MetricRegistry
-import model.{Destination, Welcome}
+import model.{Destination, Location, PTA, Welcome}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -42,8 +42,9 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val firstDestination = mock[Destination]
       when(firstDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future.successful(None)
       val secondDestination = mock[Destination]
-      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(secondDestination))
-      when(secondDestination.url) thenReturn "/second/location"
+      val expectedLocation: Location = Location("/second/location", "name")
+      when(secondDestination.location).thenReturn(expectedLocation)
+      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
 
       val controller = new TestRouteController(_destinations = List(firstDestination, secondDestination))
 
@@ -59,11 +60,14 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     "evaluate destinations in order skipping those that should not be visited - should visit /first/location" in {
 
       val firstDestination = mock[Destination]
-      when(firstDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(firstDestination))
-      when(firstDestination.url) thenReturn "/first/location"
+      val firstLocation = Location("/first/location", "first-location")
+      val secondLocation = Location("/second/location", "second-location")
+      when(firstDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(firstLocation))
       val secondDestination = mock[Destination]
-      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(secondDestination))
-      when(secondDestination.url) thenReturn "/second/location"
+      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(secondLocation))
+
+      when(firstDestination.location).thenReturn(firstLocation)
+      when(secondDestination.location).thenReturn(secondLocation)
 
       val controller = new TestRouteController(_destinations = List(firstDestination, secondDestination))
 
@@ -88,7 +92,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     }
 
     "have a list of destinations as expected" in {
-      RouterController.destinations shouldBe List(Welcome)
+      RouterController.destinations shouldBe List(Welcome, PTA)
     }
 
     "generate a metric on redirect" in {
@@ -112,22 +116,20 @@ class TestRouteController(_destinations: List[Destination], _defaultLocation: St
 
   override def destinations: List[Destination] = _destinations
 
-  override def defaultLocation = new Destination {
+  override def defaultDestination = new Destination {
     override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
 
-    override val url: String = _defaultLocation
-    override val name: String = ""
+    override val location: Location = Location(_defaultLocation, "")
   }
 
   override protected def authConnector: AuthConnector = ???
 
 }
 
-class DestinationStub(expectedShouldGo: Boolean, expectedLocation: String, override val name: String = "") extends Destination {
+class DestinationStub(expectedShouldGo: Boolean, expectedUrl: String, name: String = "") extends Destination {
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedShouldGo)
 
-  override val url: String = expectedLocation
-
+  override val location: Location = Location(expectedUrl, name)
 }
 
 object WelcomePageServiceStub extends WelcomePageService {

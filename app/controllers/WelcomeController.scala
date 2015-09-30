@@ -16,6 +16,7 @@
 
 package controllers
 
+import auth.RouterAuthenticationProvider
 import connector.FrontendAuthConnector
 import services.WelcomePageService
 import uk.gov.hmrc.play.frontend.auth.Actions
@@ -24,7 +25,7 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 trait WelcomeController extends FrontendController with Actions {
   val welcomeService: WelcomePageService
 
-  def welcome = AuthenticatedBy(CompanyAuthGovernmentGateway) {
+  def welcome = AuthenticatedBy(RouterAuthenticationProvider) {
     implicit user => implicit request => {
       welcomeService.markWelcomePageAsSeen()
       Ok(views.html.welcome())

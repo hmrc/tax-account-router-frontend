@@ -16,13 +16,13 @@
 
 package controllers
 
+import auth.RouterAuthenticationProvider
 import connector.FrontendAuthConnector
-import model.{Destination, Welcome}
+import model._
 import play.api.mvc._
 import services.WelcomePageService
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import uk.gov.hmrc.play.frontend.auth.{Actions, AuthContext, GovernmentGateway}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 
 import scala.concurrent.Future
@@ -32,14 +32,9 @@ object RouterController extends RouterController {
 
   override val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultLocation = new Destination {
-    override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
+  override val defaultDestination = BTA
 
-    override val url: String = ExternalUrls.businessTaxAccountUrl
-    override val name: String = "business-tax-account"
-  }
-
-  override val destinations: List[Destination] = List(Welcome)
+  override val destinations: List[Destination] = List(Welcome, PTA)
   override val controllerMetrics: ControllerMetrics = ControllerMetrics
 }
 
@@ -49,26 +44,22 @@ trait RouterController extends FrontendController with Actions {
 
   val welcomePageService: WelcomePageService
 
-  def defaultLocation: Destination
+  def defaultDestination: Destination
 
   def destinations: List[Destination]
 
-  val account = AuthenticatedBy(CompanyAuthGovernmentGateway).async { implicit user => request => route(user, request) }
+  val account = AuthenticatedBy(RouterAuthenticationProvider).async { implicit user => request => route(user, request) }
 
   def route(implicit user: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val nextDestination: Future[Option[Destination]] = destinations.foldLeft(Future[Option[Destination]](None)) {
+    val nextLocation: Future[Option[Location]] = destinations.foldLeft(Future[Option[Location]](None)) {
       (location, destination) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else destination.getLocation)
     }
 
-    nextDestination.map(maybeDestination => {
-      val destination: Destination = maybeDestination.getOrElse(defaultLocation)
-      controllerMetrics.registerRedirectFor(destination.name)
-      Redirect(destination.url)
+    nextLocation.map(locationCandidate => {
+      val location: Location = locationCandidate.getOrElse(defaultDestination.location)
+      controllerMetrics.registerRedirectFor(location.name)
+      Redirect(location.url)
     })
   }
-}
-
-object CompanyAuthGovernmentGateway extends GovernmentGateway {
-  lazy val login: String = ExternalUrls.signIn
 }
