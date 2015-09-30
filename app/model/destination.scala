@@ -45,7 +45,12 @@ object Welcome extends Destination {
 }
 
 object BTA extends Destination {
-  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
+
+  val businessEnrolments: Set[String] = Set("vrn", "ctUtr") //Refer to uk.gov.hmrc.play.frontend.auth.connectors.domain.Authority.Accounts in play-authorised-frontend
+
+  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    Future(user.principal.accounts.toMap.keySet.intersect(businessEnrolments).nonEmpty)
+  }
 
   override val location: Location = Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
 }

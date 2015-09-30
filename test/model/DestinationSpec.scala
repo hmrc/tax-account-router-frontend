@@ -18,11 +18,14 @@ package model
 
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
 import play.api.mvc.{AnyContent, Request, Session}
+import uk.gov.hmrc.domain.Vrn
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, VatAccount}
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
@@ -30,13 +33,28 @@ import scala.concurrent.Future
 class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   "BTA" should {
-    "always return BTA location" in {
-      implicit lazy val user: AuthContext = mock[AuthContext]
-      implicit lazy val hc: HeaderCarrier = mock[HeaderCarrier]
-      implicit lazy val request: Request[AnyContent] = mock[Request[AnyContent]]
-      val location: Future[Option[Location]] = BTA.getLocation
+    "return BTA location if the user has any business enrolments" in {
+      val accountWithBusinessEnrolments = Accounts(vat = Some(VatAccount("", Vrn(""))))
 
-      await(location) shouldBe Some(BTA.location)
+      val accountWithoutBusinessEnrolments = Accounts()
+
+      val scenarios =
+        Table(
+          ("scenario", "accounts", "expectedLocation"),
+          ("Account with business enrolments", accountWithBusinessEnrolments, Some(BTA.location)),
+          ("Account without business enrolments", accountWithoutBusinessEnrolments, None)
+        )
+
+      forAll(scenarios) { (scenario: String, accounts: Accounts, expectedLocation: Option[Location]) =>
+        val principal: Principal = Principal(None, accounts)
+        implicit val user: AuthContext = AuthContext(mock[LoggedInUser], principal, None)
+        implicit lazy val hc: HeaderCarrier = mock[HeaderCarrier]
+        implicit lazy val request: Request[AnyContent] = mock[Request[AnyContent]]
+        val location: Future[Option[Location]] = BTA.getLocation
+
+        await(location) shouldBe expectedLocation
+
+      }
     }
   }
 
@@ -49,7 +67,7 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
           ("token header is absent", Map(), Some(PTA.location))
         )
 
-      TableDrivenPropertyChecks.forAll(scenarios) { (scenario: String, sessionData: Map[String, String], expectedLocation: Option[Location]) =>
+      forAll(scenarios) { (scenario: String, sessionData: Map[String, String], expectedLocation: Option[Location]) =>
         implicit lazy val user: AuthContext = mock[AuthContext]
         implicit lazy val hc: HeaderCarrier = mock[HeaderCarrier]
         implicit lazy val request: Request[AnyContent] = mock[Request[AnyContent]]
