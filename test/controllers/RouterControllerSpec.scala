@@ -17,7 +17,7 @@
 package controllers
 
 import com.codahale.metrics.MetricRegistry
-import model.{Destination, Location, PTA, Welcome}
+import model._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -92,7 +92,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     }
 
     "have a list of destinations as expected" in {
-      RouterController.destinations shouldBe List(Welcome, PTA)
+      RouterController.destinations shouldBe List(Welcome, BTA, PTA)
     }
 
     "generate a metric on redirect" in {

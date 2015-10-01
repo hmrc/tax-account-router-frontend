@@ -16,16 +16,19 @@
 
 package model
 
+import connector.{Enrolment, EnrolmentState, GovernmentGatewayConnector, ProfileResponse}
+import org.mockito.Matchers
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import play.api.mvc.{AnyContent, Request, Session}
-import uk.gov.hmrc.domain.Vrn
+import play.api.mvc.{AnyContent, Request}
+import play.api.test.FakeRequest
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, VatAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.LevelOfAssurance
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
@@ -34,26 +37,36 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
   "BTA" should {
     "return BTA location if the user has any business enrolments" in {
-      val accountWithBusinessEnrolments = Accounts(vat = Some(VatAccount("", Vrn(""))))
 
-      val accountWithoutBusinessEnrolments = Accounts()
+      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
+
+      object TestBTA extends BTADestination {
+        override val governmentGatewayConnector: GovernmentGatewayConnector = mockGovernmentGatewayConnector
+      }
 
       val scenarios =
         Table(
-          ("scenario", "accounts", "expectedLocation"),
-          ("Account with business enrolments", accountWithBusinessEnrolments, Some(BTA.location)),
-          ("Account without business enrolments", accountWithoutBusinessEnrolments, None)
+          ("scenario", "expectedEnrolments", "expectedLocation"),
+          ("Account with matching activated business enrolments", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED)), Some(BTA.location)),
+          ("Account with matching not yet activated business enrolments", List(Enrolment("enr1", "", EnrolmentState.NOT_YET_ACTIVATED)), None),
+          ("Account without business enrolments", List(), None)
         )
 
-      forAll(scenarios) { (scenario: String, accounts: Accounts, expectedLocation: Option[Location]) =>
-        val principal: Principal = Principal(None, accounts)
-        implicit val user: AuthContext = AuthContext(mock[LoggedInUser], principal, None)
-        implicit lazy val hc: HeaderCarrier = mock[HeaderCarrier]
-        implicit lazy val request: Request[AnyContent] = mock[Request[AnyContent]]
-        val location: Future[Option[Location]] = BTA.getLocation
+      forAll(scenarios) { (scenario: String, expectedEnrolments: List[Enrolment], expectedLocation: Option[Location]) =>
+        val userId: String = "userId"
+        val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
+        implicit val user: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
+        implicit lazy val request: Request[AnyContent] = FakeRequest()
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+
+        val profileResponse = ProfileResponse("", expectedEnrolments)
+        when(mockGovernmentGatewayConnector.profile(userId)).thenReturn(Future(profileResponse))
+
+        val location: Future[Option[Location]] = TestBTA.getLocation
 
         await(location) shouldBe expectedLocation
 
+        verify(mockGovernmentGatewayConnector).profile(Matchers.eq(userId))(Matchers.eq(hc))
       }
     }
   }
@@ -69,12 +82,8 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       forAll(scenarios) { (scenario: String, sessionData: Map[String, String], expectedLocation: Option[Location]) =>
         implicit lazy val user: AuthContext = mock[AuthContext]
-        implicit lazy val hc: HeaderCarrier = mock[HeaderCarrier]
-        implicit lazy val request: Request[AnyContent] = mock[Request[AnyContent]]
-
-        val mockSession = mock[Session]
-        when(mockSession.data).thenReturn(sessionData)
-        when(request.session).thenReturn(mockSession)
+        implicit lazy val request: Request[AnyContent] = FakeRequest().withSession(sessionData.toSeq: _*)
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
         val location: Future[Option[Location]] = PTA.getLocation
 

@@ -28,12 +28,11 @@ trait StubApplicationConfiguration {
     "microservice.services.auth.port" -> stubPort,
     "microservice.services.cachable.short-lived-cache.host" -> stubHost,
     "microservice.services.cachable.short-lived-cache.port" -> stubPort,
+    "microservice.services.government-gateway.host" -> stubHost,
+    "microservice.services.government-gateway.port" -> stubPort,
     "business-tax-account.host" -> s"http://$stubHost:$stubPort",
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> ""
   )
-
-
 }
-

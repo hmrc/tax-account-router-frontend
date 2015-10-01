@@ -16,13 +16,16 @@
 
 package model
 
+import connector.{EnrolmentState, GovernmentGatewayConnector, ProfileResponse}
 import controllers.{ExternalUrls, routes}
+import play.api.Play
+import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
 import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class Location(url: String, name: String)
@@ -44,15 +47,25 @@ object Welcome extends Destination {
   override val location: Location = Location(routes.WelcomeController.welcome().url, "welcome")
 }
 
-object BTA extends Destination {
+trait BTADestination extends Destination {
 
-  val businessEnrolments: Set[String] = Set("vrn", "ctUtr") //Refer to uk.gov.hmrc.play.frontend.auth.connectors.domain.Authority.Accounts in play-authorised-frontend
-
-  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    Future(user.principal.accounts.toMap.keySet.intersect(businessEnrolments).nonEmpty)
-  }
+  val businessEnrolments: Set[String] = Play.configuration.getStringSeq("business-enrolments").getOrElse(Seq()).toSet[String]
 
   override val location: Location = Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+
+  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    val userId = user.user.userId
+    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile(userId)
+    futureProfile.map { profile =>
+      profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String].intersect(businessEnrolments).nonEmpty
+    }
+  }
+
+  val governmentGatewayConnector: GovernmentGatewayConnector
+}
+
+object BTA extends BTADestination {
+  override val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
 }
 
 object PTA extends Destination {

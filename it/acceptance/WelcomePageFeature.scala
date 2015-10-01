@@ -53,6 +53,17 @@ trait WelcomePageStubs {
                    |}
                    | """.stripMargin)))
 
+  def stubGovernmentGatewayProfile() =
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+      .withStatus(200)
+      .withBody( """
+                   |{
+                   |  "affinityGroup": "Organisation",
+                   |  "enrolments": [{"key": "enr1", "identifier": "5597800686", "state": "Activated"}]
+                   |}
+                   | """.stripMargin)))
+
 }
 
 class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
@@ -67,6 +78,9 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       And("There is nothing in Save4Later for the session")
       stubSave4LaterToBeEmpty()
       stubSaveForLaterPUT()
+
+      And("The user profile has a business related enrolment")
+      stubGovernmentGatewayProfile()
 
       When("I login for the first time")
       go(RouterHomePage)
@@ -97,6 +111,9 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
 
       Then("I am on the YTA Home Page")
       on(YtaHomePage)
+
+      And("the user profile has been fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
     }
   }
 }

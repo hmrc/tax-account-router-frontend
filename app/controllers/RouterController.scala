@@ -34,7 +34,7 @@ object RouterController extends RouterController {
 
   override val defaultDestination = BTA
 
-  override val destinations: List[Destination] = List(Welcome, PTA)
+  override val destinations: List[Destination] = List(Welcome, BTA, PTA)
   override val controllerMetrics: ControllerMetrics = ControllerMetrics
 }
 
