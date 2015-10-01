@@ -57,12 +57,7 @@ object BTA extends Destination {
 
 object PTA extends Destination {
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    val data: Map[String, String] = request.session.data
-    val token: Option[String] = data.get("token")
-    token match {
-      case Some(_) => Future(false)
-      case None => Future(true)
-    }
+    Future(!request.session.data.contains("token"))
   }
 
   override val location: Location = Location(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
