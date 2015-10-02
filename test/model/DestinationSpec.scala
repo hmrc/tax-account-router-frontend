@@ -75,6 +75,44 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
           verify(mockGovernmentGatewayConnector).profile(Matchers.eq(userId))(Matchers.eq(hc))
       }
     }
+
+    "return BTA location if the user has SA enrolment and is in a Partnership or is Self-Employed" in {
+
+      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
+
+      object TestBTA extends BTADestination {
+        override val governmentGatewayConnector: GovernmentGatewayConnector = mockGovernmentGatewayConnector
+      }
+
+      val scenarios =
+        Table(
+          ("scenario", "expectedEnrolments", "expectedLocation"),
+          ("Account without SA enrolments", List(Enrolment("enr5", "", EnrolmentState.ACTIVATED), Enrolment("enr7", "", EnrolmentState.ACTIVATED)), None),
+          ("Account with SA without PA or SE", List(Enrolment("enr3", "", EnrolmentState.ACTIVATED)), None),
+          ("Account with SA and PA", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED), Enrolment("enr5", "", EnrolmentState.ACTIVATED)), Some(BTA.location)),
+          ("Account with SA and PA", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED), Enrolment("enr7", "", EnrolmentState.ACTIVATED)), Some(BTA.location))
+        )
+
+      forAll(scenarios) { (scenario: String, expectedEnrolments: List[Enrolment], expectedLocation: Option[Location]) =>
+        val userId: String = "userId"
+        val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
+
+        implicit val user: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
+        implicit lazy val request = FakeRequest().withSession(("token", "token"))
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+
+        val profileResponse = ProfileResponse("", expectedEnrolments)
+        when(mockGovernmentGatewayConnector.profile(userId)).thenReturn(Future(profileResponse))
+
+        val location: Future[Option[Location]] = TestBTA.getLocation
+
+        await(location) shouldBe expectedLocation
+
+        verify(mockGovernmentGatewayConnector).profile(Matchers.eq(userId))(Matchers.eq(hc))
+
+      }
+    }
+
   }
 
   "PTA" should {

@@ -49,9 +49,12 @@ object Welcome extends Destination {
 
 trait BTADestination extends Destination {
 
-  val businessEnrolments: Set[String] = Play.configuration.getStringSeq("business-enrolments").getOrElse(Seq()).toSet[String]
+
+  val selfEmployedEnrolments: Set[String] = Play.configuration.getStringSeq("self-employed-enrolments").getOrElse(Seq()).toSet[String]
 
   override val location: Location = Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+
+  val rules: List[BaseEnrolmentRule] = List(WithBusinessEnrolmentsRule, WithSAAndInPartnershipEnrolmentRule, WithSAAnSelfEmployeeEnrolmentRule)
 
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
     if (!request.session.data.contains("token")) return Future(false)
@@ -59,7 +62,9 @@ trait BTADestination extends Destination {
     val userId = user.user.userId
     val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile(userId)
     futureProfile.map { profile =>
-      profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String].intersect(businessEnrolments).nonEmpty
+      val activeEnrolmentKeys: Set[String] = profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+
+      rules.exists(rule => rule.apply(activeEnrolmentKeys))
     }
   }
 
@@ -77,10 +82,3 @@ object PTA extends Destination {
 
   override val location: Location = Location(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
 }
-
-/**
- * Other destinations that are likely to be added here:
- * - YTA (ExternalUrls.businessTaxAccountUrl)
- * - IV ("/account/iv")
- * - SaPrefs ("/account/sa/print-preference")
- */
