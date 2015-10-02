@@ -46,17 +46,22 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       val scenarios =
         Table(
-          ("scenario", "expectedEnrolments", "expectedLocation"),
-          ("Account with matching activated business enrolments", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED)), Some(BTA.location)),
-          ("Account with matching not yet activated business enrolments", List(Enrolment("enr1", "", EnrolmentState.NOT_YET_ACTIVATED)), None),
-          ("Account without business enrolments", List(), None)
+          ("scenario", "expectedEnrolments", "expectedLocation", "tokenPresent"),
+          ("Account with matching activated business enrolments and token is present", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED)), Some(BTA.location), true),
+          ("Account with matching activated business enrolments and without token", List(Enrolment("enr1", "", EnrolmentState.ACTIVATED)), None, false),
+          ("Account with matching not yet activated business enrolments", List(Enrolment("enr1", "", EnrolmentState.NOT_YET_ACTIVATED)), None, true),
+          ("Account without business enrolments", List(), None, true)
         )
 
-      forAll(scenarios) { (scenario: String, expectedEnrolments: List[Enrolment], expectedLocation: Option[Location]) =>
+      forAll(scenarios) { (scenario: String, expectedEnrolments: List[Enrolment], expectedLocation: Option[Location], tokenPresent: Boolean) =>
         val userId: String = "userId"
         val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
+
         implicit val user: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
-        implicit lazy val request: Request[AnyContent] = FakeRequest()
+        implicit lazy val request = tokenPresent match {
+          case false => FakeRequest()
+          case true => FakeRequest().withSession(("token", "token"))
+        }
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
         val profileResponse = ProfileResponse("", expectedEnrolments)
@@ -66,7 +71,8 @@ class DestinationSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
         await(location) shouldBe expectedLocation
 
-        verify(mockGovernmentGatewayConnector).profile(Matchers.eq(userId))(Matchers.eq(hc))
+        if (tokenPresent)
+          verify(mockGovernmentGatewayConnector).profile(Matchers.eq(userId))(Matchers.eq(hc))
       }
     }
   }

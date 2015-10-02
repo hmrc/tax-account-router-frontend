@@ -54,6 +54,8 @@ trait BTADestination extends Destination {
   override val location: Location = Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
 
   override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    if (!request.session.data.contains("token")) return Future(false)
+
     val userId = user.user.userId
     val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile(userId)
     futureProfile.map { profile =>
