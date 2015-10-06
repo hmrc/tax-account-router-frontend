@@ -185,7 +185,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
   "HasSelfAssessmentEnrolments" should {
 
     "have a set of sub-rules" in {
-      HasSelfAssessmentEnrolments.subRules shouldBe List(IsInPartnershipOrSelfEmployed)
+      HasSelfAssessmentEnrolments.subRules shouldBe List(WithNoPreviousReturns, IsInPartnershipOrSelfEmployed)
     }
     "have a default location" in {
       HasSelfAssessmentEnrolments.defaultLocation shouldBe None
