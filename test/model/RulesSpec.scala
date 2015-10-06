@@ -16,6 +16,7 @@
 
 package model
 
+import connector.SAUserInfo
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -120,7 +121,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
   "GovernmentGatewayRule" should {
 
     "have a set of sub-rules" in {
-      GovernmentGatewayRule.subRules shouldBe List(HasAnyBusinessEnrolment)
+      GovernmentGatewayRule.subRules shouldBe List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
     }
     "have a default location" in {
       GovernmentGatewayRule.defaultLocation shouldBe Some(BTALocation)
@@ -184,7 +185,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
   "HasSelfAssessmentEnrolments" should {
 
     "have a set of sub-rules" in {
-      HasSelfAssessmentEnrolments.subRules shouldBe List()
+      HasSelfAssessmentEnrolments.subRules shouldBe List(IsInPartnershipOrSelfEmployed)
     }
     "have a default location" in {
       HasSelfAssessmentEnrolments.defaultLocation shouldBe None
@@ -279,6 +280,127 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         val futureResult: Future[Boolean] = VerifyRule.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
+      }
+    }
+  }
+
+  "IsInPartnershipOrSelfEmployed" should {
+
+    "have a set of sub-rules" in {
+      IsInPartnershipOrSelfEmployed.subRules shouldBe List()
+    }
+    "have a default location" in {
+      IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BTALocation)
+    }
+    "apply whether user is in a partnership or self employed" in {
+      val scenarios =
+        Table(
+          ("scenario", "partnership", "selfEmployed", "expectedResult"),
+          ("in partnership not self employed", true, false, true),
+          ("not in partnership and self employed", false, true, true),
+          ("in partnership and self employed", true, true, true),
+          ("not in partnership nor self employed", false, false, false)
+        )
+
+      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, expectedResult: Boolean) =>
+        //given
+        val authContext: AuthContext = mock[AuthContext]
+        implicit lazy val fakeRequest = FakeRequest()
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        //and
+        lazy val ruleContext: RuleContext = mock[RuleContext]
+        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed))
+
+        //when
+        val futureResult: Future[Boolean] = IsInPartnershipOrSelfEmployed.shouldApply(authContext, ruleContext)
+
+        //then
+        val result: Boolean = await(futureResult)
+        result shouldBe expectedResult
+
+        //and
+        verify(ruleContext).saUserInfo
+      }
+    }
+  }
+
+  "IsNotInPartnershipNorSelfEmployed" should {
+
+    "have a set of sub-rules" in {
+      IsNotInPartnershipNorSelfEmployed.subRules shouldBe List()
+    }
+    "have a default location" in {
+      IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PTALocation)
+    }
+    "apply whether user is in a partnership or self employed" in {
+      val scenarios =
+        Table(
+          ("scenario", "partnership", "selfEmployed", "expectedResult"),
+          ("in partnership not self employed", true, false, false),
+          ("not in partnership and self employed", false, true, false),
+          ("in partnership and self employed", true, true, false),
+          ("not in partnership nor self employed", false, false, true)
+        )
+
+      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, expectedResult: Boolean) =>
+        //given
+        val authContext: AuthContext = mock[AuthContext]
+        implicit lazy val fakeRequest = FakeRequest()
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        //and
+        lazy val ruleContext: RuleContext = mock[RuleContext]
+        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed))
+
+        //when
+        val futureResult: Future[Boolean] = IsNotInPartnershipNorSelfEmployed.shouldApply(authContext, ruleContext)
+
+        //then
+        val result: Boolean = await(futureResult)
+        result shouldBe expectedResult
+
+        //and
+        verify(ruleContext).saUserInfo
+      }
+    }
+  }
+
+  "WithNoPreviousReturns" should {
+
+    "have a set of sub-rules" in {
+      WithNoPreviousReturns.subRules shouldBe List()
+    }
+    "have a default location" in {
+      WithNoPreviousReturns.defaultLocation shouldBe Some(BTALocation)
+    }
+    "apply whether user does not have previous returns" in {
+      val scenarios =
+        Table(
+          ("scenario", "previousReturns", "expectedResult"),
+          ("has previous returns", true, false),
+          ("has previous returns", false, true)
+        )
+
+      forAll(scenarios) { (scenario: String, previousReturns: Boolean, expectedResult: Boolean) =>
+        //given
+        val authContext: AuthContext = mock[AuthContext]
+        implicit lazy val fakeRequest = FakeRequest()
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        //and
+        lazy val ruleContext: RuleContext = mock[RuleContext]
+        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(previousReturns = previousReturns))
+
+        //when
+        val futureResult: Future[Boolean] = WithNoPreviousReturns.shouldApply(authContext, ruleContext)
+
+        //then
+        val result: Boolean = await(futureResult)
+        result shouldBe expectedResult
+
+        //and
+        verify(ruleContext).saUserInfo
       }
     }
   }

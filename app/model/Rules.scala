@@ -16,7 +16,7 @@
 
 package model
 
-import connector.{EnrolmentState, GovernmentGatewayConnector, ProfileResponse}
+import connector._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -54,7 +54,7 @@ trait Rule {
 }
 
 object GovernmentGatewayRule extends Rule {
-  override val subRules: List[Rule] = List(HasAnyBusinessEnrolment)
+  override val subRules: List[Rule] = List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
 
   override val defaultLocation: Option[Location] = Some(BTALocation)
 
@@ -70,12 +70,36 @@ case object HasAnyBusinessEnrolment extends Rule {
 }
 
 object HasSelfAssessmentEnrolments extends Rule {
+  override val subRules: List[Rule] = List(IsInPartnershipOrSelfEmployed)
   lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
 
   override val defaultLocation: Option[Location] = None
 }
+
+object IsInPartnershipOrSelfEmployed extends Rule {
+  override val defaultLocation: Option[Location] = Some(BTALocation)
+
+  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.saUserInfo.map(saUserInfo => saUserInfo.partnership || saUserInfo.selfEmployment)
+}
+
+object IsNotInPartnershipNorSelfEmployed extends Rule {
+  override val defaultLocation: Option[Location] = Some(PTALocation)
+
+  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.saUserInfo.map(saUserInfo => !saUserInfo.partnership && !saUserInfo.selfEmployment)
+}
+
+object WithNoPreviousReturns extends Rule {
+  override val defaultLocation: Option[Location] = Some(BTALocation)
+
+  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.saUserInfo.map(!_.previousReturns)
+}
+
+
 
 trait WelcomePageRule extends Rule {
   val welcomePageService: WelcomePageService = WelcomePageService
@@ -94,12 +118,17 @@ object VerifyRule extends Rule {
 }
 
 case class RuleContext(userId: String)(implicit hc: HeaderCarrier) {
-  val governmentGatewayConnector = GovernmentGatewayConnector
+  val governmentGatewayConnector : GovernmentGatewayConnector = GovernmentGatewayConnector
+  val selfAssessmentGatewayConnector : SelfAssessmentGatewayConnector = SelfAssessmentGatewayConnector
 
   lazy val activeEnrolments: Future[Set[String]] = {
     val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile(userId)
     futureProfile.map { profile =>
       profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
     }
+  }
+
+  lazy val saUserInfo: Future[SAUserInfo] = {
+    selfAssessmentGatewayConnector.getInfo(userId)
   }
 }

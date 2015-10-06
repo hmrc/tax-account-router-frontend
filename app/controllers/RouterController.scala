@@ -57,8 +57,7 @@ trait RouterController extends FrontendController with Actions {
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val userId = authContext.user.userId
-    val ruleContext = RuleContext(userId)
+    val ruleContext = RuleContext(request.session.data.getOrElse("name", ""))
 
     val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext)
 

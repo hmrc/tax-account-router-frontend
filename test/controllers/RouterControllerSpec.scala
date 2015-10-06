@@ -26,9 +26,8 @@ import play.api.test.FakeRequest
 import services.{RuleService, WelcomePageService}
 import uk.gov.hmrc.http.cache.client.ShortLivedCache
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.LevelOfAssurance
-import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,14 +44,13 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val rules: List[Rule] = mock[List[Rule]]
 
       //and
-      val userId: String = "userId"
-      val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
+      val name: String = "name"
 
       //and
-      implicit val authContext: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
-      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+      implicit val authContext: AuthContext = mock[AuthContext]
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", name))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = new RuleContext(userId)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(name)
 
       //and
       val mockRuleService = mock[RuleService]
@@ -77,14 +75,13 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val rules: List[Rule] = mock[List[Rule]]
 
       //and
-      val userId: String = "userId"
-      val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
+      val name: String = "name"
 
       //and
-      implicit val authContext: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
-      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+      implicit val authContext: AuthContext = mock[AuthContext]
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", name))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = new RuleContext(userId)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(name)
 
       //and
       val mockRuleService = mock[RuleService]
