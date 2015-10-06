@@ -18,16 +18,17 @@ package controllers
 
 import com.codahale.metrics.MetricRegistry
 import model._
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import play.api.mvc.{AnyContent, Request, Result}
+import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request, Result}
 import play.api.test.FakeRequest
-import services.WelcomePageService
+import services.{RuleService, WelcomePageService}
 import uk.gov.hmrc.http.cache.client.ShortLivedCache
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.LevelOfAssurance
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,99 +38,81 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
   "router controller" should {
 
-    "evaluate destinations in order skipping those that should not be visited - should visit /second/location" in {
+    "return location provided by rules" in {
 
-      val firstDestination = mock[Destination]
-      when(firstDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future.successful(None)
-      val secondDestination = mock[Destination]
-      val expectedLocation: Location = Location("/second/location", "name")
-      when(secondDestination.location).thenReturn(expectedLocation)
-      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
+      //given
+      val expectedLocation: Location = Location("/some/location", "name")
+      val rules: List[Rule] = mock[List[Rule]]
 
-      val controller = new TestRouteController(_destinations = List(firstDestination, secondDestination))
+      //and
+      val userId: String = "userId"
+      val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
 
-      val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
+      //and
+      implicit val authContext: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(userId)
+
+      //and
+      val mockRuleService = mock[RuleService]
+      when(mockRuleService.fireRules(eqTo(rules))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(Some(expectedLocation))
+
+      val controller = new TestRouteController(rules = rules, ruleService = mockRuleService)
+
+      //when
+      val futureResult: Future[Result] = controller.route
       val result = await(futureResult)
-      result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/second/location"
 
-      verify(firstDestination).getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])
-      verify(secondDestination).getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])
+      //then
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe "/some/location"
+
+      verify(mockRuleService).fireRules(eqTo(rules))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier], eqTo(ruleContext))
     }
 
-    "evaluate destinations in order skipping those that should not be visited - should visit /first/location" in {
+    "return default location" in {
 
-      val firstDestination = mock[Destination]
-      val firstLocation = Location("/first/location", "first-location")
-      val secondLocation = Location("/second/location", "second-location")
-      when(firstDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(firstLocation))
-      val secondDestination = mock[Destination]
-      when(secondDestination.getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(secondLocation))
+      //given
+      val rules: List[Rule] = mock[List[Rule]]
 
-      when(firstDestination.location).thenReturn(firstLocation)
-      when(secondDestination.location).thenReturn(secondLocation)
+      //and
+      val userId: String = "userId"
+      val loggedInUser = LoggedInUser(userId, None, None, None, LevelOfAssurance.LOA_1)
 
-      val controller = new TestRouteController(_destinations = List(firstDestination, secondDestination))
+      //and
+      implicit val authContext: AuthContext = AuthContext(loggedInUser, mock[Principal], None)
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(userId)
 
-      val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
+      //and
+      val mockRuleService = mock[RuleService]
+      when(mockRuleService.fireRules(eqTo(rules))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(None)
+
+      val controller = new TestRouteController(rules = rules, defaultLocation = Location("/default/location", ""), ruleService = mockRuleService)
+
+      //when
+      val futureResult: Future[Result] = controller.route
       val result = await(futureResult)
+
+      //then
       result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/first/location"
+      result.header.headers("Location") shouldBe "/default/location"
 
-      verify(firstDestination).getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])
-      verify(secondDestination, never()).getLocation(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])
-    }
-
-    "evaluate destinations in order going to the default location when all the other locations should not be visited" in {
-      val controller = new TestRouteController(
-        _destinations = List(new DestinationStub(false, "/first/location"), new DestinationStub(false, "/second/location")),
-        _defaultLocation = "/third/location"
-      )
-      val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
-      val result = await(futureResult)
-      result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/third/location"
-    }
-
-    "have a list of destinations as expected" in {
-      RouterController.destinations shouldBe List(Welcome, BTA, PTA)
-    }
-
-    "generate a metric on redirect" in {
-      val mockControllerMetrics = mock[ControllerMetrics]
-
-      val controller = new TestRouteController(
-        _destinations = List(new DestinationStub(true, "/first/location", "first-location")),
-        _defaultLocation = "/third/location",
-        controllerMetrics = mockControllerMetrics
-      )
-
-      val futureResult: Future[Result] = controller.route(mock[AuthContext], FakeRequest())
-      await(futureResult)
-      verify(mockControllerMetrics).registerRedirectFor("first-location")
+      verify(mockRuleService).fireRules(eqTo(rules))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier], eqTo(ruleContext))
     }
   }
 }
 
-class TestRouteController(_destinations: List[Destination], _defaultLocation: String = "/", override val controllerMetrics: ControllerMetrics = ControllerMetricsStub) extends RouterController with MockitoSugar {
+class TestRouteController(override val rules: List[Rule],
+                          override val defaultLocation: Location = Location("/", ""),
+                          override val controllerMetrics: ControllerMetrics = ControllerMetricsStub,
+                          override val ruleService: RuleService) extends RouterController with MockitoSugar {
   override val welcomePageService: WelcomePageService = WelcomePageServiceStub
-
-  override def destinations: List[Destination] = _destinations
-
-  override def defaultDestination = new Destination {
-    override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future.successful(true)
-
-    override val location: Location = Location(_defaultLocation, "")
-  }
 
   override protected def authConnector: AuthConnector = ???
 
-}
-
-class DestinationStub(expectedShouldGo: Boolean, expectedUrl: String, name: String = "") extends Destination {
-  override protected def shouldGo(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedShouldGo)
-
-  override val location: Location = Location(expectedUrl, name)
 }
 
 object WelcomePageServiceStub extends WelcomePageService {

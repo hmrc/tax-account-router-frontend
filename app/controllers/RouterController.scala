@@ -20,7 +20,7 @@ import auth.RouterAuthenticationProvider
 import connector.FrontendAuthConnector
 import model._
 import play.api.mvc._
-import services.WelcomePageService
+import services.{RuleService, WelcomePageService}
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.controller.FrontendController
@@ -32,10 +32,13 @@ object RouterController extends RouterController {
 
   override val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultDestination = BTA
+  override val defaultLocation: Location = BTALocation
 
-  override val destinations: List[Destination] = List(Welcome, BTA, PTA)
   override val controllerMetrics: ControllerMetrics = ControllerMetrics
+
+  override val rules: List[Rule] = List(WelcomePageRule, VerifyRule, GovernmentGatewayRule)
+
+  override def ruleService: RuleService = RuleService
 }
 
 trait RouterController extends FrontendController with Actions {
@@ -44,20 +47,23 @@ trait RouterController extends FrontendController with Actions {
 
   val welcomePageService: WelcomePageService
 
-  def defaultDestination: Destination
+  def defaultLocation: Location
 
-  def destinations: List[Destination]
+  def rules: List[Rule]
+
+  def ruleService: RuleService
 
   val account = AuthenticatedBy(RouterAuthenticationProvider).async { implicit user => request => route(user, request) }
 
   def route(implicit user: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val nextLocation: Future[Option[Location]] = destinations.foldLeft(Future[Option[Location]](None)) {
-      (location, destination) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else destination.getLocation)
-    }
+    val userId = user.user.userId
+    implicit val ruleContext = RuleContext(userId)
+
+    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules)
 
     nextLocation.map(locationCandidate => {
-      val location: Location = locationCandidate.getOrElse(defaultDestination.location)
+      val location: Location = locationCandidate.getOrElse(defaultLocation)
       controllerMetrics.registerRedirectFor(location.name)
       Redirect(location.url)
     })
