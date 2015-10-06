@@ -41,51 +41,51 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       val mockRuleService = mock[RuleService]
 
       val rule = new Rule {
-        override def shouldApply(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier, ruleContext: RuleContext): Future[Boolean] = Future(false)
+        override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(false)
 
         override val defaultLocation: Option[Location] = mockLocation
 
         override val ruleService: RuleService = mockRuleService
       }
 
-      implicit val authContext: AuthContext = mock[AuthContext]
+      val authContext: AuthContext = mock[AuthContext]
+      lazy val ruleContext: RuleContext = mock[RuleContext]
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-      val futureLocation: Future[Option[Location]] = rule.apply
+      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext)
 
       val location: Option[Location] = await(futureLocation)
       location shouldBe None
 
-      verify(mockRuleService, never()).fireRules(any[List[Rule]])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])
+      verify(mockRuleService, never()).fireRules(any[List[Rule]], any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])
     }
 
     "return the default location whether it should be applied and sub-rules are not applied" in {
 
       val mockDefaultLocation = Some(mock[Location])
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(any[List[Rule]])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])).thenReturn(Future(None))
+      when(mockRuleService.fireRules(any[List[Rule]], any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(None))
 
       val rule = new Rule {
-        override def shouldApply(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier, ruleContext: RuleContext): Future[Boolean] = Future(true)
+        override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(true)
 
         override val defaultLocation: Option[Location] = mockDefaultLocation
 
         override val ruleService: RuleService = mockRuleService
       }
 
-      implicit val authContext: AuthContext = mock[AuthContext]
+      val authContext: AuthContext = mock[AuthContext]
+      lazy val ruleContext: RuleContext = mock[RuleContext]
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-      val futureLocation: Future[Option[Location]] = rule.apply
+      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext)
 
       val location: Option[Location] = await(futureLocation)
       location shouldBe mockDefaultLocation
 
-      verify(mockRuleService).fireRules(eqTo(List()))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])
+      verify(mockRuleService).fireRules(eqTo(List()), any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])
     }
 
     "return the location provided by the sub-rules whether it should be applied and sub-rules are applied" in {
@@ -93,27 +93,27 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       val mockDefaultLocation = Some(mock[Location])
       val mockSubRulesLocation = Some(mock[Location])
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(any[List[Rule]])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])).thenReturn(Future(mockSubRulesLocation))
+      when(mockRuleService.fireRules(any[List[Rule]], any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(mockSubRulesLocation))
 
       val rule = new Rule {
-        override def shouldApply(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier, ruleContext: RuleContext): Future[Boolean] = Future(true)
+        override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(true)
 
         override val defaultLocation: Option[Location] = mockDefaultLocation
 
         override val ruleService: RuleService = mockRuleService
       }
 
-      implicit val authContext: AuthContext = mock[AuthContext]
+      val authContext: AuthContext = mock[AuthContext]
+      lazy val ruleContext: RuleContext = mock[RuleContext]
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-      val futureLocation: Future[Option[Location]] = rule.apply
+      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext)
 
       val location: Option[Location] = await(futureLocation)
       location shouldBe mockSubRulesLocation
 
-      verify(mockRuleService).fireRules(eqTo(List()))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])
+      verify(mockRuleService).fireRules(eqTo(List()), any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])
     }
   }
 
@@ -135,15 +135,15 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
 
-        implicit val authContext: AuthContext = mock[AuthContext]
+        val authContext: AuthContext = mock[AuthContext]
+        lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = tokenPresent match {
           case false => FakeRequest()
           case true => FakeRequest().withSession(("token", "token"))
         }
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-        implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-        val futureResult: Future[Boolean] = GovernmentGatewayRule.shouldApply
+        val futureResult: Future[Boolean] = GovernmentGatewayRule.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
       }
@@ -168,13 +168,13 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
 
-        implicit val authContext: AuthContext = mock[AuthContext]
+        val authContext: AuthContext = mock[AuthContext]
+        lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-        implicit lazy val ruleContext: RuleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
 
-        val futureResult: Future[Boolean] = HasAnyBusinessEnrolment.shouldApply
+        val futureResult: Future[Boolean] = HasAnyBusinessEnrolment.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
       }
@@ -199,13 +199,13 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
 
-        implicit val authContext: AuthContext = mock[AuthContext]
+        val authContext: AuthContext = mock[AuthContext]
+        lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-        implicit lazy val ruleContext: RuleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
 
-        val futureResult: Future[Boolean] = HasSelfAssessmentEnrolments.shouldApply
+        val futureResult: Future[Boolean] = HasSelfAssessmentEnrolments.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
       }
@@ -230,18 +230,18 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, shouldShowWelcomePage: Boolean, expectedResult: Boolean) =>
 
-        implicit val authContext: AuthContext = mock[AuthContext]
+        val authContext: AuthContext = mock[AuthContext]
+        lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-        implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
         val mockWelcomePageService = mock[WelcomePageService]
-        when(mockWelcomePageService.shouldShowWelcomePage).thenReturn(Future(shouldShowWelcomePage))
+        when(mockWelcomePageService.shouldShowWelcomePage(authContext, hc)).thenReturn(Future(shouldShowWelcomePage))
 
         object WelcomePageRuleTest extends WelcomePageRule {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
         }
-        val futureResult: Future[Boolean] = WelcomePageRuleTest.shouldApply
+        val futureResult: Future[Boolean] = WelcomePageRuleTest.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
 
@@ -268,15 +268,15 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
 
-        implicit val authContext: AuthContext = mock[AuthContext]
+        val authContext: AuthContext = mock[AuthContext]
+        lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = tokenPresent match {
           case false => FakeRequest()
           case true => FakeRequest().withSession(("token", "token"))
         }
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-        implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-        val futureResult: Future[Boolean] = VerifyRule.shouldApply
+        val futureResult: Future[Boolean] = VerifyRule.shouldApply(authContext, ruleContext)
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
       }

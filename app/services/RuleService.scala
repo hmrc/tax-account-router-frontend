@@ -26,9 +26,9 @@ import scala.concurrent.Future
 
 trait RuleService {
 
-  def fireRules(rules: List[Rule])(implicit user: AuthContext, request: Request[AnyContent], hc: HeaderCarrier, ruleContext: RuleContext): Future[Option[Location]] = {
+  def fireRules(rules: List[Rule], authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
     rules.foldLeft(Future[Option[Location]](None)) {
-      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else rule.apply)
+      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else rule.apply(authContext, ruleContext))
     }
   }
 

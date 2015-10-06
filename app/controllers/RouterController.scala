@@ -55,12 +55,12 @@ trait RouterController extends FrontendController with Actions {
 
   val account = AuthenticatedBy(RouterAuthenticationProvider).async { implicit user => request => route(user, request) }
 
-  def route(implicit user: AuthContext, request: Request[AnyContent]): Future[Result] = {
+  def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val userId = user.user.userId
-    implicit val ruleContext = RuleContext(userId)
+    val userId = authContext.user.userId
+    val ruleContext = RuleContext(userId)
 
-    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules)
+    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext)
 
     nextLocation.map(locationCandidate => {
       val location: Location = locationCandidate.getOrElse(defaultLocation)

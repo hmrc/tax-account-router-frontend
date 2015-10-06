@@ -56,7 +56,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //and
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(eqTo(rules))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(Some(expectedLocation))
+      when(mockRuleService.fireRules(eqTo(rules), any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
 
       val controller = new TestRouteController(rules = rules, ruleService = mockRuleService)
 
@@ -68,7 +68,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.status shouldBe 303
       result.header.headers("Location") shouldBe "/some/location"
 
-      verify(mockRuleService).fireRules(eqTo(rules))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier], eqTo(ruleContext))
+      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return default location" in {
@@ -88,7 +88,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //and
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(eqTo(rules))(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(None)
+      when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
       val controller = new TestRouteController(rules = rules, defaultLocation = Location("/default/location", ""), ruleService = mockRuleService)
 
@@ -100,7 +100,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.status shouldBe 303
       result.header.headers("Location") shouldBe "/default/location"
 
-      verify(mockRuleService).fireRules(eqTo(rules))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier], eqTo(ruleContext))
+      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
   }
 }

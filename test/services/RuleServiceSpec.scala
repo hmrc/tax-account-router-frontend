@@ -17,8 +17,7 @@
 package services
 
 import model.{Location, Rule, RuleContext}
-import org.mockito.Matchers
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
@@ -38,10 +37,10 @@ class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       //given
       val firstRule = mock[Rule]
-      when(firstRule.apply(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future.successful(None)
+      when(firstRule.apply(any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future.successful(None)
       val secondRule = mock[Rule]
       val expectedLocation: Location = Location("/second/location", "name")
-      when(secondRule.apply(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])).thenReturn(Future(Some(expectedLocation)))
+      when(secondRule.apply(any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(Some(expectedLocation)))
       val rules: List[Rule] = List(firstRule, secondRule)
 
       //and
@@ -49,7 +48,7 @@ class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[Location]] = RuleService.fireRules(rules)(mock[AuthContext], request, hc, mock[RuleContext])
+      val maybeLocation: Future[Option[Location]] = RuleService.fireRules(rules, mock[AuthContext], mock[RuleContext])(request, hc)
 
       //then
       val location: Option[Location] = await(maybeLocation)
@@ -61,9 +60,9 @@ class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       //given
       val firstRule = mock[Rule]
       val expectedLocation: Location = Location("/first/location", "name")
-      when(firstRule.apply(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(Some(expectedLocation))
+      when(firstRule.apply(any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
       val secondRule = mock[Rule]
-      when(secondRule.apply(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])) thenReturn Future(None)
+      when(secondRule.apply(any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
       val rules: List[Rule] = List(firstRule, secondRule)
 
       //and
@@ -71,15 +70,15 @@ class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[Location]] = RuleService.fireRules(rules)(mock[AuthContext], request, hc, mock[RuleContext])
+      val maybeLocation: Future[Option[Location]] = RuleService.fireRules(rules, mock[AuthContext], mock[RuleContext])(request, hc)
 
       //then
       val location: Option[Location] = await(maybeLocation)
       location shouldBe Some(expectedLocation)
 
       //then
-      verify(firstRule).apply(any[AuthContext], Matchers.eq(request), Matchers.eq(hc), any[RuleContext])
-      verify(secondRule, never()).apply(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier], any[RuleContext])
+      verify(firstRule).apply(any[AuthContext], any[RuleContext])(eqTo(request), eqTo(hc))
+      verify(secondRule, never()).apply(any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])
     }
 
   }
