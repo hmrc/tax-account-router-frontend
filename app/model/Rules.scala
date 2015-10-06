@@ -89,7 +89,7 @@ object IsNotInPartnershipNorSelfEmployed extends Rule {
   override val defaultLocation: Option[Location] = Some(PTALocation)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.saUserInfo.map(saUserInfo => !saUserInfo.partnership && !saUserInfo.selfEmployment)
+    ruleContext.saUserInfo.map(saUserInfo => saUserInfo.previousReturns && (!saUserInfo.partnership && !saUserInfo.selfEmployment))
 }
 
 object WithNoPreviousReturns extends Rule {

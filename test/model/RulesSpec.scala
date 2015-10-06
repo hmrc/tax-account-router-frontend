@@ -336,14 +336,18 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "apply whether user is in a partnership or self employed" in {
       val scenarios =
         Table(
-          ("scenario", "partnership", "selfEmployed", "expectedResult"),
-          ("in partnership not self employed", true, false, false),
-          ("not in partnership and self employed", false, true, false),
-          ("in partnership and self employed", true, true, false),
-          ("not in partnership nor self employed", false, false, true)
+          ("scenario", "partnership", "selfEmployed", "previousReturns","expectedResult"),
+          ("with previous returns in partnership not self employed", true, false, true, false),
+          ("with previous returns not in partnership and self employed", false, true, true, false),
+          ("with previous returns in partnership and self employed", true, true, true, false),
+          ("with previous returns not in partnership nor self employed", false, false, true, true),
+          ("with no previous returns in partnership not self employed", true, false, false, false),
+          ("with no previous returns not in partnership and self employed", false, true, false, false),
+          ("with no previous returns in partnership and self employed", true, true, false, false),
+          ("with no previous returns not in partnership nor self employed", false, false, false, false)
         )
 
-      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, expectedResult: Boolean) =>
+      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, previousReturns: Boolean, expectedResult: Boolean) =>
         //given
         val authContext: AuthContext = mock[AuthContext]
         implicit lazy val fakeRequest = FakeRequest()
@@ -351,7 +355,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         //and
         lazy val ruleContext: RuleContext = mock[RuleContext]
-        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed))
+        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed, previousReturns = previousReturns))
 
         //when
         val futureResult: Future[Boolean] = IsNotInPartnershipNorSelfEmployed.shouldApply(authContext, ruleContext)
