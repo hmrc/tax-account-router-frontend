@@ -70,7 +70,7 @@ case object HasAnyBusinessEnrolment extends Rule {
 }
 
 object HasSelfAssessmentEnrolments extends Rule {
-  override val subRules: List[Rule] = List(WithNoPreviousReturns, IsInPartnershipOrSelfEmployed)
+  override val subRules: List[Rule] = List(WithNoPreviousReturns, IsInPartnershipOrSelfEmployed, IsNotInPartnershipNorSelfEmployed)
   lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
@@ -82,7 +82,7 @@ object IsInPartnershipOrSelfEmployed extends Rule {
   override val defaultLocation: Option[Location] = Some(BTALocation)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.saUserInfo.map(saUserInfo => saUserInfo.partnership || saUserInfo.selfEmployment)
+    ruleContext.saUserInfo.map(saUserInfo => saUserInfo.previousReturns && (saUserInfo.partnership || saUserInfo.selfEmployment))
 }
 
 object IsNotInPartnershipNorSelfEmployed extends Rule {
