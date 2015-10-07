@@ -21,7 +21,7 @@ import support.Env
 import support.stubs.{Stub, StubbedPage}
 
 object YtaHomeStubPage extends Stub with StubbedPage {
-  override def create = {
+  override def create() = {
     stubOut(urlMatching("/account"), "YTA Home Page")
   }
 }

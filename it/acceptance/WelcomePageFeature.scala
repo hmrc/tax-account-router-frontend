@@ -18,9 +18,9 @@ package acceptance
 
 import com.github.tomakehurst.wiremock.client.WireMock.{findAll => wmFindAll, _}
 import support.page.{RouterHomePage, WelcomePage, YtaHomePage, YtaHomeStubPage}
-import support.stubs.{StubbedFeatureSpec, TaxAccountUser}
+import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 
-trait WelcomePageStubs {
+trait WelcomePageStubs extends CommonStubs {
 
   def stubSave4LaterToBeEmpty() =
     stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
@@ -40,20 +40,7 @@ trait WelcomePageStubs {
                    |}
                    | """.stripMargin)))
 
-  def stubSave4LaterWelcomePageSeen() =
-    stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
-      .willReturn(aResponse()
-      .withStatus(200)
-      .withBody( """
-                   |{
-                   |    "id": "some-session-id",
-                   |    "data": {
-                   |        "welcomePageSeen": true
-                   |    }
-                   |}
-                   | """.stripMargin)))
-
-  def stubGovernmentGatewayProfile() =
+  def stubGovernmentGatewayProfileWithBusinessEnrolment() =
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()
       .withStatus(200)
@@ -80,7 +67,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       stubSaveForLaterPUT()
 
       And("The user profile has a business related enrolment")
-      stubGovernmentGatewayProfile()
+      stubGovernmentGatewayProfileWithBusinessEnrolment()
 
       When("I login for the first time")
       go(RouterHomePage)
@@ -92,17 +79,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       verify(putRequestedFor(urlEqualTo("/save4later/business-tax-account/1234567890/data/welcomePageSeen")))
 
       And("The Save4Later stub is updated to return the new welcomePageSeen flag")
-      stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
-        .willReturn(aResponse()
-        .withStatus(200)
-        .withBody( """
-                     |{
-                     |    "id": "some-session-id",
-                     |    "data": {
-                     |        "welcomePageSeen": true
-                     |    }
-                     |}
-                     | """.stripMargin)))
+      stubSave4LaterWelcomePageSeen()
 
       createStubs(YtaHomeStubPage)
 

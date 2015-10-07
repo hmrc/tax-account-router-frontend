@@ -16,12 +16,12 @@
 
 package support.stubs
 
-class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean)
+class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean, tokenPresent: Boolean)
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(firstTimeLoggedIn).create
+      LoggedInSessionUser(firstTimeLoggedIn, tokenPresent).create
 
     } else {
       LoggedOutSessionUser.create
@@ -31,7 +31,7 @@ class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean)
 
 object TaxAccountUser {
 
-  def apply(loggedIn: Boolean = true, firstTimeLoggedIn: Boolean = false) = {
-    new TaxAccountUser(loggedIn, firstTimeLoggedIn)
+  def apply(loggedIn: Boolean = true, firstTimeLoggedIn: Boolean = false, tokenPresent: Boolean = true) = {
+    new TaxAccountUser(loggedIn, firstTimeLoggedIn, tokenPresent)
   }
 }

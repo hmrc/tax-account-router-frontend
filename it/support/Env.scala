@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
-import org.openqa.selenium.remote.DesiredCapabilities
+import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
 
 object Env {
 
@@ -30,16 +30,19 @@ object Env {
   val stubHost = "localhost"
   val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-//  val firefoxDriver = {
-//    val profile: FirefoxProfile = new FirefoxProfile
-//    profile.setPreference("javascript.enabled", true)
-//    profile.setAcceptUntrustedCertificates(true)
-//    new FirefoxDriver(profile)
-//  }
-  
-  val driver = {
+  lazy val firefoxDriver: RemoteWebDriver = {
+    val profile: FirefoxProfile = new FirefoxProfile
+    profile.setPreference("javascript.enabled", true)
+    profile.setAcceptUntrustedCertificates(true)
+    new FirefoxDriver(profile)
+  }
+
+  lazy val phantomJsDriver: RemoteWebDriver = {
     val capabilities = DesiredCapabilities.phantomjs()
     capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", 10)
     new PhantomJSDriver(capabilities)
   }
+
+  val driver = phantomJsDriver
+
 }
