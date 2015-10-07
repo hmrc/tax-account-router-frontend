@@ -1,6 +1,6 @@
 package acceptance
 
-import support.page.{PtaHomePage, PtaHomeStubPage, RouterHomePage}
+import support.page.{PtaHomePage, PtaHomeStubPage, RouterRootPath}
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
@@ -19,7 +19,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubSave4LaterWelcomePageSeen()
 
       When("the user hits the router")
-      go(RouterHomePage)
+      go(RouterRootPath)
 
       Then("the user should be routed to PTA Home Page")
       on(PtaHomePage)
