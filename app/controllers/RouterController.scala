@@ -59,7 +59,9 @@ trait RouterController extends FrontendController with Actions {
 
     val ruleContext = RuleContext(request.session.data.getOrElse("name", ""))
 
-    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext)
+    val auditContext = AuditContext()
+
+    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
       val location: Location = locationCandidate.getOrElse(defaultLocation)

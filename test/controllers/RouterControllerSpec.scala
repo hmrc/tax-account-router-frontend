@@ -51,10 +51,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", name))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
       implicit lazy val ruleContext: RuleContext = new RuleContext(name)
+      val auditContext = new AuditContext()
 
       //and
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(eqTo(rules), any[AuthContext], any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
+      when(mockRuleService.fireRules(eqTo(rules), any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
 
       val controller = new TestRouteController(rules = rules, ruleService = mockRuleService)
 
@@ -66,7 +67,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.status shouldBe 303
       result.header.headers("Location") shouldBe "/some/location"
 
-      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext))(eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return default location" in {
@@ -82,10 +83,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", name))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
       implicit lazy val ruleContext: RuleContext = new RuleContext(name)
+      val auditContext = new AuditContext()
 
       //and
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
+      when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
       val controller = new TestRouteController(rules = rules, defaultLocation = Location("/default/location", ""), ruleService = mockRuleService)
 
@@ -97,7 +99,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.status shouldBe 303
       result.header.headers("Location") shouldBe "/default/location"
 
-      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext))(eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
   }
 }
