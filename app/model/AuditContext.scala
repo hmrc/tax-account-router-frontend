@@ -24,6 +24,7 @@ import uk.gov.hmrc.play.audit.model.{AuditEvent, ExtendedDataEvent}
 import uk.gov.hmrc.play.config.AppName
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 
 object AuditContext {
@@ -74,7 +75,7 @@ trait TAuditContext {
   }
 
   def setValue(key: String, futureResult: Future[Boolean])(implicit ec: ExecutionContext): Future[Boolean] = {
-    futureResult.andThen { case result => reasons += (key -> result.toString) }
+    futureResult.andThen { case Success(result) => reasons += (key -> result.toString) }
   }
 
   def toAuditEvent(url: String)(implicit hc: HeaderCarrier, request: Request[AnyContent]): AuditEvent = ExtendedDataEvent(
