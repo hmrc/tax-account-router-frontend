@@ -17,6 +17,11 @@
 package model
 
 import model.AuditContext._
+import play.api.libs.json.Json
+import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.model.{AuditEvent, ExtendedDataEvent}
+import uk.gov.hmrc.play.config.AppName
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +34,7 @@ object AuditContext {
   val has_previous_returns: String = "has_previous_returns"
   val is_in_a_partnership: String = "is_in_a_partnership"
   val is_self_employed: String = "is_self_employed"
-  
+
   def defaultReasons = scala.collection.mutable.Map[String, String](
     has_seen_welcome_page -> "-" ,
     has_print_preferences_set -> "-" ,
@@ -72,8 +77,15 @@ trait TAuditContext {
     futureResult.andThen { case result => reasons += (key -> result.toString) }
   }
 
+  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, request: Request[AnyContent]): AuditEvent = ExtendedDataEvent(
+    auditSource = AppName.appName,
+    auditType = "Routing",
+    tags = hc.toAuditTags("transaction-name", request.path),
+    detail = Json.obj(
+      "destination" -> url,
+      "reasons" -> reasons.toMap[String, String]
+    )
+  )
 }
 
-case class AuditContext(override val reasons : scala.collection.mutable.Map[String, String] = defaultReasons) extends TAuditContext {
-
-}
+case class AuditContext(override val reasons: scala.collection.mutable.Map[String, String] = defaultReasons) extends TAuditContext

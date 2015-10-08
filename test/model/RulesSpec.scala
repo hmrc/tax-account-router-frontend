@@ -43,7 +43,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       val mockRuleService = mock[RuleService]
       val auditContext = mock[AuditContext]
 
-      val rule = RuleTest(mockLocation, mockRuleService, false)
+      val rule = RuleTest(mockLocation, mockRuleService, shouldApplyValue = false)
 
       val authContext: AuthContext = mock[AuthContext]
       lazy val ruleContext: RuleContext = mock[RuleContext]
@@ -66,7 +66,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       when(mockRuleService.fireRules(any[List[Rule]], any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(None))
 
-      val rule = RuleTest(mockDefaultLocation, mockRuleService, true)
+      val rule = RuleTest(mockDefaultLocation, mockRuleService, shouldApplyValue = true)
 
       val authContext: AuthContext = mock[AuthContext]
       lazy val ruleContext: RuleContext = mock[RuleContext]
@@ -90,7 +90,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       val mockRuleService = mock[RuleService]
       when(mockRuleService.fireRules(any[List[Rule]], any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(mockSubRulesLocation))
 
-      val rule = RuleTest(mockDefaultLocation, mockRuleService, true)
+      val rule = RuleTest(mockDefaultLocation, mockRuleService, shouldApplyValue = true)
 
       val authContext: AuthContext = mock[AuthContext]
       lazy val ruleContext: RuleContext = mock[RuleContext]
@@ -172,7 +172,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
         //given
-        val auditContext = new AuditContextTest()
+        val auditContext = AuditContextTest()
         val authContext: AuthContext = mock[AuthContext]
         lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = FakeRequest()
@@ -180,7 +180,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
 
         //and
-        val expectedAuditContext = new AuditContextTest()
+        val expectedAuditContext = AuditContextTest()
         expectedAuditContext.setHasBusinessEnrolments(expectedResult)
 
         //when
@@ -246,7 +246,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, shouldShowWelcomePage: Boolean, expectedResult: Boolean) =>
         //given
-        val auditContext = new AuditContextTest()
+        val auditContext = AuditContextTest()
         val authContext: AuthContext = mock[AuthContext]
         lazy val ruleContext: RuleContext = mock[RuleContext]
         implicit lazy val fakeRequest = FakeRequest()
@@ -261,7 +261,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         }
 
         //and
-        val expectedAuditContext = new AuditContextTest()
+        val expectedAuditContext = AuditContextTest()
         expectedAuditContext.setHasSeenWelcomePage(Future(expectedResult))
 
         //when
@@ -337,7 +337,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, previousReturns: Boolean, expectedResult: Boolean) =>
         //given
-        val auditContext = new AuditContextTest()
+        val auditContext = AuditContextTest()
         val authContext: AuthContext = mock[AuthContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
@@ -347,7 +347,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed, previousReturns = previousReturns))
 
         //and
-        val expectedAuditContext = new AuditContextTest()
+        val expectedAuditContext = AuditContextTest()
         expectedAuditContext.setIsInAPartnership(Future(partnership))
         expectedAuditContext.setIsSelfEmployed(Future(selfEmployed))
         expectedAuditContext.setHasPreviousReturns(Future(previousReturns))
@@ -392,7 +392,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, previousReturns: Boolean, expectedResult: Boolean) =>
         //given
-        val auditContext = new AuditContextTest()
+        val auditContext = AuditContextTest()
         val authContext: AuthContext = mock[AuthContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
@@ -402,7 +402,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed, previousReturns = previousReturns))
 
         //and
-        val expectedAuditContext = new AuditContextTest()
+        val expectedAuditContext = AuditContextTest()
         expectedAuditContext.setIsInAPartnership(Future(partnership))
         expectedAuditContext.setIsSelfEmployed(Future(selfEmployed))
         expectedAuditContext.setHasPreviousReturns(Future(previousReturns))
@@ -441,7 +441,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
       forAll(scenarios) { (scenario: String, previousReturns: Boolean, expectedResult: Boolean) =>
         //given
-        val auditContext = new AuditContextTest()
+        val auditContext = AuditContextTest()
         val authContext: AuthContext = mock[AuthContext]
         implicit lazy val fakeRequest = FakeRequest()
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
@@ -451,7 +451,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         when(ruleContext.saUserInfo).thenReturn(SAUserInfo(previousReturns = previousReturns))
 
         //and
-        val expectedAuditContext = new AuditContextTest()
+        val expectedAuditContext = AuditContextTest()
         expectedAuditContext.setHasPreviousReturns(Future(previousReturns))
 
         //when
