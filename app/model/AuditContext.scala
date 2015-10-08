@@ -28,12 +28,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object AuditContext {
 
-  val has_seen_welcome_page: String = "has_seen_welcome_page"
-  val has_print_preferences_set: String = "has_print_preferences_set"
-  val has_business_enrolments: String = "has_business_enrolments"
-  val has_previous_returns: String = "has_previous_returns"
-  val is_in_a_partnership: String = "is_in_a_partnership"
-  val is_self_employed: String = "is_self_employed"
+  val has_seen_welcome_page: String = "has-seen-welcome-page"
+  val has_print_preferences_set: String = "has-print-preferences-set"
+  val has_business_enrolments: String = "has-business-enrolments"
+  val has_previous_returns: String = "has-previous-returns"
+  val is_in_a_partnership: String = "is-in-a-partnership"
+  val is_self_employed: String = "is-self-employed"
 
   def defaultReasons = scala.collection.mutable.Map[String, String](
     has_seen_welcome_page -> "-" ,
