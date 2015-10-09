@@ -18,10 +18,14 @@ package model
 
 import controllers.{ExternalUrls, routes}
 
-case class Location(url: String, name: String)
+object Location extends Enumeration {
 
-object PTALocation extends Location(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
+  type LocationType = Type
 
-object BTALocation extends Location(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+  sealed case class Type(url: String, name: String) extends Val
 
-object WelcomePageLocation extends Location(routes.WelcomeController.welcome().url, "welcome")
+  val PTA : LocationType = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
+  val BTA = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+  val WELCOME = Type(routes.WelcomeController.welcome().url, "welcome")
+
+}

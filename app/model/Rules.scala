@@ -18,6 +18,7 @@ package model
 
 import connector._
 import model.AuditEventType._
+import model.Location._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -32,15 +33,15 @@ trait Rule {
 
   val subRules: List[Rule] = List()
 
-  val defaultLocation: Option[Location]
+  val defaultLocation: Option[LocationType]
 
   val ruleService: RuleService = RuleService
 
-  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] =
+  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] =
 
     shouldApply(authContext, ruleContext, auditContext).flatMap {
       case true =>
-        val nextLocation: Future[Option[Location]] = ruleService.fireRules(subRules, authContext, ruleContext, auditContext)
+        val nextLocation: Future[Option[LocationType]] = ruleService.fireRules(subRules, authContext, ruleContext, auditContext)
         nextLocation.map {
           case Some(location) => Some(location)
           case None => defaultLocation match {
@@ -57,7 +58,7 @@ trait Rule {
 object GovernmentGatewayRule extends Rule {
   override val subRules: List[Rule] = List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
 
-  override val defaultLocation: Option[Location] = Some(BTALocation)
+  override val defaultLocation: Option[LocationType] = Some(BTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(request.session.data.contains("token"))
 }
@@ -73,7 +74,7 @@ object HasAnyBusinessEnrolment extends Rule {
     hasBusinessEnrolments
   }
 
-  override val defaultLocation: Option[Location] = Some(BTALocation)
+  override val defaultLocation: Option[LocationType] = Some(BTA)
 }
 
 object HasSelfAssessmentEnrolments extends Rule {
@@ -82,11 +83,11 @@ object HasSelfAssessmentEnrolments extends Rule {
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
 
-  override val defaultLocation: Option[Location] = None
+  override val defaultLocation: Option[LocationType] = None
 }
 
 object IsInPartnershipOrSelfEmployed extends Rule {
-  override val defaultLocation: Option[Location] = Some(BTALocation)
+  override val defaultLocation: Option[LocationType] = Some(BTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.saUserInfo.map(saUserInfo => {
@@ -103,7 +104,7 @@ object IsInPartnershipOrSelfEmployed extends Rule {
 }
 
 object IsNotInPartnershipNorSelfEmployed extends Rule {
-  override val defaultLocation: Option[Location] = Some(PTALocation)
+  override val defaultLocation: Option[LocationType] = Some(PTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.saUserInfo.map(saUserInfo => {
@@ -120,7 +121,7 @@ object IsNotInPartnershipNorSelfEmployed extends Rule {
 }
 
 object WithNoPreviousReturns extends Rule {
-  override val defaultLocation: Option[Location] = Some(BTALocation)
+  override val defaultLocation: Option[LocationType] = Some(BTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.saUserInfo.map(saUserInfo => {
@@ -137,7 +138,7 @@ object WithNoPreviousReturns extends Rule {
 trait WelcomePageRule extends Rule {
   val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultLocation: Option[Location] = Some(WelcomePageLocation)
+  override val defaultLocation: Option[LocationType] = Some(WELCOME)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
     val result: Future[Boolean] = welcomePageService.shouldShowWelcomePage(authContext, hc)
@@ -151,7 +152,7 @@ object WelcomePageRule extends WelcomePageRule
 object VerifyRule extends Rule {
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(!request.session.data.contains("token"))
 
-  override val defaultLocation: Option[Location] = Some(PTALocation)
+  override val defaultLocation: Option[LocationType] = Some(PTA)
 }
 
 case class RuleContext(userId: String)(implicit hc: HeaderCarrier) {

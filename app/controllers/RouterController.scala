@@ -21,6 +21,7 @@ import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import model._
 import play.api.mvc._
+import model.Location._
 import services.{RuleService, WelcomePageService}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
@@ -34,7 +35,7 @@ object RouterController extends RouterController {
 
   override val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultLocation: Location = BTALocation
+  override val defaultLocation: LocationType = BTA
 
   override val controllerMetrics: ControllerMetrics = ControllerMetrics
 
@@ -53,7 +54,7 @@ trait RouterController extends FrontendController with Actions {
 
   val welcomePageService: WelcomePageService
 
-  def defaultLocation: Location
+  def defaultLocation: LocationType
 
   def rules: List[Rule]
 
@@ -71,10 +72,10 @@ trait RouterController extends FrontendController with Actions {
 
     val auditContext: TAuditContext = createAuditContext()
 
-    val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext, auditContext)
+    val nextLocation: Future[Option[LocationType]] = ruleService.fireRules(rules, authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
-      val location: Location = locationCandidate.getOrElse(defaultLocation)
+      val location: LocationType = locationCandidate.getOrElse(defaultLocation)
       controllerMetrics.registerRedirectFor(location.name)
       auditConnector.sendEvent(auditContext.toAuditEvent(location.url))
       Redirect(location.url)

@@ -17,6 +17,7 @@
 package controllers
 
 import com.codahale.metrics.MetricRegistry
+import model.Location._
 import model._
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -43,7 +44,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     "return location provided by rules" in {
 
       //given
-      val expectedLocation: Location = Location("/some/location", "location-name")
+      val expectedLocation: LocationType = BTA
       val rules: List[Rule] = mock[List[Rule]]
 
       //and
@@ -68,7 +69,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //then
       result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/some/location"
+      result.header.headers("Location") shouldBe BTA.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
@@ -92,7 +93,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockRuleService = mock[RuleService]
       when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
-      val controller = new TestRouterController(rules = rules, defaultLocation = Location("/default/location", ""), ruleService = mockRuleService)
+      val controller = new TestRouterController(rules = rules, defaultLocation = BTA, ruleService = mockRuleService)
 
       //when
       val futureResult: Future[Result] = controller.route
@@ -100,7 +101,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //then
       result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe "/default/location"
+      result.header.headers("Location") shouldBe BTA.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
@@ -127,7 +128,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockAuditConnector = mock[AuditConnector]
       val controller = new TestRouterController(
         rules = rules,
-        defaultLocation = Location("/default/location", ""),
+        defaultLocation = BTA,
         ruleService = mockRuleService,
         _auditConnector = Some(mockAuditConnector),
         _auditContext = Some(mockAuditContext)
@@ -141,13 +142,13 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
 
       auditEventCaptor.getValue shouldBe mockAuditEvent
-      verify(mockAuditContext).toAuditEvent(eqTo("/default/location"))(any[HeaderCarrier], any[Request[AnyContent]])
+      verify(mockAuditContext).toAuditEvent(eqTo(BTA.url))(any[HeaderCarrier], any[Request[AnyContent]])
     }
   }
 }
 
 class TestRouterController(override val rules: List[Rule],
-                           override val defaultLocation: Location = Location("/", ""),
+                           override val defaultLocation: LocationType = BTA,
                            override val controllerMetrics: ControllerMetrics = ControllerMetricsStub,
                            override val ruleService: RuleService,
                            _auditConnector: Option[AuditConnector] = None,

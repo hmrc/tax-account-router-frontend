@@ -18,6 +18,7 @@ package model
 
 import connector.SAUserInfo
 import model.AuditEventType._
+import model.Location._
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -40,7 +41,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
   "a rule" should {
     "return a None location whether it shouldn't be applied" in {
 
-      val mockLocation = Some(mock[Location])
+      val mockLocation = Some(mock[LocationType])
       val mockRuleService = mock[RuleService]
       val auditContext = mock[AuditContext]
 
@@ -51,9 +52,9 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
+      val futureLocation: Future[Option[LocationType]] = rule.apply(authContext, ruleContext, auditContext)
 
-      val location: Option[Location] = await(futureLocation)
+      val location: Option[LocationType] = await(futureLocation)
       location shouldBe None
 
       verify(mockRuleService, never()).fireRules(any[List[Rule]], any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])
@@ -61,7 +62,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
     "return the default location whether it should be applied and sub-rules are not applied" in {
 
-      val mockDefaultLocation = Some(mock[Location])
+      val mockDefaultLocation = Some(mock[LocationType])
       val mockRuleService = mock[RuleService]
       val auditContext = mock[AuditContext]
 
@@ -74,9 +75,9 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
+      val futureLocation: Future[Option[LocationType]] = rule.apply(authContext, ruleContext, auditContext)
 
-      val location: Option[Location] = await(futureLocation)
+      val location: Option[LocationType] = await(futureLocation)
       location shouldBe mockDefaultLocation
 
       verify(mockRuleService).fireRules(eqTo(List()), any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])
@@ -84,8 +85,8 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
     "return the location provided by the sub-rules whether it should be applied and sub-rules are applied" in {
 
-      val mockDefaultLocation = Some(mock[Location])
-      val mockSubRulesLocation = Some(mock[Location])
+      val mockDefaultLocation = Some(mock[LocationType])
+      val mockSubRulesLocation = Some(mock[LocationType])
       val auditContext = AuditContext()
 
       val mockRuleService = mock[RuleService]
@@ -98,19 +99,19 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val futureLocation: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
+      val futureLocation: Future[Option[LocationType]] = rule.apply(authContext, ruleContext, auditContext)
 
-      val location: Option[Location] = await(futureLocation)
+      val location: Option[LocationType] = await(futureLocation)
       location shouldBe mockSubRulesLocation
 
       verify(mockRuleService).fireRules(eqTo(List()), any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])
     }
   }
 
-  case class RuleTest(mockDefaultLocation: Option[Location], mockRuleService: RuleService, shouldApplyValue: Boolean) extends Rule {
+  case class RuleTest(mockDefaultLocation: Option[LocationType], mockRuleService: RuleService, shouldApplyValue: Boolean) extends Rule {
     override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(shouldApplyValue)
 
-    override val defaultLocation: Option[Location] = mockDefaultLocation
+    override val defaultLocation: Option[LocationType] = mockDefaultLocation
 
     override val ruleService: RuleService = mockRuleService
   }
@@ -121,7 +122,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       GovernmentGatewayRule.subRules shouldBe List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
     }
     "have a default location" in {
-      GovernmentGatewayRule.defaultLocation shouldBe Some(BTALocation)
+      GovernmentGatewayRule.defaultLocation shouldBe Some(BTA)
     }
     "apply whether the token is present" in {
       val scenarios =
@@ -155,7 +156,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       HasAnyBusinessEnrolment.subRules shouldBe List()
     }
     "have a default location" in {
-      HasAnyBusinessEnrolment.defaultLocation shouldBe Some(BTALocation)
+      HasAnyBusinessEnrolment.defaultLocation shouldBe Some(BTA)
     }
     "apply whether the active enrolments include any business enrolment" in {
       val scenarios: TableFor3[String, Set[String], Boolean] =
@@ -226,7 +227,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       WelcomePageRule.subRules shouldBe List()
     }
     "have a default location" in {
-      WelcomePageRule.defaultLocation shouldBe Some(WelcomePageLocation)
+      WelcomePageRule.defaultLocation shouldBe Some(WELCOME)
     }
     "apply whether route to the welcome page" in {
       val scenarios =
@@ -274,7 +275,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       VerifyRule.subRules shouldBe List()
     }
     "have a default location" in {
-      VerifyRule.defaultLocation shouldBe Some(PTALocation)
+      VerifyRule.defaultLocation shouldBe Some(PTA)
     }
     "apply whether the token is not present" in {
       val scenarios =
@@ -308,7 +309,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       IsInPartnershipOrSelfEmployed.subRules shouldBe List()
     }
     "have a default location" in {
-      IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BTALocation)
+      IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BTA)
     }
     "apply whether user is in a partnership or self employed" in {
       val scenarios =
@@ -360,7 +361,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       IsNotInPartnershipNorSelfEmployed.subRules shouldBe List()
     }
     "have a default location" in {
-      IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PTALocation)
+      IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PTA)
     }
     "apply whether user is in a partnership or self employed" in {
       val scenarios =
@@ -412,7 +413,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       WithNoPreviousReturns.subRules shouldBe List()
     }
     "have a default location" in {
-      WithNoPreviousReturns.defaultLocation shouldBe Some(BTALocation)
+      WithNoPreviousReturns.defaultLocation shouldBe Some(BTA)
     }
     "apply whether user does not have previous returns" in {
       val scenarios =

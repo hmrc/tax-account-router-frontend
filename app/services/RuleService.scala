@@ -16,6 +16,7 @@
 
 package services
 
+import model.Location.LocationType
 import model._
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
@@ -26,8 +27,8 @@ import scala.concurrent.Future
 
 trait RuleService {
 
-  def fireRules(rules: List[Rule], authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
-    rules.foldLeft(Future[Option[Location]](None)) {
+  def fireRules(rules: List[Rule], authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] = {
+    rules.foldLeft(Future[Option[LocationType]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else rule.apply(authContext, ruleContext, auditContext))
     }
   }
