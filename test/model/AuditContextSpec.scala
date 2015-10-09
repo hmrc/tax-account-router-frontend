@@ -23,7 +23,6 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.{FakeHeaders, FakeRequest}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -83,16 +82,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication {
         "is-in-a-partnership" -> "true",
         "is-self-employed" -> "true"
       )
-      val expectedAuditEvent = ExtendedDataEvent(
-        auditSource = AppName.appName,
-        auditType = "Routing",
-        tags = hc.toAuditTags("transaction-name", fakeRequest.path),
-        detail = Json.obj(
-          "destination" -> destination,
-          "reasons" -> reasonsMap
-        )
-      )
-
 
       val result = for {
         welcomePageSeen <- hasSeenWelcomePage
