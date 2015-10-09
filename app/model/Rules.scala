@@ -17,6 +17,7 @@
 package model
 
 import connector._
+import model.AuditEventType._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
@@ -67,7 +68,7 @@ object HasAnyBusinessEnrolment extends Rule {
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
     val hasBusinessEnrolments: Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
 
-    auditContext.setHasBusinessEnrolments(hasBusinessEnrolments)
+    auditContext.setValue(HAS_BUSINESS_ENROLMENTS, hasBusinessEnrolments)
 
     hasBusinessEnrolments
   }
@@ -93,9 +94,9 @@ object IsInPartnershipOrSelfEmployed extends Rule {
       val isInPartnership: Boolean = saUserInfo.partnership
       val isSelfEmployed: Boolean = saUserInfo.selfEmployment
 
-      auditContext.setHasPreviousReturns(Future(hasPreviousReturns))
-      auditContext.setIsInAPartnership(Future(isInPartnership))
-      auditContext.setIsSelfEmployed(Future(isSelfEmployed))
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
+      auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(isInPartnership))
+      auditContext.setValue(IS_SELF_EMPLOYED, Future(isSelfEmployed))
 
       hasPreviousReturns && (isInPartnership || isSelfEmployed)
     })
@@ -110,9 +111,9 @@ object IsNotInPartnershipNorSelfEmployed extends Rule {
       val isInPartnership: Boolean = saUserInfo.partnership
       val isSelfEmployed: Boolean = saUserInfo.selfEmployment
 
-      auditContext.setHasPreviousReturns(Future(hasPreviousReturns))
-      auditContext.setIsInAPartnership(Future(isInPartnership))
-      auditContext.setIsSelfEmployed(Future(isSelfEmployed))
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
+      auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(isInPartnership))
+      auditContext.setValue(IS_SELF_EMPLOYED, Future(isSelfEmployed))
 
       hasPreviousReturns && (!isInPartnership && !isSelfEmployed)
     })
@@ -125,7 +126,7 @@ object WithNoPreviousReturns extends Rule {
     ruleContext.saUserInfo.map(saUserInfo => {
       val hasPreviousReturns: Boolean = saUserInfo.previousReturns
 
-      auditContext.setHasPreviousReturns(Future(hasPreviousReturns))
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
 
       !hasPreviousReturns
     })
@@ -140,7 +141,7 @@ trait WelcomePageRule extends Rule {
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
     val result: Future[Boolean] = welcomePageService.shouldShowWelcomePage(authContext, hc)
-    auditContext.setHasSeenWelcomePage(result)
+    auditContext.setValue(HAS_ALREADY_SEEN_WELCOME_PAGE, result.map(!_))
     result
   }
 }

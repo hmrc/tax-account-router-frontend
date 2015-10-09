@@ -20,65 +20,48 @@ import model.AuditContext._
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.model.{AuditEvent, ExtendedDataEvent}
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.config.AppName
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
+object AuditEventType extends Enumeration {
+
+  type AuditEventType = EventType
+
+  sealed case class EventType(key: String) extends Val
+
+  val HAS_ALREADY_SEEN_WELCOME_PAGE = EventType("has-already-seen-welcome-page")
+  val HAS_PRINT_PREFERENCES_ALREADY_SET = EventType("has-print-preferences-already-set")
+  val HAS_BUSINESS_ENROLMENTS = EventType("has-business-enrolments")
+  val HAS_PREVIOUS_RETURNS = EventType("has-previous-returns")
+  val IS_IN_A_PARTNERSHIP = EventType("is-in-a-partnership")
+  val IS_SELF_EMPLOYED = EventType("is-self-employed")
+}
+
+import model.AuditEventType._
 
 object AuditContext {
 
-  val has_seen_welcome_page: String = "has-seen-welcome-page"
-  val has_print_preferences_set: String = "has-print-preferences-set"
-  val has_business_enrolments: String = "has-business-enrolments"
-  val has_previous_returns: String = "has-previous-returns"
-  val is_in_a_partnership: String = "is-in-a-partnership"
-  val is_self_employed: String = "is-self-employed"
-
   def defaultReasons = scala.collection.mutable.Map[String, String](
-    has_seen_welcome_page -> "-" ,
-    has_print_preferences_set -> "-" ,
-    has_business_enrolments -> "-" ,
-    has_previous_returns -> "-" ,
-    is_in_a_partnership -> "-" ,
-    is_self_employed -> "-"
+    HAS_ALREADY_SEEN_WELCOME_PAGE.key -> "-" ,
+    HAS_PRINT_PREFERENCES_ALREADY_SET.key -> "-" ,
+    HAS_BUSINESS_ENROLMENTS.key -> "-" ,
+    HAS_PREVIOUS_RETURNS.key -> "-" ,
+    IS_IN_A_PARTNERSHIP.key -> "-" ,
+    IS_SELF_EMPLOYED.key -> "-"
   )
 }
 
 trait TAuditContext {
 
-  protected def reasons: scala.collection.mutable.Map[String, String] = defaultReasons
+  private val reasons: scala.collection.mutable.Map[String, String] = defaultReasons
 
-  def setHasSeenWelcomePage(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(has_seen_welcome_page, value)
-  }
+  def setValue[T](auditEventType: AuditEventType, futureResult: Future[T])(implicit ec: ExecutionContext): Future[T] =
+    futureResult.andThen { case Success(result) => reasons += (auditEventType.key -> result.toString) }
 
-  def setHasPrintPreferencesSet(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(has_print_preferences_set, value)
-  }
-
-  def setHasBusinessEnrolments(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(has_business_enrolments, value)
-  }
-
-  def setHasPreviousReturns(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(has_previous_returns, value)
-  }
-
-  def setIsInAPartnership(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(is_in_a_partnership, value)
-  }
-
-  def setIsSelfEmployed(value: Future[Boolean])(implicit ec: ExecutionContext) = {
-    setValue(is_self_employed, value)
-  }
-
-  def setValue(key: String, futureResult: Future[Boolean])(implicit ec: ExecutionContext): Future[Boolean] = {
-    futureResult.andThen { case Success(result) => reasons += (key -> result.toString) }
-  }
-
-  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, request: Request[AnyContent]): AuditEvent = ExtendedDataEvent(
+  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, request: Request[AnyContent]): ExtendedDataEvent = ExtendedDataEvent(
     auditSource = AppName.appName,
     auditType = "Routing",
     tags = hc.toAuditTags("transaction-name", request.path),
@@ -89,4 +72,4 @@ trait TAuditContext {
   )
 }
 
-case class AuditContext(override val reasons: scala.collection.mutable.Map[String, String] = defaultReasons) extends TAuditContext
+case class AuditContext() extends TAuditContext

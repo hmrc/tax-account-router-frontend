@@ -43,6 +43,8 @@ object RouterController extends RouterController {
   override def ruleService: RuleService = RuleService
 
   override def auditConnector: AuditConnector = FrontendAuditConnector
+
+  override def createAuditContext(): TAuditContext = AuditContext()
 }
 
 trait RouterController extends FrontendController with Actions {
@@ -59,13 +61,15 @@ trait RouterController extends FrontendController with Actions {
 
   def auditConnector: AuditConnector
 
+  def createAuditContext(): TAuditContext
+
   val account = AuthenticatedBy(RouterAuthenticationProvider).async { implicit user => request => route(user, request) }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
     val ruleContext = RuleContext(request.session.data.getOrElse("name", ""))
 
-    val auditContext = AuditContext()
+    val auditContext: TAuditContext = createAuditContext()
 
     val nextLocation: Future[Option[Location]] = ruleService.fireRules(rules, authContext, ruleContext, auditContext)
 
