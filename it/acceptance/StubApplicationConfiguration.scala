@@ -34,6 +34,7 @@ trait StubApplicationConfiguration {
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
     "personal-tax-account.host" -> s"http://$stubHost:$stubPort",
-    "tax-account-router.host" -> ""
+    "tax-account-router.host" -> "",
+    "throttling.enabled" -> false
   )
 }

@@ -25,7 +25,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request, Result}
 import play.api.test.FakeRequest
-import services.{RuleService, WelcomePageService}
+import services.{RuleService, ThrottlingService, WelcomePageService}
 import uk.gov.hmrc.http.cache.client.ShortLivedCache
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -61,7 +61,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockRuleService = mock[RuleService]
       when(mockRuleService.fireRules(eqTo(rules), any[AuthContext], any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
 
-      val controller = new TestRouterController(rules = rules, ruleService = mockRuleService)
+      //and
+      val mockThrottlingService = mock[ThrottlingService]
+      when(mockThrottlingService.throttle(expectedLocation)).thenReturn(expectedLocation)
+
+      val controller = new TestRouterController(rules = rules, ruleService = mockRuleService, throttlingService = mockThrottlingService)
 
       //when
       val futureResult: Future[Result] = controller.route
@@ -72,12 +76,14 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.headers("Location") shouldBe BTA.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
     }
 
     "return default location" in {
 
       //given
       val rules: List[Rule] = mock[List[Rule]]
+      val expectedLocation: LocationType = BTA
 
       //and
       val userName: String = "userName"
@@ -93,7 +99,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockRuleService = mock[RuleService]
       when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(auditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
-      val controller = new TestRouterController(rules = rules, defaultLocation = BTA, ruleService = mockRuleService)
+      //and
+      val mockThrottlingService = mock[ThrottlingService]
+      when(mockThrottlingService.throttle(expectedLocation)).thenReturn(expectedLocation)
+
+      val controller = new TestRouterController(rules = rules, defaultLocation = expectedLocation, ruleService = mockRuleService, throttlingService = mockThrottlingService)
 
       //when
       val futureResult: Future[Result] = controller.route
@@ -101,15 +111,17 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //then
       result.header.status shouldBe 303
-      result.header.headers("Location") shouldBe BTA.url
+      result.header.headers("Location") shouldBe expectedLocation.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
     }
 
     "audit the event before redirecting" in {
       //given
       val rules: List[Rule] = mock[List[Rule]]
       val userName: String = "userName"
+      val expectedLocation: LocationType = BTA
 
       //and
       implicit val authContext: AuthContext = mock[AuthContext]
@@ -125,13 +137,18 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockRuleService = mock[RuleService]
       when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(mockAuditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
+      //and
+      val mockThrottlingService = mock[ThrottlingService]
+      when(mockThrottlingService.throttle(expectedLocation)).thenReturn(expectedLocation)
+
       val mockAuditConnector = mock[AuditConnector]
       val controller = new TestRouterController(
         rules = rules,
-        defaultLocation = BTA,
+        defaultLocation = expectedLocation,
         ruleService = mockRuleService,
         _auditConnector = Some(mockAuditConnector),
-        _auditContext = Some(mockAuditContext)
+        _auditContext = Some(mockAuditContext),
+        throttlingService = mockThrottlingService
       )
 
       //when
@@ -142,7 +159,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
 
       auditEventCaptor.getValue shouldBe mockAuditEvent
-      verify(mockAuditContext).toAuditEvent(eqTo(BTA.url))(any[HeaderCarrier], any[Request[AnyContent]])
+      verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[Request[AnyContent]])
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
     }
   }
 }
@@ -151,6 +169,7 @@ class TestRouterController(override val rules: List[Rule],
                            override val defaultLocation: LocationType = BTA,
                            override val controllerMetrics: ControllerMetrics = ControllerMetricsStub,
                            override val ruleService: RuleService,
+                           override val throttlingService: ThrottlingService,
                            _auditConnector: Option[AuditConnector] = None,
                            _auditContext: Option[TAuditContext] = None) extends RouterController with MockitoSugar {
   override val welcomePageService: WelcomePageService = WelcomePageServiceStub

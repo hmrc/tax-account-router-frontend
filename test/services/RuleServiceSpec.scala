@@ -17,7 +17,7 @@
 package services
 
 import model.Location._
-import model.{AuditContext, Location, Rule, RuleContext}
+import model.{AuditContext, Rule, RuleContext}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar

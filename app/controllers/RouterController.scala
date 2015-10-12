@@ -19,10 +19,10 @@ package controllers
 import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
+import model.Location._
 import model._
 import play.api.mvc._
-import model.Location._
-import services.{RuleService, WelcomePageService}
+import services.{RuleService, ThrottlingService, WelcomePageService}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
@@ -43,6 +43,8 @@ object RouterController extends RouterController {
 
   override def ruleService: RuleService = RuleService
 
+  override def throttlingService: ThrottlingService = ThrottlingService
+
   override def auditConnector: AuditConnector = FrontendAuditConnector
 
   override def createAuditContext(): TAuditContext = AuditContext()
@@ -59,6 +61,8 @@ trait RouterController extends FrontendController with Actions {
   def rules: List[Rule]
 
   def ruleService: RuleService
+
+  def throttlingService: ThrottlingService
 
   def auditConnector: AuditConnector
 
@@ -78,7 +82,8 @@ trait RouterController extends FrontendController with Actions {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
       controllerMetrics.registerRedirectFor(location.name)
       auditConnector.sendEvent(auditContext.toAuditEvent(location.url))
-      Redirect(location.url)
+      val throttledLocation: LocationType = throttlingService.throttle(location)
+      Redirect(throttledLocation.url)
     })
   }
 }
