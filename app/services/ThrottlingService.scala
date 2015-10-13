@@ -18,8 +18,9 @@ package services
 
 import model.Location
 import model.Location.LocationType
-import play.api.Play
 import play.api.Play.current
+import play.api.mvc.{AnyContent, Request}
+import play.api.{Configuration, Play}
 
 import scala.util.Random
 
@@ -29,27 +30,38 @@ trait ThrottlingService {
 
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
 
-  private def findFallbackFor(location: LocationType): String = {
-    Play.configuration.getString(s"throttling.locations.${location.name}.fallback").getOrElse(location.name)
+  private def findConfigurationFor(location: LocationType)(implicit request: Request[AnyContent]) : Configuration = {
+
+    val postfix = request.session.data.contains("token") match {
+      case true if location == Location.PTA  => "-gg"
+      case false if location == Location.PTA => "-verify"
+      case _ => ""
+    }
+
+    Play.configuration.getConfig(s"throttling.locations.${location.name}$postfix").getOrElse(Configuration.empty)
   }
 
-  private def findPercentageToThrottleFor(location: LocationType): Float = {
-    Play.configuration.getDouble(s"throttling.locations.${location.name}.percentageBeToThrottled").map(_.toFloat).getOrElse(0)
+  private def findFallbackFor(configurationForLocation: Configuration, location: LocationType): String = {
+    configurationForLocation.getString("fallback").getOrElse(location.name)
+  }
+
+  private def findPercentageToThrottleFor(configurationForLocation: Configuration): Float = {
+    configurationForLocation.getString("percentageBeToThrottled").map(_.toFloat).getOrElse(0)
   }
 
   def findLocationByName(fallbackLocationName: String): Option[LocationType] = {
     Location.locations.get(fallbackLocationName)
   }
 
-  def throttle(location: LocationType): LocationType = {
-    //get config for that location
+  def throttle(location: LocationType)(implicit request: Request[AnyContent]): LocationType = {
     throttlingEnabled match {
       case false => location
       case true => {
-        val throttlingChance: Float = findPercentageToThrottleFor(location)
+        val configurationForLocation: Configuration = findConfigurationFor(location)
+        val throttlingChance: Float = findPercentageToThrottleFor(configurationForLocation)
         val randomNumber = random.nextFloat()
         randomNumber match {
-          case x if x <= throttlingChance => findLocationByName(findFallbackFor(location)).getOrElse(location)
+          case x if x <= throttlingChance => findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location)
           case _ => location
         }
       }

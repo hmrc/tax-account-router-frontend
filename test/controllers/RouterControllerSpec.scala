@@ -76,7 +76,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.headers("Location") shouldBe BTA.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
 
     "return default location" in {
@@ -114,7 +114,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       result.header.headers("Location") shouldBe expectedLocation.url
 
       verify(mockRuleService).fireRules(eqTo(rules), eqTo(authContext), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
 
     "audit the event before redirecting" in {
@@ -160,7 +160,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       auditEventCaptor.getValue shouldBe mockAuditEvent
       verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[Request[AnyContent]])
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation))
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
   }
 }
