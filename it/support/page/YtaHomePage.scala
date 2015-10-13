@@ -22,12 +22,12 @@ import support.stubs.{Stub, StubbedPage}
 
 object YtaHomeStubPage extends Stub with StubbedPage {
   override def create() = {
-    stubOut(urlMatching("/account"), "YTA Home Page")
+    stubOut(urlMatching("/business-account"), "YTA Home Page")
   }
 }
 
 object YtaHomePage extends WebPage {
-  override val url: String = Env.host + "/account"
+  override val url: String = Env.host + "/business-account"
 
   override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "YTA Home Page")
 }

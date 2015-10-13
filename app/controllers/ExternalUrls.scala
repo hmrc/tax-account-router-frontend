@@ -24,7 +24,7 @@ object ExternalUrls extends RunMode {
   import play.api.Play.current
 
   val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  val businessTaxAccountUrl = s"$businessTaxAccountHost/account"
+  val businessTaxAccountUrl = s"$businessTaxAccountHost/business-account"
 
   val personalTaxAccountHost = Play.configuration.getString("personal-tax-account.host").getOrElse("")
   val personalTaxAccountUrl = s"$personalTaxAccountHost/personal-account"
