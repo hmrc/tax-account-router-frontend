@@ -18,17 +18,23 @@ package model
 
 import model.AuditEventType._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
 import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.{FakeHeaders, FakeRequest}
+import uk.gov.hmrc.domain._
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+import uk.gov.hmrc.play.frontend.auth.connectors.domain._
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuditContextSpec extends UnitSpec with WithFakeApplication {
+class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSugar {
 
   val fixedDateTime = DateTime.now(DateTimeZone.UTC)
 
@@ -71,6 +77,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication {
 
       val path = "/some/path"
       val destination = "/some/destination"
+      val authId: String = "authId"
+      implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, LevelOfAssurance.LOA_1), Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
@@ -99,14 +107,59 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication {
       auditEvent.auditSource shouldBe "tax-account-router-frontend"
       auditEvent.auditType shouldBe "Routing"
       auditEvent.eventId should fullyMatch regex """^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$""".r
+
       auditEvent.tags.contains("clientIP")
       auditEvent.tags("path") shouldBe path
       auditEvent.tags.contains("X-Session-ID")
       auditEvent.tags.contains("X-Request-ID")
       auditEvent.tags.contains("clientPort")
       auditEvent.tags("transactionName") shouldBe "transaction-name"
-      auditEvent.detail shouldBe Json.obj("destination" -> destination, "reasons" -> reasonsMap)
+
+      auditEvent.detail shouldBe Json.obj(
+        "authId" -> authId,
+        "destination" -> destination,
+        "reasons" -> reasonsMap
+      )
+
       auditEvent.generatedAt shouldBe fixedDateTime
+    }
+
+    "add to the extended event optional fields" in {
+
+      val scenarios = Table(
+        ("scenario", "epaye", "sa", "ct", "vat"),
+        ("paye defined", Some(EpayeAccount("", EmpRef("taxOfficeNumber", "taxOfficeReference"))), None, None, None),
+        ("sa defined", None, Some(SaAccount("", SaUtr("saUtr"))), None, None),
+        ("ct defined", None, None, Some(CtAccount("", CtUtr("ctUtr"))), None),
+        ("vat defined", None, None, None, Some(VatAccount("", Vrn("vrn"))))
+      )
+
+      forAll(scenarios) { (scenario: String, epaye: Option[EpayeAccount], sa: Option[SaAccount], ct: Option[CtAccount], vat: Option[VatAccount]) =>
+
+        val auditContext: TAuditContext = AuditContext()
+
+        val path = "/some/path"
+        val destination = "/some/destination"
+        val authId: String = "authId"
+
+        val accounts: Accounts = Accounts(
+          epaye = epaye,
+          sa = sa,
+          ct = ct,
+          vat = vat
+        )
+
+        implicit val authContext = AuthContext(LoggedInUser(authId, None, None, None, LevelOfAssurance.LOA_1), Principal(None, accounts), None)
+        implicit val fakeRequest = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val auditEvent: ExtendedDataEvent = auditContext.toAuditEvent(destination)
+
+        (auditEvent.detail \ "empRef").asOpt[String] shouldBe epaye.fold[Option[String]](None) { paye => Some(paye.empRef.value) }
+        (auditEvent.detail \ "saUtr").asOpt[String] shouldBe sa.fold[Option[String]](None) { sa => Some(sa.utr.value) }
+        (auditEvent.detail \ "ctUtr").asOpt[String] shouldBe ct.fold[Option[String]](None) { ct => Some(ct.utr.value) }
+        (auditEvent.detail \ "vrn").asOpt[String] shouldBe vat.fold[Option[String]](None) { vat => Some(vat.vrn.value) }
+      }
     }
   }
 }

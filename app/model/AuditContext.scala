@@ -17,11 +17,14 @@
 package model
 
 import model.AuditContext._
-import play.api.libs.json.Json
+import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.config.AppName
+import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -61,15 +64,24 @@ trait TAuditContext {
   def setValue[T](auditEventType: AuditEventType, futureResult: Future[T])(implicit ec: ExecutionContext): Future[T] =
     futureResult.andThen { case Success(result) => reasons += (auditEventType.key -> result.toString) }
 
-  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, request: Request[AnyContent]): ExtendedDataEvent = ExtendedDataEvent(
-    auditSource = AppName.appName,
-    auditType = "Routing",
-    tags = hc.toAuditTags("transaction-name", request.path),
-    detail = Json.obj(
-      "destination" -> url,
-      "reasons" -> reasons.toMap[String, String]
+  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): ExtendedDataEvent = {
+    val accounts: Accounts = authContext.principal.accounts
+    val accountMap = accounts.toMap
+    val accountsAsJson: Seq[(String, JsValueWrapper)] = accountMap
+      .map { case (k, v) => (k, Json.toJsFieldJsValueWrapper(v.toString)) }
+      .toSeq
+    val optionalAccounts: JsObject = Json.obj(accountsAsJson: _*)
+    ExtendedDataEvent(
+      auditSource = AppName.appName,
+      auditType = "Routing",
+      tags = hc.toAuditTags("transaction-name", request.path),
+      detail = Json.obj(
+        "authId" -> authContext.user.userId,
+        "destination" -> url,
+        "reasons" -> reasons.toMap[String, String]
+      ) ++ optionalAccounts
     )
-  )
+  }
 }
 
 case class AuditContext() extends TAuditContext

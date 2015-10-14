@@ -166,7 +166,5 @@ case class RuleContext(userId: String)(implicit hc: HeaderCarrier) {
     }
   }
 
-  lazy val saUserInfo: Future[SAUserInfo] = {
-    selfAssessmentGatewayConnector.getInfo(userId)
-  }
+  lazy val saUserInfo: Future[SAUserInfo] = selfAssessmentGatewayConnector.getInfo(userId)
 }

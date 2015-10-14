@@ -30,8 +30,9 @@ import uk.gov.hmrc.http.cache.client.ShortLivedCache
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,7 +52,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val userName: String = "userName"
 
       //and
-      implicit val authContext: AuthContext = mock[AuthContext]
+      implicit val authContext: AuthContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", userName))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
       implicit lazy val ruleContext: RuleContext = new RuleContext(userName)
@@ -89,7 +90,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val userName: String = "userName"
 
       //and
-      implicit val authContext: AuthContext = mock[AuthContext]
+      implicit val authContext: AuthContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", userName))
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
       implicit lazy val ruleContext: RuleContext = new RuleContext(userName)
@@ -131,7 +132,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val mockAuditContext = mock[TAuditContext]
       val mockAuditEvent = mock[ExtendedDataEvent]
-      when(mockAuditContext.toAuditEvent(any[String])(any[HeaderCarrier], any[Request[AnyContent]])).thenReturn(mockAuditEvent)
+      when(mockAuditContext.toAuditEvent(any[String])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(mockAuditEvent)
 
       //and
       val mockRuleService = mock[RuleService]
@@ -159,7 +160,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
 
       auditEventCaptor.getValue shouldBe mockAuditEvent
-      verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[Request[AnyContent]])
+      verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
       verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
   }
