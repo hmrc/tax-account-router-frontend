@@ -30,7 +30,7 @@ class SelfAssessmentGatewayConnectorSpec extends UnitSpec {
         ("User with no previous returns", "Jenifer", false, false, false),
         ("User in partnership", "Morgan", true, false, true),
         ("User with selfEmployment", "Bert", false, true, true),
-        ("User not in partnership and without selfEmployment", "VatSaEpayePerformanceTests", false, false, true),
+        ("User not in partnership and without selfEmployment", "BILLY BOB", false, false, true),
         ("User with previous returns in partnership and selfEmployment", "XXXXXXXXXX", true, true, true)
       )
 

@@ -33,7 +33,7 @@ object SelfAssessmentGatewayConnector extends SelfAssessmentGatewayConnector {
       case "Jenifer" => SAUserInfo(partnership = false, selfEmployment = false, previousReturns = false)
       case "Morgan" => SAUserInfo(partnership = true, selfEmployment = false, previousReturns = true)
       case "Bert" => SAUserInfo(partnership = false, selfEmployment = true, previousReturns = true)
-      case "VatSaEpayePerformanceTests" => SAUserInfo(partnership = false, selfEmployment = false, previousReturns = true)
+      case "BILLY BOB" => SAUserInfo(partnership = false, selfEmployment = false, previousReturns = true)
       case _ => SAUserInfo(partnership = true, selfEmployment = true, previousReturns = true)
     }
     Future(saUserInfo)
