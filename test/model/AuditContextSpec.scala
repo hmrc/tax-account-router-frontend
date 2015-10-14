@@ -102,7 +102,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
       await(result)
 
-      val auditEvent: ExtendedDataEvent = auditContext.toAuditEvent(destination)
+      val futureAuditEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination)
+      val auditEvent = await(futureAuditEvent)
 
       auditEvent.auditSource shouldBe "tax-account-router-frontend"
       auditEvent.auditType shouldBe "Routing"
@@ -153,7 +154,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         implicit val fakeRequest = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val auditEvent: ExtendedDataEvent = auditContext.toAuditEvent(destination)
+        val futureDataEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination)
+        val auditEvent = await(futureDataEvent)
 
         (auditEvent.detail \ "empRef").asOpt[String] shouldBe epaye.fold[Option[String]](None) { paye => Some(paye.empRef.value) }
         (auditEvent.detail \ "saUtr").asOpt[String] shouldBe sa.fold[Option[String]](None) { sa => Some(sa.utr.value) }

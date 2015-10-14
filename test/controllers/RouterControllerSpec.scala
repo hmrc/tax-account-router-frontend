@@ -70,6 +70,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //when
       val futureResult: Future[Result] = controller.route
+
       val result = await(futureResult)
 
       //then
@@ -108,6 +109,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //when
       val futureResult: Future[Result] = controller.route
+
       val result = await(futureResult)
 
       //then
@@ -132,11 +134,13 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val mockAuditContext = mock[TAuditContext]
       val mockAuditEvent = mock[ExtendedDataEvent]
-      when(mockAuditContext.toAuditEvent(any[String])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(mockAuditEvent)
+      val auditContextToAuditEventResult: Future[ExtendedDataEvent] = Future(mockAuditEvent)
+      when(mockAuditContext.toAuditEvent(any[String])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
 
       //and
       val mockRuleService = mock[RuleService]
-      when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(mockAuditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
+      val fireRulesResult: Future[Option[LocationType]] = Future(None)
+      when(mockRuleService.fireRules(eqTo(rules), eqTo(authContext), any[RuleContext], eqTo(mockAuditContext))(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn fireRulesResult
 
       //and
       val mockThrottlingService = mock[ThrottlingService]
@@ -153,14 +157,18 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       )
 
       //when
-      await(controller.route)
+      val routeResult: Future[Result] = controller.route
 
       //then
+      await(routeResult)
+
+      //and
+      verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
+
       val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
       verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
-
       auditEventCaptor.getValue shouldBe mockAuditEvent
-      verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
+
       verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
   }

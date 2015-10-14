@@ -25,6 +25,7 @@ import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -64,23 +65,25 @@ trait TAuditContext {
   def setValue[T](auditEventType: AuditEventType, futureResult: Future[T])(implicit ec: ExecutionContext): Future[T] =
     futureResult.andThen { case Success(result) => reasons += (auditEventType.key -> result.toString) }
 
-  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): ExtendedDataEvent = {
-    val accounts: Accounts = authContext.principal.accounts
-    val accountMap = accounts.toMap
-    val accountsAsJson: Seq[(String, JsValueWrapper)] = accountMap
-      .map { case (k, v) => (k, Json.toJsFieldJsValueWrapper(v.toString)) }
-      .toSeq
-    val optionalAccounts: JsObject = Json.obj(accountsAsJson: _*)
-    ExtendedDataEvent(
-      auditSource = AppName.appName,
-      auditType = "Routing",
-      tags = hc.toAuditTags("transaction-name", request.path),
-      detail = Json.obj(
-        "authId" -> authContext.user.userId,
-        "destination" -> url,
-        "reasons" -> reasons.toMap[String, String]
-      ) ++ optionalAccounts
-    )
+  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
+    Future {
+      val accounts: Accounts = authContext.principal.accounts
+      val accountMap = accounts.toMap
+      val accountsAsJson: Seq[(String, JsValueWrapper)] = accountMap
+        .map { case (k, v) => (k, Json.toJsFieldJsValueWrapper(v.toString)) }
+        .toSeq
+      val optionalAccounts: JsObject = Json.obj(accountsAsJson: _*)
+      ExtendedDataEvent(
+        auditSource = AppName.appName,
+        auditType = "Routing",
+        tags = hc.toAuditTags("transaction-name", request.path),
+        detail = Json.obj(
+          "authId" -> authContext.user.userId,
+          "destination" -> url,
+          "reasons" -> reasons.toMap[String, String]
+        ) ++ optionalAccounts
+      )
+    }
   }
 }
 

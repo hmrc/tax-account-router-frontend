@@ -81,7 +81,7 @@ trait RouterController extends FrontendController with Actions {
     nextLocation.map(locationCandidate => {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
       controllerMetrics.registerRedirectFor(location.name)
-      auditConnector.sendEvent(auditContext.toAuditEvent(location.url))
+      auditContext.toAuditEvent(location.url).foreach(auditConnector.sendEvent(_))
       val throttledLocation: LocationType = throttlingService.throttle(location)
       Redirect(throttledLocation.url)
     })
