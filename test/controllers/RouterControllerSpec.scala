@@ -22,6 +22,7 @@ import model._
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
+import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request, Result}
 import play.api.test.FakeRequest
@@ -38,7 +39,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually {
 
   "router controller" should {
 
@@ -165,9 +166,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //and
       verify(mockAuditContext).toAuditEvent(eqTo(expectedLocation.url))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
 
-      val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
-      verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
-      auditEventCaptor.getValue shouldBe mockAuditEvent
+      eventually {
+        val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+        verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+        auditEventCaptor.getValue shouldBe mockAuditEvent
+      }
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation))(eqTo(fakeRequest))
     }
