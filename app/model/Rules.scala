@@ -90,7 +90,7 @@ object IsInPartnershipOrSelfEmployed extends Rule {
   override val defaultLocation: Option[LocationType] = Some(BTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.saUserInfo.map(saUserInfo => {
+    ruleContext.lastSaReturn.map(saUserInfo => {
       val hasPreviousReturns: Boolean = saUserInfo.previousReturns
       val isInPartnership: Boolean = saUserInfo.partnership
       val isSelfEmployed: Boolean = saUserInfo.selfEmployment
@@ -107,7 +107,7 @@ object IsNotInPartnershipNorSelfEmployed extends Rule {
   override val defaultLocation: Option[LocationType] = Some(PTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.saUserInfo.map(saUserInfo => {
+    ruleContext.lastSaReturn.map(saUserInfo => {
       val hasPreviousReturns: Boolean = saUserInfo.previousReturns
       val isInPartnership: Boolean = saUserInfo.partnership
       val isSelfEmployed: Boolean = saUserInfo.selfEmployment
@@ -124,7 +124,7 @@ object WithNoPreviousReturns extends Rule {
   override val defaultLocation: Option[LocationType] = Some(BTA)
 
   override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.saUserInfo.map(saUserInfo => {
+    ruleContext.lastSaReturn.map(saUserInfo => {
       val hasPreviousReturns: Boolean = saUserInfo.previousReturns
 
       auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
@@ -155,16 +155,17 @@ object VerifyRule extends Rule {
   override val defaultLocation: Option[LocationType] = Some(PTA)
 }
 
-case class RuleContext(userId: String)(implicit hc: HeaderCarrier) {
+case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   val governmentGatewayConnector : GovernmentGatewayConnector = GovernmentGatewayConnector
-  val selfAssessmentGatewayConnector : SelfAssessmentGatewayConnector = SelfAssessmentGatewayConnector
+  val selfAssessmentConnector : SelfAssessmentConnector = SelfAssessmentConnector
 
   lazy val activeEnrolments: Future[Set[String]] = {
-    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile(userId)
+    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile
     futureProfile.map { profile =>
       profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
     }
   }
 
-  lazy val saUserInfo: Future[SAUserInfo] = selfAssessmentGatewayConnector.getInfo(userId)
+  lazy val lastSaReturn: Future[SaReturn] = authContext.principal.accounts.sa
+    .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
 }

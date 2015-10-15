@@ -35,7 +35,7 @@ trait GovernmentGatewayConnector {
 
   def http: HttpGet with HttpPost
 
-  def profile(userId: String)(implicit hc: HeaderCarrier): Future[ProfileResponse] = {
+  def profile(implicit hc: HeaderCarrier): Future[ProfileResponse] = {
     implicit val reads = {
       implicit val reads = Json.reads[Enrolment]
       Json.reads[ProfileResponse]

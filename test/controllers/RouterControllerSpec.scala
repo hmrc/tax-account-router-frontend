@@ -50,13 +50,10 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val rules: List[Rule] = mock[List[Rule]]
 
       //and
-      val userName: String = "userName"
-
-      //and
       implicit val authContext: AuthContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", userName))
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = new RuleContext(userName)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(authContext)
       val auditContext = new AuditContext()
 
       //and
@@ -89,13 +86,10 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val expectedLocation: LocationType = BTA
 
       //and
-      val userName: String = "userName"
-
-      //and
       implicit val authContext: AuthContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", userName))
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = new RuleContext(userName)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(authContext)
       val auditContext = new AuditContext()
 
       //and
@@ -129,9 +123,9 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //and
       implicit val authContext: AuthContext = mock[AuthContext]
-      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession(("name", userName))
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit lazy val ruleContext: RuleContext = new RuleContext(userName)
+      implicit lazy val ruleContext: RuleContext = new RuleContext(authContext)
 
       val mockAuditContext = mock[TAuditContext]
       val mockAuditEvent = mock[ExtendedDataEvent]

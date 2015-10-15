@@ -16,7 +16,7 @@
 
 package model
 
-import connector.SAUserInfo
+import connector.SaReturn
 import model.AuditEventType._
 import model.Location._
 import org.mockito.ArgumentCaptor
@@ -303,6 +303,8 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     }
   }
 
+
+
   "IsInPartnershipOrSelfEmployed" should {
 
     "have a set of sub-rules" in {
@@ -311,21 +313,22 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BTA)
     }
-    "apply whether user is in a partnership or self employed" in {
-      val scenarios =
-        Table(
-          ("scenario", "partnership", "selfEmployed", "previousReturns", "expectedResult"),
-          ("with previous returns and in partnership not self employed", true, false, true, true),
-          ("with previous returns and not in partnership and self employed", false, true, true, true),
-          ("with previous returns and in partnership and self employed", true, true, true, true),
-          ("with previous returns and not in partnership nor self employed", false, false, true, false),
-          ("with previous no returns and in partnership not self employed", true, false, false, false),
-          ("with previous no returns and not in partnership and self employed", false, true, false, false),
-          ("with previous no returns and in partnership and self employed", true, true, false, false),
-          ("with previous no returns and not in partnership nor self employed", false, false, false, false)
-        )
 
-      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, previousReturns: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "schedules", "previousReturns", "expectedResult"),
+        ("with previous returns and in partnership not self employed", List("partnership"), true, true),
+        ("with previous returns and not in partnership and self employed", List("self_employment"), true, true),
+        ("with previous returns and in partnership and self employed", List("partnership", "self_employment"), true, true),
+        ("with previous returns and not in partnership nor self employed", List.empty, true, false),
+        ("with previous no returns and in partnership not self employed", List("partnership"), false, false),
+        ("with previous no returns and not in partnership and self employed", List("self_employment"), false, false),
+        ("with previous no returns and in partnership and self employed", List("partnership", "self_employment"), false, false),
+        ("with previous no returns and not in partnership nor self employed", List.empty, false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, schedules: List[String], previousReturns: Boolean, expectedResult: Boolean) =>
+      s"apply whether the user is in a partnership or is self-employed: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -334,7 +337,11 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         //and
         lazy val ruleContext: RuleContext = mock[RuleContext]
-        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed, previousReturns = previousReturns))
+
+
+        val saReturn: SaReturn = SaReturn(schedules, previousReturns = previousReturns)
+
+        when(ruleContext.lastSaReturn).thenReturn(saReturn)
 
         //when
         val futureResult: Future[Boolean] = IsInPartnershipOrSelfEmployed.shouldApply(authContext, ruleContext, mockAuditContext)
@@ -344,11 +351,11 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         result shouldBe expectedResult
 
         //and
-        verify(ruleContext).saUserInfo
+        verify(ruleContext).lastSaReturn
 
         //and
-        mockAuditContext.verifySetValue(auditEventType = IS_IN_A_PARTNERSHIP, valueType = Boolean, expectedValue = partnership)
-        mockAuditContext.verifySetValue(auditEventType = IS_SELF_EMPLOYED, valueType = Boolean, expectedValue = selfEmployed)
+        mockAuditContext.verifySetValue(auditEventType = IS_IN_A_PARTNERSHIP, valueType = Boolean, expectedValue = saReturn.partnership)
+        mockAuditContext.verifySetValue(auditEventType = IS_SELF_EMPLOYED, valueType = Boolean, expectedValue = saReturn.selfEmployment)
         mockAuditContext.verifySetValue(auditEventType = HAS_PREVIOUS_RETURNS, valueType = Boolean, expectedValue = previousReturns)
         verifyNoMoreInteractions(mockAuditContext)
       }
@@ -363,21 +370,23 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PTA)
     }
-    "apply whether user is in a partnership or self employed" in {
-      val scenarios =
-        Table(
-          ("scenario", "partnership", "selfEmployed", "previousReturns", "expectedResult"),
-          ("with previous returns in partnership not self employed", true, false, true, false),
-          ("with previous returns not in partnership and self employed", false, true, true, false),
-          ("with previous returns in partnership and self employed", true, true, true, false),
-          ("with previous returns not in partnership nor self employed", false, false, true, true),
-          ("with no previous returns in partnership not self employed", true, false, false, false),
-          ("with no previous returns not in partnership and self employed", false, true, false, false),
-          ("with no previous returns in partnership and self employed", true, true, false, false),
-          ("with no previous returns not in partnership nor self employed", false, false, false, false)
-        )
 
-      forAll(scenarios) { (scenario: String, partnership: Boolean, selfEmployed: Boolean, previousReturns: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "schedules", "previousReturns", "expectedResult"),
+        ("with previous returns and in partnership not self employed", List("partnership"), true, false),
+        ("with previous returns and not in partnership and self employed", List("self_employment"), true, false),
+        ("with previous returns and in partnership and self employed", List("partnership", "self_employment"), true, false),
+        ("with previous returns and not in partnership nor self employed", List.empty, true, true),
+        ("with previous no returns and in partnership not self employed", List("partnership"), false, false),
+        ("with previous no returns and not in partnership and self employed", List("self_employment"), false, false),
+        ("with previous no returns and in partnership and self employed", List("partnership", "self_employment"), false, false),
+        ("with previous no returns and not in partnership nor self employed", List.empty, false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, schedules: List[String], previousReturns: Boolean, expectedResult: Boolean) =>
+
+      s"apply whether the user is not in a partnership nor self-employed: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -386,7 +395,8 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         //and
         lazy val ruleContext: RuleContext = mock[RuleContext]
-        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(partnership = partnership, selfEmployment = selfEmployed, previousReturns = previousReturns))
+        val saReturn: SaReturn = SaReturn(schedules, previousReturns = previousReturns)
+        when(ruleContext.lastSaReturn).thenReturn(saReturn)
 
         //when
         val futureResult: Future[Boolean] = IsNotInPartnershipNorSelfEmployed.shouldApply(authContext, ruleContext, mockAuditContext)
@@ -396,11 +406,11 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         result shouldBe expectedResult
 
         //and
-        verify(ruleContext).saUserInfo
+        verify(ruleContext).lastSaReturn
 
         //and
-        mockAuditContext.verifySetValue(auditEventType = IS_IN_A_PARTNERSHIP, valueType = Boolean, expectedValue = partnership)
-        mockAuditContext.verifySetValue(auditEventType = IS_SELF_EMPLOYED, valueType = Boolean, expectedValue = selfEmployed)
+        mockAuditContext.verifySetValue(auditEventType = IS_IN_A_PARTNERSHIP, valueType = Boolean, expectedValue = saReturn.partnership)
+        mockAuditContext.verifySetValue(auditEventType = IS_SELF_EMPLOYED, valueType = Boolean, expectedValue = saReturn.selfEmployment)
         mockAuditContext.verifySetValue(auditEventType = HAS_PREVIOUS_RETURNS, valueType = Boolean, expectedValue = previousReturns)
         verifyNoMoreInteractions(mockAuditContext)
       }
@@ -432,7 +442,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         //and
         lazy val ruleContext: RuleContext = mock[RuleContext]
-        when(ruleContext.saUserInfo).thenReturn(SAUserInfo(previousReturns = previousReturns))
+        when(ruleContext.lastSaReturn).thenReturn(SaReturn(previousReturns = previousReturns))
 
         //when
         val futureResult: Future[Boolean] = WithNoPreviousReturns.shouldApply(authContext, ruleContext, mockAuditContext)
@@ -442,7 +452,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         result shouldBe expectedResult
 
         //and
-        verify(ruleContext).saUserInfo
+        verify(ruleContext).lastSaReturn
 
         //and
         mockAuditContext.verifySetValue(auditEventType = HAS_PREVIOUS_RETURNS, valueType = Boolean, expectedValue = previousReturns)
@@ -459,4 +469,5 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       await(captor.getValue) shouldBe expectedValue
     }
   }
+
 }

@@ -21,7 +21,10 @@ import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
+import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.frontend.auth.{Principal, LoggedInUser, AuthContext}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{VatAccount, SaAccount, Accounts, Authority}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,16 +33,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
-  "Rule Context" should {
-    "return active enrolments" in {
+  "activeEnrolments" should {
+    "return active enrolments when available" in {
       //given
-      val userId = "userId"
       val profileResponse = new ProfileResponse(
         affinityGroup = "",
         enrolments = List(Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED), Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED))
       )
       val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
-      when(mockGovernmentGatewayConnector.profile(userId)).thenReturn(profileResponse)
+      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
 
       //and
       implicit lazy val request = FakeRequest()
@@ -48,7 +50,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       //and
       val expectedActiveEnrolments: Set[String] = Set("enr1")
 
-      val ruleContext = new RuleContext(userId) {
+      val ruleContext = new RuleContext(mock[AuthContext]) {
         override val governmentGatewayConnector = mockGovernmentGatewayConnector
       }
 
@@ -59,36 +61,47 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       expectedActiveEnrolments shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockGovernmentGatewayConnector).profile(eqTo(userId))(eqTo(hc))
+      verify(mockGovernmentGatewayConnector).profile(eqTo(hc))
     }
+  }
 
-    "return SA user info" in {
+  "saUserInfo" should {
+    "return the last self-assessment return if available in SA and the user has an SA account" in {
       //given
-      val userId = "userId"
-      val expectedSaUserInfo = mock[SAUserInfo]
 
-      val mockSelfAssessmentGatewayConnector = mock[SelfAssessmentGatewayConnector]
-      when(mockSelfAssessmentGatewayConnector.getInfo(eqTo(userId))(any[ExecutionContext])).thenReturn(Future(expectedSaUserInfo))
+      val saReturn = SaReturn(List("something"))
 
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+
+      val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
+      when(mockSelfAssessmentConnector.lastReturn("123456789")(hc)).thenReturn(Future(saReturn))
+
+      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = Some(SaAccount("", SaUtr("123456789"))))), None)
       //and
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
-
-      //and
-      val ruleContext = new RuleContext(userId) {
-        override val selfAssessmentGatewayConnector = mockSelfAssessmentGatewayConnector
+      val ruleContext = new RuleContext(authContext) {
+        override val selfAssessmentConnector = mockSelfAssessmentConnector
       }
 
-      //when
-      val returnedSAUserInfo: SAUserInfo = await(ruleContext.saUserInfo)
-
       //then
-      returnedSAUserInfo shouldBe expectedSaUserInfo
-
-      //and
-      verify(mockSelfAssessmentGatewayConnector).getInfo(eqTo(userId))(any[ExecutionContext])
+      await(ruleContext.lastSaReturn) shouldBe saReturn
     }
 
+    "return an empty self-assessment return if the user has no SA account" in {
+      //given
+      val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
+
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+
+      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
+      //and
+      val ruleContext = new RuleContext(authContext) {
+        override val selfAssessmentConnector = mockSelfAssessmentConnector
+      }
+      //then
+      await(ruleContext.lastSaReturn) shouldBe SaReturn.empty
+
+      verifyZeroInteractions(mockSelfAssessmentConnector)
+    }
   }
 
 

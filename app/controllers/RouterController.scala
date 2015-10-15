@@ -72,7 +72,7 @@ trait RouterController extends FrontendController with Actions {
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val ruleContext = RuleContext(request.session.data.getOrElse("name", ""))
+    val ruleContext = RuleContext(authContext)
 
     val auditContext: TAuditContext = createAuditContext()
 
