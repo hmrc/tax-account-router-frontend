@@ -16,8 +16,8 @@
 
 package services
 
-import model.Location
 import model.Location.LocationType
+import model.{AuditContext, Location, ThrottlingAuditContext}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -52,7 +52,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation)
+        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
         returnedLocation shouldBe initialLocation
@@ -68,7 +68,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation)
+        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
         returnedLocation shouldBe initialLocation
@@ -86,44 +86,53 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation)
+        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
         returnedLocation shouldBe initialLocation
       }
     }
 
-    "return the right location after throttling or not" in {
+    "return the right location after throttling or not and update audit context" in {
 
       val initialLocation = mock[LocationType]
       val locationName = "location-name"
+      val locationUrl = "location-url"
       when(initialLocation.name) thenReturn locationName
+      when(initialLocation.url) thenReturn locationUrl
 
       val scenarios = evaluateUsingPlay { () =>
         Table(
-          ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation"),
-          ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BTA.name),
-          ("Should throttle to fallback when random number is equal than percentage", 0.5f, 0.5f, Location.BTA.name),
-          ("Should not throttle to fallback when random number is equal than percentage", 0.5f, 0.7f, locationName)
+          ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
+          ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BTA, true),
+          ("Should throttle to fallback when random number is equal than percentage", 0.5f, 0.5f, Location.BTA, true),
+          ("Should not throttle to fallback when random number is equal than percentage", 0.5f, 0.7f, initialLocation, false)
         )
       }
 
-      forAll(scenarios) { (scenario: String, percentageBeToThrottled: Float, randomNumber: Float, expectedLocation: String) =>
+      forAll(scenarios) { (scenario: String, percentageBeToThrottled: Float, randomNumber: Float, expectedLocation: LocationType, throttled: Boolean) =>
 
-        Helpers.running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation))) {
+        Helpers.running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
           val randomMock = mock[Random]
           when(randomMock.nextFloat()) thenReturn randomNumber
           implicit val mockRequest = FakeRequest()
 
           //and
+          val auditContextMock = mock[AuditContext]
+
+          //and
           val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
 
           //when
-          val returnedLocation: LocationType = throttlingServiceTest.throttle(initialLocation)
+          val returnedLocation: LocationType = throttlingServiceTest.throttle(initialLocation, auditContextMock)
 
           //then
-          returnedLocation.name shouldBe expectedLocation
+          returnedLocation.name shouldBe expectedLocation.name
+
+          //and
+          val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled)
+          verify(auditContextMock).setValue(throttlingAuditContext)
         }
 
       }
@@ -159,7 +168,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
           }
 
           //when
-          val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(Location.PTA)
+          val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(Location.PTA, mock[AuditContext])
 
           //then
           returnedLocation.name shouldBe expectedLocation

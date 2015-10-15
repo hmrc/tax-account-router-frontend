@@ -17,6 +17,7 @@
 package model
 
 import model.AuditContext._
+import model.Location.LocationType
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContent, Request}
@@ -61,6 +62,15 @@ object AuditContext {
 trait TAuditContext {
 
   private val reasons: scala.collection.mutable.Map[String, String] = defaultReasons
+  private val throttling: scala.collection.mutable.Map[String, String] = scala.collection.mutable.Map[String, String]()
+
+  def setValue(throttlingAuditContext: ThrottlingAuditContext): Unit =
+    throttling +=(
+      "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
+      "percentage" -> throttlingAuditContext.throttlingPercentage.getOrElse("-").toString,
+      "throttled" -> throttlingAuditContext.throttled.toString,
+      "destination-before-throttling" -> throttlingAuditContext.initialDestination.url
+      )
 
   def setValue[T](auditEventType: AuditEventType, futureResult: Future[T])(implicit ec: ExecutionContext): Future[T] =
     futureResult.andThen { case Success(result) => reasons += (auditEventType.key -> result.toString) }
@@ -80,7 +90,8 @@ trait TAuditContext {
         detail = Json.obj(
           "authId" -> authContext.user.userId,
           "destination" -> url,
-          "reasons" -> reasons.toMap[String, String]
+          "reasons" -> reasons.toMap[String, String],
+          "throttling" -> throttling.toMap[String, String]
         ) ++ optionalAccounts
       )
     }
@@ -88,3 +99,5 @@ trait TAuditContext {
 }
 
 case class AuditContext() extends TAuditContext
+
+case class ThrottlingAuditContext(throttlingPercentage: Option[Float], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean)

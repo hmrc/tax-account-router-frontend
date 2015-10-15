@@ -17,6 +17,7 @@
 package model
 
 import model.AuditEventType._
+import model.Location.LocationType
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -91,6 +92,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-self-employed" -> "true"
       )
 
+      val throttlingMap: Map[String, String] = Map()
+
       val result = for {
         welcomePageSeen <- hasSeenWelcomePage
         printPreferencesSet <- hasPrintPreferencesSet
@@ -119,7 +122,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditEvent.detail shouldBe Json.obj(
         "authId" -> authId,
         "destination" -> destination,
-        "reasons" -> reasonsMap
+        "reasons" -> reasonsMap,
+        "throttling" -> throttlingMap
       )
 
       auditEvent.generatedAt shouldBe fixedDateTime
@@ -161,6 +165,40 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         (auditEvent.detail \ "saUtr").asOpt[String] shouldBe sa.fold[Option[String]](None) { sa => Some(sa.utr.value) }
         (auditEvent.detail \ "ctUtr").asOpt[String] shouldBe ct.fold[Option[String]](None) { ct => Some(ct.utr.value) }
         (auditEvent.detail \ "vrn").asOpt[String] shouldBe vat.fold[Option[String]](None) { vat => Some(vat.vrn.value) }
+      }
+    }
+
+    "with the throttling audit context" in {
+      val destination = Location.PTA
+
+      val scenarios = Table(
+        ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),
+        ("without percentage configured", None, "-", false, destination, false),
+        ("with percentage configured", Option(1f), "1.0", true, destination, true)
+      )
+
+      forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Float], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
+        //given
+        val auditContext: TAuditContext = AuditContext()
+
+        //and
+        implicit val authContext = AuthContext(LoggedInUser("", None, None, None, LevelOfAssurance.LOA_1), Principal(None, Accounts()), None)
+        implicit val fakeRequest = FakeRequest(method = "GET", uri = "", headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
+        implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        //and
+        val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage, throttled, destination, enabled)
+        auditContext.setValue(throttlingAuditContext)
+
+        //when
+        val futureDataEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination.url)
+        val auditEvent = await(futureDataEvent)
+
+        //then
+        (auditEvent.detail \ "throttling" \ "enabled").as[String] shouldBe enabled.toString
+        (auditEvent.detail \ "throttling" \ "percentage").as[String] shouldBe throttlingPercentageString
+        (auditEvent.detail \ "throttling" \ "throttled").as[String] shouldBe throttled.toString
+        (auditEvent.detail \ "throttling" \ "destination-before-throttling").as[String] shouldBe initialDestination.url
       }
     }
   }
