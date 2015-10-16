@@ -16,18 +16,20 @@
 
 package services
 
+import helpers.SpecHelpers
 import model.Location.LocationType
 import model.{AuditContext, Location, ThrottlingAuditContext}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
-import play.api.test.{FakeApplication, FakeRequest, Helpers}
+import play.api.test.Helpers._
+import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.util.Random
 
-class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
+class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers {
 
   def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Float = 0, fallbackLocation: String = "default-fallback-location") = {
     Map[String, Any](
@@ -37,16 +39,10 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
     )
   }
 
-  def evaluateUsingPlay[T](block: () => T): T = {
-    Helpers.running(FakeApplication()) {
-      block.apply()
-    }
-  }
-
   "ThrottlingService" should {
 
     "not throttle if disabled" in {
-      Helpers.running(FakeApplication(additionalConfiguration = createConfiguration(enabled = false))) {
+      running(FakeApplication(additionalConfiguration = createConfiguration(enabled = false))) {
         //given
         val initialLocation = mock[LocationType]
         implicit val mockRequest = FakeRequest()
@@ -60,7 +56,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
     }
 
     "return location passed as argument when no configuration found" in {
-      Helpers.running(FakeApplication(additionalConfiguration = createConfiguration())) {
+      running(FakeApplication(additionalConfiguration = createConfiguration())) {
         //given
         val locationName = "location-name"
         val initialLocation = mock[LocationType]
@@ -79,7 +75,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
 
       val locationName = "location-name"
 
-      Helpers.running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = 1, fallbackLocation = ""))) {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = 1, fallbackLocation = ""))) {
         //given
         val initialLocation = mock[LocationType]
         when(initialLocation.name) thenReturn locationName
@@ -92,16 +88,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
         returnedLocation shouldBe initialLocation
       }
     }
+  }
 
-
-
+  it should {
     val initialLocation = mock[LocationType]
     val locationName = "location-name"
     val locationUrl = "location-url"
     when(initialLocation.name) thenReturn locationName
     when(initialLocation.url) thenReturn locationUrl
 
-    val scenarios1 = evaluateUsingPlay { () =>
+    val scenarios = evaluateUsingPlay { () =>
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
         ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BTA, true),
@@ -110,9 +106,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
       )
     }
 
-    forAll(scenarios1) { (scenario: String, percentageBeToThrottled: Float, randomNumber: Float, expectedLocation: LocationType, throttled: Boolean) =>
-      s"return the right location after throttling or not and update audit context : $scenario" in {
-        Helpers.running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
+    forAll(scenarios) { (scenario: String, percentageBeToThrottled: Float, randomNumber: Float, expectedLocation: LocationType, throttled: Boolean) =>
+      s"return the right location after throttling or not and update audit context - scenario: $scenario" in {
+        running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
           val randomMock = mock[Random]
           when(randomMock.nextFloat()) thenReturn randomNumber
@@ -138,20 +134,20 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
       }
 
     }
+  }
 
-
-
+  it should {
     val configuration = evaluateUsingPlay { () =>
       Map[String, Any](
-          "throttling.enabled" -> true,
-          s"throttling.locations.${Location.PTA.name}-gg.percentageBeToThrottled" -> 1,
-          s"throttling.locations.${Location.PTA.name}-gg.fallback" -> Location.BTA.name,
-          s"throttling.locations.${Location.PTA.name}-verify.percentageBeToThrottled" -> 1,
-          s"throttling.locations.${Location.PTA.name}-verify.fallback" -> Location.WELCOME.name
-        )
+            "throttling.enabled" -> true,
+            s"throttling.locations.${Location.PTA.name}-gg.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PTA.name}-gg.fallback" -> Location.BTA.name,
+            s"throttling.locations.${Location.PTA.name}-verify.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PTA.name}-verify.fallback" -> Location.WELCOME.name
+          )
     }
 
-    val scenarios2 = evaluateUsingPlay { () =>
+    val scenarios = evaluateUsingPlay { () =>
       Table(
         ("scenario", "tokenPresent", "expectedLocation"),
         ("Should throttle to BTA when token present", true, Location.BTA.name),
@@ -159,9 +155,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
       )
     }
 
-    forAll(scenarios2) { (scenario: String, tokenPresent: Boolean, expectedLocation: String) =>
-      s"return the right location after throttling PTA or not : $scenario" in {
-        Helpers.running(FakeApplication(additionalConfiguration = configuration)) {
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String) =>
+      s"return the right location after throttling PTA or not - scenario: $scenario" in {
+        running(FakeApplication(additionalConfiguration = configuration)) {
           //given
           implicit lazy val fakeRequest = tokenPresent match {
             case false => FakeRequest()
@@ -174,13 +170,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar {
           //then
           returnedLocation.name shouldBe expectedLocation
         }
-
       }
-
     }
-
   }
-
-  class ThrottlingServiceTest(override val random: Random = Random) extends ThrottlingService
-
 }
+
+class ThrottlingServiceTest(override val random: Random = Random) extends ThrottlingService

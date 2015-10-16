@@ -16,6 +16,7 @@
 
 package model
 
+import helpers.SpecHelpers
 import model.AuditEventType._
 import model.Location.LocationType
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
@@ -35,7 +36,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSugar {
+class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSugar with SpecHelpers {
 
   val fixedDateTime = DateTime.now(DateTimeZone.UTC)
 
@@ -129,17 +130,20 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditEvent.generatedAt shouldBe fixedDateTime
     }
 
-    "add to the extended event optional fields" in {
+  }
 
-      val scenarios = Table(
-        ("scenario", "epaye", "sa", "ct", "vat"),
-        ("paye defined", Some(EpayeAccount("", EmpRef("taxOfficeNumber", "taxOfficeReference"))), None, None, None),
-        ("sa defined", None, Some(SaAccount("", SaUtr("saUtr"))), None, None),
-        ("ct defined", None, None, Some(CtAccount("", CtUtr("ctUtr"))), None),
-        ("vat defined", None, None, None, Some(VatAccount("", Vrn("vrn"))))
-      )
+  it should {
+    val scenarios = Table(
+      ("scenario", "epaye", "sa", "ct", "vat"),
+      ("paye defined", Some(EpayeAccount("", EmpRef("taxOfficeNumber", "taxOfficeReference"))), None, None, None),
+      ("sa defined", None, Some(SaAccount("", SaUtr("saUtr"))), None, None),
+      ("ct defined", None, None, Some(CtAccount("", CtUtr("ctUtr"))), None),
+      ("vat defined", None, None, None, Some(VatAccount("", Vrn("vrn"))))
+    )
 
-      forAll(scenarios) { (scenario: String, epaye: Option[EpayeAccount], sa: Option[SaAccount], ct: Option[CtAccount], vat: Option[VatAccount]) =>
+    forAll(scenarios) { (scenario: String, epaye: Option[EpayeAccount], sa: Option[SaAccount], ct: Option[CtAccount], vat: Option[VatAccount]) =>
+
+      s"add to the extended event optional fields - scenario: $scenario" in {
 
         val auditContext: TAuditContext = AuditContext()
 
@@ -167,17 +171,21 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         (auditEvent.detail \ "vrn").asOpt[String] shouldBe vat.fold[Option[String]](None) { vat => Some(vat.vrn.value) }
       }
     }
+  }
 
-    "with the throttling audit context" in {
-      val destination = Location.PTA
+  it should {
 
-      val scenarios = Table(
-        ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),
-        ("without percentage configured", None, "-", false, destination, false),
-        ("with percentage configured", Option(1f), "1.0", true, destination, true)
-      )
+    val destination = evaluateUsingPlay(() => Location.PTA)
 
-      forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Float], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
+    val scenarios = Table(
+      ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),
+      ("without percentage configured", None, "-", false, destination, false),
+      ("with percentage configured", Option(1f), "1.0", true, destination, true)
+    )
+
+    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Float], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
+
+      s"with the throttling audit context - scenario: $scenario" in {
         //given
         val auditContext: TAuditContext = AuditContext()
 

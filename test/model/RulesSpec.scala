@@ -124,15 +124,17 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       GovernmentGatewayRule.defaultLocation shouldBe Some(BTA)
     }
-    "apply whether the token is present" in {
-      val scenarios =
-        Table(
-          ("scenario", "tokenPresent", "expectedResult"),
-          ("token is present", true, true),
-          ("token is absent", false, false)
-        )
 
-      forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "tokenPresent", "expectedResult"),
+        ("token is present", true, true),
+        ("token is absent", false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+
+      s"apply whether the token is present - scenario: $scenario" in {
 
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -158,15 +160,17 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       HasAnyBusinessEnrolment.defaultLocation shouldBe Some(BTA)
     }
-    "apply whether the active enrolments include any business enrolment" in {
-      val scenarios: TableFor3[String, Set[String], Boolean] =
-        Table(
-          ("scenario", "enrolments", "expectedResult"),
-          ("has business enrolments", Set("enr1"), true),
-          ("has no business enrolments", Set(), false)
-        )
 
-      forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+    val scenarios: TableFor3[String, Set[String], Boolean] =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("has business enrolments", Set("enr1"), true),
+        ("has no business enrolments", Set(), false)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+
+      s"apply whether the active enrolments include any business enrolment - scenario: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -197,15 +201,17 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       HasSelfAssessmentEnrolments.defaultLocation shouldBe None
     }
-    "apply whether the active enrolments include any self assessment enrolment" in {
-      val scenarios: TableFor3[String, Set[String], Boolean] =
-        Table(
-          ("scenario", "enrolments", "expectedResult"),
-          ("has self assessment enrolments", Set("enr3"), true),
-          ("has no self assessment  enrolments", Set(), false)
-        )
 
-      forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+    val scenarios: TableFor3[String, Set[String], Boolean] =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("has self assessment enrolments", Set("enr3"), true),
+        ("has no self assessment  enrolments", Set(), false)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+
+      s"apply whether the active enrolments include any self assessment enrolment - scenario: $scenario" in {
 
         val auditContext = AuditContext()
         val authContext: AuthContext = mock[AuthContext]
@@ -229,15 +235,18 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       WelcomePageRule.defaultLocation shouldBe Some(WELCOME)
     }
-    "apply whether route to the welcome page" in {
-      val scenarios =
-        Table(
-          ("scenario", "shouldShowWelcomePage", "expectedResult"),
-          ("welcome page not visited before", true, true),
-          ("welcome page visited before", false, false)
-        )
 
-      forAll(scenarios) { (scenario: String, shouldShowWelcomePage: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "shouldShowWelcomePage", "expectedResult"),
+        ("welcome page not visited before", true, true),
+        ("welcome page visited before", false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, shouldShowWelcomePage: Boolean, expectedResult: Boolean) =>
+
+      s"apply whether route to the welcome page - scenario: $scenario" in {
+
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -277,15 +286,17 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       VerifyRule.defaultLocation shouldBe Some(PTA)
     }
-    "apply whether the token is not present" in {
-      val scenarios =
-        Table(
-          ("scenario", "tokenPresent", "expectedResult"),
-          ("token is present", true, false),
-          ("token is absent", false, true)
-        )
 
-      forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "tokenPresent", "expectedResult"),
+        ("token is present", true, false),
+        ("token is absent", false, true)
+      )
+
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+
+      s"apply whether the token is not present - scenario: $scenario" in {
 
         val auditContext = AuditContext()
         val authContext: AuthContext = mock[AuthContext]
@@ -328,7 +339,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       )
 
     forAll(scenarios) { (scenario: String, schedules: List[String], previousReturns: Boolean, expectedResult: Boolean) =>
-      s"apply whether the user is in a partnership or is self-employed: $scenario" in {
+      s"apply whether the user is in a partnership or is self-employed - scenario: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -386,7 +397,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
     forAll(scenarios) { (scenario: String, schedules: List[String], previousReturns: Boolean, expectedResult: Boolean) =>
 
-      s"apply whether the user is not in a partnership nor self-employed: $scenario" in {
+      s"apply whether the user is not in a partnership nor self-employed - scenario: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
@@ -425,15 +436,17 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
     "have a default location" in {
       WithNoPreviousReturns.defaultLocation shouldBe Some(BTA)
     }
-    "apply whether user does not have previous returns" in {
-      val scenarios =
-        Table(
-          ("scenario", "previousReturns", "expectedResult"),
-          ("has previous returns", true, false),
-          ("has previous returns", false, true)
-        )
 
-      forAll(scenarios) { (scenario: String, previousReturns: Boolean, expectedResult: Boolean) =>
+    val scenarios =
+      Table(
+        ("scenario", "previousReturns", "expectedResult"),
+        ("has previous returns", true, false),
+        ("has no previous returns", false, true)
+      )
+
+    forAll(scenarios) { (scenario: String, previousReturns: Boolean, expectedResult: Boolean) =>
+
+      s"apply whether user does not have previous returns - scenario: $scenario" in {
         //given
         val mockAuditContext = mock[TAuditContext]
         val authContext: AuthContext = mock[AuthContext]
