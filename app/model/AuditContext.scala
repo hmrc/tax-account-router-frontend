@@ -31,11 +31,11 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-object AuditEventType extends Enumeration {
+object AuditEventType {
 
   type AuditEventType = EventType
 
-  sealed case class EventType(key: String) extends Val
+  sealed case class EventType(key: String)
 
   val HAS_ALREADY_SEEN_WELCOME_PAGE = EventType("has-already-seen-welcome-page")
   val HAS_PRINT_PREFERENCES_ALREADY_SET = EventType("has-print-preferences-already-set")
@@ -43,6 +43,7 @@ object AuditEventType extends Enumeration {
   val HAS_PREVIOUS_RETURNS = EventType("has-previous-returns")
   val IS_IN_A_PARTNERSHIP = EventType("is-in-a-partnership")
   val IS_SELF_EMPLOYED = EventType("is-self-employed")
+  val HAS_SA_ENROLMENTS = EventType("has-self-assessment-enrolments")
 }
 
 import model.AuditEventType._
@@ -55,7 +56,8 @@ object AuditContext {
     HAS_BUSINESS_ENROLMENTS.key -> "-" ,
     HAS_PREVIOUS_RETURNS.key -> "-" ,
     IS_IN_A_PARTNERSHIP.key -> "-" ,
-    IS_SELF_EMPLOYED.key -> "-"
+    IS_SELF_EMPLOYED.key -> "-",
+    HAS_SA_ENROLMENTS.key -> "-"
   )
 }
 

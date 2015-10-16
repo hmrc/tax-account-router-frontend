@@ -60,7 +60,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-business-enrolments" -> "-",
         "has-previous-returns" -> "-",
         "is-in-a-partnership" -> "-",
-        "is-self-employed" -> "-"
+        "is-self-employed" -> "-",
+        "has-self-assessment-enrolments" -> "-"
       )
     }
   }
@@ -76,6 +77,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       val hasBusinessEnrolments: Future[Boolean] = auditContext.setValue(HAS_BUSINESS_ENROLMENTS, Future(true))
       val isInAPartnership: Future[Boolean] = auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(true))
       val isSelfEmployed: Future[Boolean] = auditContext.setValue(IS_SELF_EMPLOYED, Future(true))
+      val hasSelfAssessmentEnrolments: Future[Boolean] = auditContext.setValue(HAS_SA_ENROLMENTS, Future(true))
 
       val path = "/some/path"
       val destination = "/some/destination"
@@ -90,7 +92,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-business-enrolments" -> "true",
         "has-previous-returns" -> "true",
         "is-in-a-partnership" -> "true",
-        "is-self-employed" -> "true"
+        "is-self-employed" -> "true",
+        "has-self-assessment-enrolments" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()
@@ -102,6 +105,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         businessEnrolments <- hasBusinessEnrolments
         partnership <- isInAPartnership
         selfEmployed <- isSelfEmployed
+        selfAssessmentEnrolments <- hasSelfAssessmentEnrolments
       } yield selfEmployed
 
       await(result)

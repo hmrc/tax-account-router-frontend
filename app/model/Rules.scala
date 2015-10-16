@@ -81,7 +81,11 @@ object HasSelfAssessmentEnrolments extends Rule {
   override val subRules: List[Rule] = List(WithNoPreviousReturns, IsInPartnershipOrSelfEmployed, IsNotInPartnershipNorSelfEmployed)
   lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
+  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    val hasSaEnrolments: Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
+    auditContext.setValue(HAS_SA_ENROLMENTS, hasSaEnrolments)
+    hasSaEnrolments
+  }
 
   override val defaultLocation: Option[LocationType] = None
 }
@@ -134,7 +138,6 @@ object WithNoPreviousReturns extends Rule {
 }
 
 
-
 trait WelcomePageRule extends Rule {
   val welcomePageService: WelcomePageService = WelcomePageService
 
@@ -156,8 +159,8 @@ object VerifyRule extends Rule {
 }
 
 case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
-  val governmentGatewayConnector : GovernmentGatewayConnector = GovernmentGatewayConnector
-  val selfAssessmentConnector : SelfAssessmentConnector = SelfAssessmentConnector
+  val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
+  val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
 
   lazy val activeEnrolments: Future[Set[String]] = {
     val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile
