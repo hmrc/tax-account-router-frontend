@@ -41,11 +41,11 @@ trait WelcomePageService {
 
   private def userHasPreviouslyLoggedIn()(implicit authContext: AuthContext): Future[Boolean] = Future.successful(authContext.user.previouslyLoggedInAt.isDefined)
 
-  def shouldShowWelcomePage(implicit authContext: AuthContext, hc: HeaderCarrier): Future[Boolean] = {
+  def hasNeverSeenTheWelcomePage(implicit authContext: AuthContext, hc: HeaderCarrier): Future[Boolean] = {
     for {
       userHasPreviouslyLoggedIn <- userHasPreviouslyLoggedIn()
       hasWelcomePageBeenSeenBefore <- hasWelcomePageBeenSeenBefore()
-    } yield !(userHasPreviouslyLoggedIn || hasWelcomePageBeenSeenBefore)
+    } yield !userHasPreviouslyLoggedIn && !hasWelcomePageBeenSeenBefore
   }
 
   private def userCacheId(user: LoggedInUser) = user.userId.replace("/auth/oid/", "")

@@ -33,8 +33,8 @@ trait ThrottlingService {
   private def findConfigurationFor(location: LocationType)(implicit request: Request[AnyContent]): Configuration = {
 
     val suffix = request.session.data.contains("token") match {
-      case true if location == Location.PTA => "-gg"
-      case false if location == Location.PTA => "-verify"
+      case true if location == Location.PersonalTaxAccount => "-gg"
+      case false if location == Location.PersonalTaxAccount => "-verify"
       case _ => ""
     }
 

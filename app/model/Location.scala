@@ -24,9 +24,9 @@ object Location extends Enumeration {
 
   sealed case class Type(url: String, name: String) extends Val
 
-  val PTA = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
-  val BTA = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
-  val WELCOME = Type(routes.WelcomeController.welcome().url, "welcome")
+  val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
+  val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
+  val Welcome = Type(routes.WelcomeController.welcome().url, "welcome")
 
   val locations: Map[String, LocationType] = Location.values.toList.map(_.asInstanceOf[LocationType]).map(value => value.name -> value).toMap
 

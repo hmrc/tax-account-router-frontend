@@ -23,7 +23,7 @@ import model.Location._
 import model._
 import play.api.Logger
 import play.api.mvc._
-import services.{RuleService, ThrottlingService, WelcomePageService}
+import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
@@ -36,13 +36,11 @@ object RouterController extends RouterController {
 
   override val welcomePageService: WelcomePageService = WelcomePageService
 
-  override val defaultLocation: LocationType = BTA
+  override val defaultLocation: LocationType = BusinessTaxAccount
 
   override val controllerMetrics: ControllerMetrics = ControllerMetrics
 
-  override val rules: List[Rule] = List(WelcomePageRule, VerifyRule, GovernmentGatewayRule)
-
-  override def ruleService: RuleService = RuleService
+  override val ruleEngine: RuleEngine = TarRules
 
   override def throttlingService: ThrottlingService = ThrottlingService
 
@@ -59,9 +57,7 @@ trait RouterController extends FrontendController with Actions {
 
   def defaultLocation: LocationType
 
-  def rules: List[Rule]
-
-  def ruleService: RuleService
+  def ruleEngine: RuleEngine
 
   def throttlingService: ThrottlingService
 
@@ -77,7 +73,7 @@ trait RouterController extends FrontendController with Actions {
 
     val auditContext: TAuditContext = createAuditContext()
 
-    val nextLocation: Future[Option[LocationType]] = ruleService.fireRules(rules, authContext, ruleContext, auditContext)
+    val nextLocation: Future[Option[LocationType]] = ruleEngine.findLocation(authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
@@ -90,4 +86,18 @@ trait RouterController extends FrontendController with Actions {
       Redirect(throttledLocation.url)
     })
   }
+}
+
+object TarRules extends RuleEngine {
+  import Condition._
+
+  override val rules: List[Rule] = List(
+      When(LoggedInForTheFirstTime) thenGoTo Welcome,
+      When(LoggedInViaVerify) thenGoTo PersonalTaxAccount,
+      When(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount,
+      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,
+      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount,
+      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount,
+      When(AllOtherRulesFailed) thenGoTo BusinessTaxAccount
+  )
 }

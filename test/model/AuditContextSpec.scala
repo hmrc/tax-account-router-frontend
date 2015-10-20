@@ -71,13 +71,13 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     "return an extended audit event" in {
       val auditContext: TAuditContext = AuditContext()
 
-      val hasSeenWelcomePage: Future[Boolean] = auditContext.setValue(HAS_ALREADY_SEEN_WELCOME_PAGE, Future(true))
-      val hasPrintPreferencesSet: Future[Boolean] = auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, Future(true))
-      val hasPreviousReturns: Future[Boolean] = auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(true))
-      val hasBusinessEnrolments: Future[Boolean] = auditContext.setValue(HAS_BUSINESS_ENROLMENTS, Future(true))
-      val isInAPartnership: Future[Boolean] = auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(true))
-      val isSelfEmployed: Future[Boolean] = auditContext.setValue(IS_SELF_EMPLOYED, Future(true))
-      val hasSelfAssessmentEnrolments: Future[Boolean] = auditContext.setValue(HAS_SA_ENROLMENTS, Future(true))
+      auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, true)
+      auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, true)
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, true)
+      auditContext.setValue(HAS_BUSINESS_ENROLMENTS, true)
+      auditContext.setValue(IS_IN_A_PARTNERSHIP, true)
+      auditContext.setValue(IS_SELF_EMPLOYED, true)
+      auditContext.setValue(HAS_SA_ENROLMENTS, true)
 
       val path = "/some/path"
       val destination = "/some/destination"
@@ -97,18 +97,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       )
 
       val throttlingMap: Map[String, String] = Map()
-
-      val result = for {
-        welcomePageSeen <- hasSeenWelcomePage
-        printPreferencesSet <- hasPrintPreferencesSet
-        previousReturns <- hasPreviousReturns
-        businessEnrolments <- hasBusinessEnrolments
-        partnership <- isInAPartnership
-        selfEmployed <- isSelfEmployed
-        selfAssessmentEnrolments <- hasSelfAssessmentEnrolments
-      } yield selfEmployed
-
-      await(result)
 
       val futureAuditEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination)
       val auditEvent = await(futureAuditEvent)
@@ -179,7 +167,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
   it should {
 
-    val destination = evaluateUsingPlay(() => Location.PTA)
+    val destination = evaluateUsingPlay(() => Location.PersonalTaxAccount)
 
     val scenarios = Table(
       ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),

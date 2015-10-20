@@ -16,6 +16,7 @@
 
 package services
 
+import model.AuditEventType.{EventType, AuditEventType}
 import model.Location._
 import model.{AuditContext, Rule, RuleContext}
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -30,48 +31,53 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
-  "rule service" should {
+  case class BooleanCondition(b: Boolean) extends Condition {
+    override val auditType: Option[AuditEventType] = None
+    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+      Future(b)
+  }
+
+  private val trueLocation: LocationType = new Type("/true", "true")
+  val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation)
+  private val falseLocation: LocationType = new Type("/false", "false")
+  val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation)
+
+
+  "The rule engine" should {
 
     "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in {
-
-      //given
-      val firstRule = mock[Rule]
-      when(firstRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future.successful(None)
-      val secondRule = mock[Rule]
-      val expectedLocation: LocationType = BTA
-      when(secondRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future(Some(expectedLocation)))
-      val rules: List[Rule] = List(firstRule, secondRule)
-
-      //and
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = RuleService.fireRules(rules, mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      val maybeLocation: Future[Option[LocationType]] = new RuleEngine{
+        override val rules: List[Rule] =  List(falseRule, trueRule)
+      }.findLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
-      location shouldBe Some(expectedLocation)
+      location shouldBe Some(trueLocation)
     }
 
     "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
 
       //given
       val firstRule = mock[Rule]
-      val expectedLocation: LocationType = BTA
+      val expectedLocation: LocationType = BusinessTaxAccount
       when(firstRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
       val secondRule = mock[Rule]
       when(secondRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
-      val rules: List[Rule] = List(firstRule, secondRule)
 
       //and
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = RuleService.fireRules(rules, mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      val maybeLocation: Future[Option[LocationType]] = new RuleEngine{
+        override val rules: List[Rule] =  List(firstRule, secondRule)
+      }.findLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
@@ -85,3 +91,5 @@ class RuleServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
   }
 
 }
+
+

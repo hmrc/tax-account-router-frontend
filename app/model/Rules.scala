@@ -16,159 +16,88 @@
 
 package model
 
-import connector._
 import model.AuditEventType._
-import model.Location._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import services.{RuleService, WelcomePageService}
+import services.{Condition, WelcomePageService}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-trait Rule {
-
-  val subRules: List[Rule] = List()
-
-  val defaultLocation: Option[LocationType]
-
-  val ruleService: RuleService = RuleService
-
-  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] =
-
-    shouldApply(authContext, ruleContext, auditContext).flatMap {
-      case true =>
-        val nextLocation: Future[Option[LocationType]] = ruleService.fireRules(subRules, authContext, ruleContext, auditContext)
-        nextLocation.map {
-          case Some(location) => Some(location)
-          case None => defaultLocation match {
-            case None => None
-            case _ => defaultLocation
-          }
-        }
-      case false => Future(None)
-    }
-
-  def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
-}
-
-object GovernmentGatewayRule extends Rule {
-  override val subRules: List[Rule] = List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
-
-  override val defaultLocation: Option[LocationType] = Some(BTA)
-
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(request.session.data.contains("token"))
-}
-
-object HasAnyBusinessEnrolment extends Rule {
+object HasAnyBusinessEnrolment extends Condition {
   lazy val businessEnrolments: Set[String] = Play.configuration.getStringSeq("business-enrolments").getOrElse(Seq()).toSet[String]
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    val hasBusinessEnrolments: Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
 
-    auditContext.setValue(HAS_BUSINESS_ENROLMENTS, hasBusinessEnrolments)
-
-    hasBusinessEnrolments
-  }
-
-  override val defaultLocation: Option[LocationType] = Some(BTA)
+  override val auditType: Option[AuditEventType] = Some(HAS_BUSINESS_ENROLMENTS)
 }
 
-object HasSelfAssessmentEnrolments extends Rule {
-  override val subRules: List[Rule] = List(WithNoPreviousReturns, IsInPartnershipOrSelfEmployed, IsNotInPartnershipNorSelfEmployed)
+object HasSelfAssessmentEnrolments extends Condition {
   lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    val hasSaEnrolments: Future[Boolean] = ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
-    auditContext.setValue(HAS_SA_ENROLMENTS, hasSaEnrolments)
-    hasSaEnrolments
-  }
 
-  override val defaultLocation: Option[LocationType] = None
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
+
+  override val auditType: Option[AuditEventType] = Some(HAS_SA_ENROLMENTS)
 }
 
-object IsInPartnershipOrSelfEmployed extends Rule {
-  override val defaultLocation: Option[LocationType] = Some(BTA)
+object HasPreviousReturns extends Condition {
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.lastSaReturn.map(saUserInfo => {
-      val hasPreviousReturns: Boolean = saUserInfo.previousReturns
-      val isInPartnership: Boolean = saUserInfo.partnership
-      val isSelfEmployed: Boolean = saUserInfo.selfEmployment
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.lastSaReturn.map(_.previousReturns)
 
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
-      auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(isInPartnership))
-      auditContext.setValue(IS_SELF_EMPLOYED, Future(isSelfEmployed))
-
-      hasPreviousReturns && (isInPartnership || isSelfEmployed)
-    })
+  override val auditType: Option[AuditEventType] = Some(HAS_PREVIOUS_RETURNS)
 }
 
-object IsNotInPartnershipNorSelfEmployed extends Rule {
-  override val defaultLocation: Option[LocationType] = Some(PTA)
+object IsInAPartnership extends Condition {
+  override val auditType: Option[AuditEventType] = Some(IS_IN_A_PARTNERSHIP)
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.lastSaReturn.map(saUserInfo => {
-      val hasPreviousReturns: Boolean = saUserInfo.previousReturns
-      val isInPartnership: Boolean = saUserInfo.partnership
-      val isSelfEmployed: Boolean = saUserInfo.selfEmployment
-
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
-      auditContext.setValue(IS_IN_A_PARTNERSHIP, Future(isInPartnership))
-      auditContext.setValue(IS_SELF_EMPLOYED, Future(isSelfEmployed))
-
-      hasPreviousReturns && (!isInPartnership && !isSelfEmployed)
-    })
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.lastSaReturn.map(_.partnership)
 }
 
-object WithNoPreviousReturns extends Rule {
-  override val defaultLocation: Option[LocationType] = Some(BTA)
+object IsSelfEmployed extends Condition {
+  override val auditType: Option[AuditEventType] = Some(IS_SELF_EMPLOYED)
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    ruleContext.lastSaReturn.map(saUserInfo => {
-      val hasPreviousReturns: Boolean = saUserInfo.previousReturns
-
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, Future(hasPreviousReturns))
-
-      !hasPreviousReturns
-    })
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.lastSaReturn.map(_.selfEmployment)
 }
 
 
-trait WelcomePageRule extends Rule {
-  val welcomePageService: WelcomePageService = WelcomePageService
+trait LoggedInForTheFirstTime extends Condition {
+  val welcomePageService: WelcomePageService
 
-  override val defaultLocation: Option[LocationType] = Some(WELCOME)
+  override val auditType: Option[AuditEventType] = Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
 
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    val result: Future[Boolean] = welcomePageService.shouldShowWelcomePage(authContext, hc)
-    auditContext.setValue(HAS_ALREADY_SEEN_WELCOME_PAGE, result.map(!_))
-    result
-  }
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    welcomePageService.hasNeverSeenTheWelcomePage(authContext, hc)
 }
 
-object WelcomePageRule extends WelcomePageRule
-
-object VerifyRule extends Rule {
-  override def shouldApply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(!request.session.data.contains("token"))
-
-  override val defaultLocation: Option[LocationType] = Some(PTA)
+object LoggedInForTheFirstTime extends LoggedInForTheFirstTime {
+  override val welcomePageService: WelcomePageService = WelcomePageService
 }
 
-case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
-  val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
-  val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
+object LoggedInViaVerify extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    Future(!request.session.data.contains("token"))
 
-  lazy val activeEnrolments: Future[Set[String]] = {
-    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile
-    futureProfile.map { profile =>
-      profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
-    }
-  }
+  override val auditType: Option[AuditEventType] = Some(IS_A_VERIFY_USER)
+}
 
-  lazy val lastSaReturn: Future[SaReturn] = authContext.principal.accounts.sa
-    .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
+object LoggedInViaGovernmentGateway extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    Future(request.session.data.contains("token"))
+
+  override val auditType: Option[AuditEventType] = Some(IS_A_GOVERNMENT_GATEWAY_USER)
+}
+
+object AllOtherRulesFailed extends Condition {
+  override val auditType: Option[AuditEventType] = None
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(true)
 }

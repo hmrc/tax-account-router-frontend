@@ -122,7 +122,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       GovernmentGatewayRule.subRules shouldBe List(HasAnyBusinessEnrolment, HasSelfAssessmentEnrolments)
     }
     "have a default location" in {
-      GovernmentGatewayRule.defaultLocation shouldBe Some(BTA)
+      GovernmentGatewayRule.defaultLocation shouldBe Some(BusinessTaxAccount)
     }
 
     val scenarios =
@@ -158,7 +158,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       HasAnyBusinessEnrolment.subRules shouldBe List()
     }
     "have a default location" in {
-      HasAnyBusinessEnrolment.defaultLocation shouldBe Some(BTA)
+      HasAnyBusinessEnrolment.defaultLocation shouldBe Some(BusinessTaxAccount)
     }
 
     val scenarios: TableFor3[String, Set[String], Boolean] =
@@ -252,7 +252,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       WelcomePageRule.subRules shouldBe List()
     }
     "have a default location" in {
-      WelcomePageRule.defaultLocation shouldBe Some(WELCOME)
+      WelcomePageRule.defaultLocation shouldBe Some(Welcome)
     }
 
     val scenarios =
@@ -276,7 +276,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         //and
         val mockWelcomePageService = mock[WelcomePageService]
-        when(mockWelcomePageService.shouldShowWelcomePage(authContext, hc)).thenReturn(Future(shouldShowWelcomePage))
+        when(mockWelcomePageService.hasNeverSeenTheWelcomePage(authContext, hc)).thenReturn(Future(shouldShowWelcomePage))
 
         object WelcomePageRuleTest extends WelcomePageRule {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
@@ -289,7 +289,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         val result: Boolean = await(futureResult)
         result shouldBe expectedResult
 
-        verify(mockWelcomePageService).shouldShowWelcomePage(eqTo(authContext), eqTo(hc))
+        verify(mockWelcomePageService).hasNeverSeenTheWelcomePage(eqTo(authContext), eqTo(hc))
       }
 
       s"audit the result of the rule evaluation - scenario: $scenario" in {
@@ -297,7 +297,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
         val ruleContext: RuleContext = mock[RuleContext]
 
         val mockWelcomePageService = mock[WelcomePageService]
-        when(mockWelcomePageService.shouldShowWelcomePage(authContext, hc)).thenReturn(Future(shouldShowWelcomePage))
+        when(mockWelcomePageService.hasNeverSeenTheWelcomePage(authContext, hc)).thenReturn(Future(shouldShowWelcomePage))
 
         object WelcomePageRuleTest extends WelcomePageRule {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
@@ -305,7 +305,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
         await(WelcomePageRuleTest.shouldApply(authContext, ruleContext, mockAuditContext))
 
-        mockAuditContext.verifySetValue(auditEventType = HAS_ALREADY_SEEN_WELCOME_PAGE, valueType = Boolean, expectedValue = !shouldShowWelcomePage)
+        mockAuditContext.verifySetValue(auditEventType = HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, valueType = Boolean, expectedValue = !shouldShowWelcomePage)
         verifyNoMoreInteractions(mockAuditContext)
       }
     }
@@ -317,7 +317,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       VerifyRule.subRules shouldBe List()
     }
     "have a default location" in {
-      VerifyRule.defaultLocation shouldBe Some(PTA)
+      VerifyRule.defaultLocation shouldBe Some(PersonalTaxAccount)
     }
 
     val scenarios =
@@ -353,7 +353,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       IsInPartnershipOrSelfEmployed.subRules shouldBe List()
     }
     "have a default location" in {
-      IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BTA)
+      IsInPartnershipOrSelfEmployed.defaultLocation shouldBe Some(BusinessTaxAccount)
     }
 
     val scenarios =
@@ -417,7 +417,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       IsNotInPartnershipNorSelfEmployed.subRules shouldBe List()
     }
     "have a default location" in {
-      IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PTA)
+      IsNotInPartnershipNorSelfEmployed.defaultLocation shouldBe Some(PersonalTaxAccount)
     }
 
     val scenarios =
@@ -483,7 +483,7 @@ class RulesSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
       WithNoPreviousReturns.subRules shouldBe List()
     }
     "have a default location" in {
-      WithNoPreviousReturns.defaultLocation shouldBe Some(BTA)
+      WithNoPreviousReturns.defaultLocation shouldBe Some(BusinessTaxAccount)
     }
 
     val scenarios =

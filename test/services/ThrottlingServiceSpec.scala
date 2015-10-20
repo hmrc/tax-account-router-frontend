@@ -100,8 +100,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val scenarios = evaluateUsingPlay { () =>
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
-        ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BTA, true),
-        ("Should throttle to fallback when random number is equal than percentage", 0.5f, 0.5f, Location.BTA, true),
+        ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is equal than percentage", 0.5f, 0.5f, Location.BusinessTaxAccount, true),
         ("Should not throttle to fallback when random number is equal than percentage", 0.5f, 0.7f, initialLocation, false)
       )
     }
@@ -140,18 +140,18 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val configuration = evaluateUsingPlay { () =>
       Map[String, Any](
             "throttling.enabled" -> true,
-            s"throttling.locations.${Location.PTA.name}-gg.percentageBeToThrottled" -> 1,
-            s"throttling.locations.${Location.PTA.name}-gg.fallback" -> Location.BTA.name,
-            s"throttling.locations.${Location.PTA.name}-verify.percentageBeToThrottled" -> 1,
-            s"throttling.locations.${Location.PTA.name}-verify.fallback" -> Location.WELCOME.name
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.fallback" -> Location.BusinessTaxAccount.name,
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.fallback" -> Location.Welcome.name
           )
     }
 
     val scenarios = evaluateUsingPlay { () =>
       Table(
         ("scenario", "tokenPresent", "expectedLocation"),
-        ("Should throttle to BTA when token present", true, Location.BTA.name),
-        ("Should throttle to Welcome when token not present", false, Location.WELCOME.name)
+        ("Should throttle to BTA when token present", true, Location.BusinessTaxAccount.name),
+        ("Should throttle to Welcome when token not present", false, Location.Welcome.name)
       )
     }
 
@@ -165,7 +165,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
           }
 
           //when
-          val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(Location.PTA, mock[AuditContext])
+          val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(Location.PersonalTaxAccount, mock[AuditContext])
 
           //then
           returnedLocation.name shouldBe expectedLocation

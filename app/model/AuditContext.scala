@@ -29,7 +29,6 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 object AuditEventType {
 
@@ -37,7 +36,9 @@ object AuditEventType {
 
   sealed case class EventType(key: String)
 
-  val HAS_ALREADY_SEEN_WELCOME_PAGE = EventType("has-already-seen-welcome-page")
+  val IS_A_VERIFY_USER = EventType("is-a-verify-user")
+  val IS_A_GOVERNMENT_GATEWAY_USER = EventType("is-a-government-gateway-user")
+  val HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE = EventType("has-never-seen-welcome-page-before")
   val HAS_PRINT_PREFERENCES_ALREADY_SET = EventType("has-print-preferences-already-set")
   val HAS_BUSINESS_ENROLMENTS = EventType("has-business-enrolments")
   val HAS_PREVIOUS_RETURNS = EventType("has-previous-returns")
@@ -51,7 +52,9 @@ import model.AuditEventType._
 object AuditContext {
 
   def defaultReasons = scala.collection.mutable.Map[String, String](
-    HAS_ALREADY_SEEN_WELCOME_PAGE.key -> "-" ,
+    IS_A_VERIFY_USER.key -> "-" ,
+    IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
+    HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "-" ,
     HAS_PRINT_PREFERENCES_ALREADY_SET.key -> "-" ,
     HAS_BUSINESS_ENROLMENTS.key -> "-" ,
     HAS_PREVIOUS_RETURNS.key -> "-" ,
@@ -74,8 +77,8 @@ trait TAuditContext {
       "destination-before-throttling" -> throttlingAuditContext.initialDestination.url
       )
 
-  def setValue[T](auditEventType: AuditEventType, futureResult: Future[T])(implicit ec: ExecutionContext): Future[T] =
-    futureResult.andThen { case Success(result) => reasons += (auditEventType.key -> result.toString) }
+  def setValue(auditEventType: AuditEventType, result: Boolean)(implicit ec: ExecutionContext): Unit =
+    reasons += (auditEventType.key -> result.toString)
 
   def toAuditEvent(url: String)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
     Future {
