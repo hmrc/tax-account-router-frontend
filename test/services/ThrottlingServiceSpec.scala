@@ -97,7 +97,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     when(initialLocation.name) thenReturn locationName
     when(initialLocation.url) thenReturn locationUrl
 
-    val scenarios = evaluateUsingPlay { () =>
+    val scenarios = evaluateUsingPlay {
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
         ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BusinessTaxAccount, true),
@@ -137,7 +137,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
   }
 
   it should {
-    val configuration = evaluateUsingPlay { () =>
+    val configuration = evaluateUsingPlay {
       Map[String, Any](
             "throttling.enabled" -> true,
             s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 1,
@@ -147,7 +147,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
           )
     }
 
-    val scenarios = evaluateUsingPlay { () =>
+    val scenarios = evaluateUsingPlay {
       Table(
         ("scenario", "tokenPresent", "expectedLocation"),
         ("Should throttle to BTA when token present", true, Location.BusinessTaxAccount.name),

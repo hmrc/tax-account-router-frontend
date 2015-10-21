@@ -16,11 +16,12 @@
 
 package model
 
+import engine.Condition
 import model.AuditEventType._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import services.{Condition, WelcomePageService}
+import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -38,7 +39,6 @@ object HasAnyBusinessEnrolment extends Condition {
 
 object HasSelfAssessmentEnrolments extends Condition {
   lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
-
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
@@ -67,7 +67,6 @@ object IsSelfEmployed extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.lastSaReturn.map(_.selfEmployment)
 }
-
 
 trait LoggedInForTheFirstTime extends Condition {
   val welcomePageService: WelcomePageService

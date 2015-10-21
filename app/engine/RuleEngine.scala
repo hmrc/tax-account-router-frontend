@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package model
+package engine
 
-import connector._
+import model.Location._
+import model._
+import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
-  val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
-  val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
+trait RuleEngine {
 
-  lazy val activeEnrolments: Future[Set[String]] = {
-    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile
-    futureProfile.map { profile =>
-      profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  val rules: List[Rule]
+
+  def getLocation(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] = {
+
+    rules.foldLeft(Future[Option[LocationType]](None)) {
+      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else rule.apply(authContext, ruleContext, auditContext))
     }
   }
-
-  lazy val lastSaReturn: Future[SaReturn] = authContext.principal.accounts.sa
-    .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
 }

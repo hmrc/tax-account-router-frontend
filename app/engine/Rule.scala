@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package helpers
+package engine
 
-import play.api.test.FakeApplication
-import play.api.test.Helpers._
+import model.Location.LocationType
+import model.{RuleContext, TAuditContext}
+import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.frontend.auth.AuthContext
 
-trait SpecHelpers {
+import scala.concurrent.Future
 
-  def evaluateUsingPlay[T](block: => T): T = {
-    running(FakeApplication()) {
-      block
-    }
-  }
+trait Rule {
+
+  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]]
+
 }

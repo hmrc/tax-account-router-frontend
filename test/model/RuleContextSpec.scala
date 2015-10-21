@@ -17,18 +17,18 @@
 package model
 
 import connector._
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.{Principal, LoggedInUser, AuthContext}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{VatAccount, SaAccount, Accounts, Authority}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
@@ -103,6 +103,4 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       verifyZeroInteractions(mockSelfAssessmentConnector)
     }
   }
-
-
 }

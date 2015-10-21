@@ -55,7 +55,9 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     "be the expected ones" in {
 
       AuditContext.defaultReasons shouldBe Map(
-        "has-already-seen-welcome-page" -> "-",
+        "is-a-verify-user" -> "-",
+        "is-a-government-gateway-user" -> "-",
+        "has-never-seen-welcome-page-before" -> "-",
         "has-print-preferences-already-set" -> "-",
         "has-business-enrolments" -> "-",
         "has-previous-returns" -> "-",
@@ -71,10 +73,12 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     "return an extended audit event" in {
       val auditContext: TAuditContext = AuditContext()
 
+      auditContext.setValue(IS_A_VERIFY_USER, true)
+      auditContext.setValue(IS_A_GOVERNMENT_GATEWAY_USER, true)
       auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, true)
       auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, true)
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, true)
       auditContext.setValue(HAS_BUSINESS_ENROLMENTS, true)
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, true)
       auditContext.setValue(IS_IN_A_PARTNERSHIP, true)
       auditContext.setValue(IS_SELF_EMPLOYED, true)
       auditContext.setValue(HAS_SA_ENROLMENTS, true)
@@ -87,7 +91,9 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
       val reasonsMap = Map(
-        "has-already-seen-welcome-page" -> "true",
+        "is-a-verify-user" -> "true",
+        "is-a-government-gateway-user" -> "true",
+        "has-never-seen-welcome-page-before" -> "true",
         "has-print-preferences-already-set" -> "true",
         "has-business-enrolments" -> "true",
         "has-previous-returns" -> "true",
@@ -167,7 +173,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
   it should {
 
-    val destination = evaluateUsingPlay(() => Location.PersonalTaxAccount)
+    val destination = evaluateUsingPlay(Location.PersonalTaxAccount)
 
     val scenarios = Table(
       ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),

@@ -16,9 +16,10 @@
 
 package services
 
-import model.AuditEventType.{EventType, AuditEventType}
+import engine.{Condition, Rule, RuleEngine, When}
+import model.AuditEventType.AuditEventType
 import model.Location._
-import model.{AuditContext, Rule, RuleContext}
+import model.{AuditContext, RuleContext}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -35,6 +36,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[AuditEventType] = None
+
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       Future(b)
   }
@@ -52,9 +54,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = new RuleEngine{
-        override val rules: List[Rule] =  List(falseRule, trueRule)
-      }.findLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
+        override val rules: List[Rule] = List(falseRule, trueRule)
+      }.getLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
@@ -75,9 +77,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = new RuleEngine{
-        override val rules: List[Rule] =  List(firstRule, secondRule)
-      }.findLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
+        override val rules: List[Rule] = List(firstRule, secondRule)
+      }.getLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
@@ -87,9 +89,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       verify(firstRule).apply(any[AuthContext], any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
       verify(secondRule, never()).apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
     }
-
   }
-
 }
 
 

@@ -19,6 +19,7 @@ package controllers
 import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
+import engine.{Condition, Rule, RuleEngine}
 import model.Location._
 import model._
 import play.api.Logger
@@ -33,8 +34,6 @@ import scala.concurrent.Future
 
 object RouterController extends RouterController {
   override protected def authConnector: AuthConnector = FrontendAuthConnector
-
-  override val welcomePageService: WelcomePageService = WelcomePageService
 
   override val defaultLocation: LocationType = BusinessTaxAccount
 
@@ -52,8 +51,6 @@ object RouterController extends RouterController {
 trait RouterController extends FrontendController with Actions {
 
   val controllerMetrics: ControllerMetrics
-
-  val welcomePageService: WelcomePageService
 
   def defaultLocation: LocationType
 
@@ -73,7 +70,7 @@ trait RouterController extends FrontendController with Actions {
 
     val auditContext: TAuditContext = createAuditContext()
 
-    val nextLocation: Future[Option[LocationType]] = ruleEngine.findLocation(authContext, ruleContext, auditContext)
+    val nextLocation: Future[Option[LocationType]] = ruleEngine.getLocation(authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
@@ -92,12 +89,12 @@ object TarRules extends RuleEngine {
   import Condition._
 
   override val rules: List[Rule] = List(
-      When(LoggedInForTheFirstTime) thenGoTo Welcome,
-      When(LoggedInViaVerify) thenGoTo PersonalTaxAccount,
-      When(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount,
-      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,
-      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount,
-      When(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount,
-      When(AllOtherRulesFailed) thenGoTo BusinessTaxAccount
+    when(LoggedInForTheFirstTime) thenGoTo Welcome,
+    when(LoggedInViaVerify) thenGoTo PersonalTaxAccount,
+    when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount,
+    when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,
+    when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount,
+    when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount,
+    when(AllOtherRulesFailed) thenGoTo BusinessTaxAccount
   )
 }
