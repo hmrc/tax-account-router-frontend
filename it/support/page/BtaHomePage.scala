@@ -20,14 +20,14 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import support.Env
 import support.stubs.{Stub, StubbedPage}
 
-object YtaHomeStubPage extends Stub with StubbedPage {
+object BtaHomeStubPage extends Stub with StubbedPage {
   override def create() = {
-    stubOut(urlMatching("/business-account"), "YTA Home Page")
+    stubOut(urlMatching("/business-account"), "BTA Home Page")
   }
 }
 
-object YtaHomePage extends WebPage {
+object BtaHomePage extends WebPage {
   override val url: String = Env.host + "/business-account"
 
-  override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "YTA Home Page")
+  override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "BTA Home Page")
 }

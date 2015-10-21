@@ -17,4 +17,53 @@ trait CommonStubs {
             |}
             | """.stripMargin)))
   }
+
+  def stubProfileWithBusinessEnrolments() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Organisation",
+            |"enrolments":[
+            |                {"key": "enr1", "identifier": "5597800686", "state": "Activated"}
+            |             ]
+            |}
+            | """.stripMargin)))
+  }
+
+  def stubProfileWithSelfAssessmentEnrolments() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Organisation",
+            |"enrolments":[
+            |                {"key": "enr3", "identifier": "5597800686", "state": "Activated"}
+            |             ]
+            |}
+            | """.stripMargin)))
+  }
+
+  def stubSaReturnWithNoPreviousReturns(saUtr: String) = {
+    stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
+      .willReturn(aResponse()
+        .withStatus(404)))
+  }
+
+  def stubSaReturnWithPartnership(saUtr: String) = {
+    stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"previousReturns":true,
+            |"supplementarySchedules":["partnership"]
+            |}
+            | """.stripMargin)))
+  }
 }

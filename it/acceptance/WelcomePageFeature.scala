@@ -59,7 +59,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
 
     scenario("is shown only once") {
 
-      Given("a new YTA user")
+      Given("a new BTA user")
       createStubs(TaxAccountUser(firstTimeLoggedIn = true))
 
       And("the welcome page has never been visited")
@@ -81,14 +81,14 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       Given("the Welcome page has already been visited")
       stubSave4LaterWelcomePageSeen()
 
-      And("a stubbed YTA homepage")
-      createStubs(YtaHomeStubPage)
+      And("a stubbed BTA homepage")
+      createStubs(BtaHomeStubPage)
 
       When("the user clicks on Continue on the Welcome page")
       WelcomePage.clickContinue()
 
-      Then("the user should be redirected to YTA home page")
-      on(YtaHomePage)
+      Then("the user should be redirected to BTA home page")
+      on(BtaHomePage)
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
@@ -96,8 +96,8 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       When("the user hits directly the router again")
       go(RouterRootPath)
 
-      Then("the user should be redirected to YTA home page")
-      on(YtaHomePage)
+      Then("the user should be redirected to BTA home page")
+      on(BtaHomePage)
     }
   }
 }

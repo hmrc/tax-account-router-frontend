@@ -22,8 +22,10 @@ import java.util.UUID
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.Crypto
+import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
@@ -47,7 +49,7 @@ trait SessionCookieBaker {
   }
 }
 
-class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean) extends Stub with SessionCookieBaker {
+class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
 
   override def create() = {
     val token =
@@ -97,7 +99,7 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean) ext
               |    "uri": "/auth/oid/1234567890",
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
               |    ${if(firstTimeLoggedIn) "" else "\"previouslyLoggedInAt\": \"2014-05-09T14:48:24.841Z\","}
-              |    "accounts": {},
+               |    "accounts":${Json.toJson(accounts)},
               |    "levelOfAssurance": "2"
               |}
               |
@@ -107,5 +109,5 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean) ext
 }
 
 object LoggedInSessionUser {
-  def apply(firstTimeLoggedIn: Boolean, tokenPresent: Boolean) = new LoggedInSessionUser(firstTimeLoggedIn, tokenPresent)
+  def apply(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, accounts: Accounts) = new LoggedInSessionUser(firstTimeLoggedIn, tokenPresent, accounts)
 }

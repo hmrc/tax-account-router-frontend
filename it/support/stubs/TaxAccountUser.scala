@@ -16,12 +16,17 @@
 
 package support.stubs
 
-class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean, tokenPresent: Boolean)
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
+
+class TaxAccountUser(loggedIn: Boolean,
+                     firstTimeLoggedIn: Boolean,
+                     tokenPresent: Boolean,
+                     accounts: Accounts)
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(firstTimeLoggedIn, tokenPresent).create
+      LoggedInSessionUser(firstTimeLoggedIn, tokenPresent, accounts).create
 
     } else {
       LoggedOutSessionUser.create
@@ -31,7 +36,10 @@ class TaxAccountUser(loggedIn: Boolean, firstTimeLoggedIn: Boolean, tokenPresent
 
 object TaxAccountUser {
 
-  def apply(loggedIn: Boolean = true, firstTimeLoggedIn: Boolean = false, tokenPresent: Boolean = true) = {
-    new TaxAccountUser(loggedIn, firstTimeLoggedIn, tokenPresent)
+  def apply(loggedIn: Boolean = true,
+            firstTimeLoggedIn: Boolean = false,
+            tokenPresent: Boolean = true,
+            accounts: Accounts = Accounts()) = {
+    new TaxAccountUser(loggedIn, firstTimeLoggedIn, tokenPresent, accounts)
   }
 }

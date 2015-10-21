@@ -20,11 +20,10 @@ import config.WSHttp
 import play.api.libs.json._
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.{NotFoundException, HttpGet}
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.play.http.{HttpGet, NotFoundException}
 
 import scala.concurrent.Future
-
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 trait SelfAssessmentConnector {
 
