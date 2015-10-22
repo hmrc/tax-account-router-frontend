@@ -17,9 +17,10 @@
 package services
 
 import engine.{Condition, Rule, RuleEngine, When}
+import helpers.SpecHelpers
 import model.AuditEventType.AuditEventType
 import model.Location._
-import model.{AuditContext, RuleContext}
+import model.{AuditContext, Location, RuleContext}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -32,7 +33,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[AuditEventType] = None
@@ -41,9 +42,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       Future(b)
   }
 
-  private val trueLocation: LocationType = new Type("/true", "true")
+  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
   val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation)
-  private val falseLocation: LocationType = new Type("/false", "false")
+  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false"))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation)
 
 

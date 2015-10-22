@@ -23,7 +23,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Verify")
       createStubs(TaxAccountUser(firstTimeLoggedIn = true, tokenPresent = false))
 
-      And("a stubbed PTA homepage")
       createStubs(PtaHomeStubPage)
 
       And("the welcome page has already been visited")
@@ -41,10 +40,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser())
 
-      And("with business related enrolments")
+      And("the user has business related enrolments")
       stubProfileWithBusinessEnrolments()
 
-      And("a stubbed BTA homepage")
       createStubs(BtaHomeStubPage)
 
       And("the welcome page has already been visited")
@@ -67,13 +65,12 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts))
 
-      And("with self assessment enrolments")
+      And("the user has self assessment enrolments")
       stubProfileWithSelfAssessmentEnrolments()
 
-      And("with previous returns")
+      And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      And("a stubbed BTA homepage")
       createStubs(BtaHomeStubPage)
 
       And("the welcome page has already been visited")
@@ -99,13 +96,12 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts))
 
-      And("with self assessment enrolments")
+      And("the user has self assessment enrolments")
       stubProfileWithSelfAssessmentEnrolments()
 
-      And("with previous returns")
-      stubSaReturnWithPartnership(saUtr)
+      And("the user is in a partnership")
+      stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
 
-      And("a stubbed BTA homepage")
       createStubs(BtaHomeStubPage)
 
       And("the welcome page has already been visited")
@@ -116,6 +112,68 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+    }
+
+    scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user is self employed")
+      stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
+
+      createStubs(BtaHomeStubPage)
+
+      And("the welcome page has already been visited")
+      stubSave4LaterWelcomePageSeen()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+    }
+
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected to PTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has previous returns and is not in a partnership and is not self employed")
+      stubSaReturn(saUtr, previousReturns = true)
+
+      createStubs(PtaHomeStubPage)
+
+      And("the welcome page has already been visited")
+      stubSave4LaterWelcomePageSeen()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to PTA Home Page")
+      on(PtaHomePage)
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))

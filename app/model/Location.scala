@@ -22,7 +22,7 @@ object Location extends Enumeration {
 
   type LocationType = Type
 
-  sealed case class Type(url: String, name: String) extends Val
+  case class Type(url: String, name: String) extends Val
 
   val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
   val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")

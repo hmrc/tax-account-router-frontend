@@ -48,8 +48,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
   }
 
-  private val trueLocation: LocationType = evaluateUsingPlay(new Type("/true", "true"))
-  private val falseLocation: LocationType = evaluateUsingPlay(new Type("/false", "false"))
+  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
+  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false"))
 
   val ruleEngineStubReturningSomeLocation = new RuleEngine {
     override val rules: List[Rule] = List(When(TestCondition(true)).thenGoTo(trueLocation))

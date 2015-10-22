@@ -1,6 +1,7 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.libs.json.Json
 
 trait CommonStubs {
   def stubSave4LaterWelcomePageSeen() = {
@@ -54,16 +55,16 @@ trait CommonStubs {
         .withStatus(404)))
   }
 
-  def stubSaReturnWithPartnership(saUtr: String) = {
+  def stubSaReturn(saUtr: String, previousReturns: Boolean = false, supplementarySchedules: List[String] = List.empty) = {
     stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
       .willReturn(aResponse()
         .withStatus(200)
         .withBody(
-          """
-            |{
-            |"previousReturns":true,
-            |"supplementarySchedules":["partnership"]
-            |}
-            | """.stripMargin)))
+          s"""
+             |{
+             | "previousReturns":$previousReturns,
+             | "supplementarySchedules":${Json.toJson(supplementarySchedules)}
+             |}
+             | """.stripMargin)))
   }
 }
