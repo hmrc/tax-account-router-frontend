@@ -16,13 +16,14 @@
 
 package services
 
+import controllers.TarRules
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
 import model.AuditEventType.AuditEventType
 import model.Location._
-import model.{AuditContext, Location, RuleContext}
+import model._
 import org.mockito.Matchers.{eq => eqTo, _}
-import org.mockito.Mockito._
+import org.mockito.Mockito.{when, _}
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
@@ -48,7 +49,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation)
 
 
-  "The rule engine" should {
+  "a rule engine" should {
 
     "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in {
       implicit lazy val request = FakeRequest()
@@ -89,6 +90,24 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       //then
       verify(firstRule).apply(any[AuthContext], any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
       verify(secondRule, never()).apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+    }
+  }
+
+  "the TAR rule engine" should {
+    "have as last rule a tautology that redirects to BTA" in {
+
+      val lastRule: Rule = TarRules.rules.last
+
+      implicit val fakeRequest = FakeRequest()
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+      val mockAuthContext = mock[AuthContext]
+      val mockRuleContext = mock[RuleContext]
+      val mockAuditContext = mock[TAuditContext]
+
+      val location: Option[LocationType] = await(lastRule.apply(mockAuthContext, mockRuleContext, mockAuditContext))
+
+      location shouldBe Some(BusinessTaxAccount)
     }
   }
 }
