@@ -45,8 +45,8 @@ trait WelcomePageService {
 
   def hasWelcomePageBeenSeenBefore(authContext: AuthContext)(implicit hc: HeaderCarrier): Future[Boolean] = {
     shortLivedCache.fetchAndGetEntry[Boolean](cacheId = userCacheId(authContext.user), key = welcomePageSeenKey).map {
-      case Some(data) => true
-      case None => false
+      case Some(true) => true
+      case _ => false
     }.recover {
       case t: Throwable => {
         Logger.warn(s"Error retrieving $welcomePageSeenKey", t)
