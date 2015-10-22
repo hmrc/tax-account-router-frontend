@@ -19,7 +19,7 @@ package engine
 import helpers.SpecHelpers
 import model.AuditEventType._
 import model.Location.LocationType
-import model.{AuditEventType, Location, RuleContext, TAuditContext}
+import model.{AuditEventType, _}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.mockito.verification.VerificationMode
@@ -100,17 +100,16 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override val auditType: Option[AuditEventType] = None
         }
 
-        val condition2 = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition2Truth)
-
-          override val auditType: Option[AuditEventType] = None
-        }
+        val condition2 = mock[Condition]
+        when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
 
         val resultCondition: Condition = condition1.and(condition2)
 
         val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
+
+        if (!condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
     }
   }
@@ -138,17 +137,16 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override val auditType: Option[AuditEventType] = None
         }
 
-        val condition2 = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition2Truth)
-
-          override val auditType: Option[AuditEventType] = None
-        }
+        val condition2 = mock[Condition]
+        when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
 
         val resultCondition: Condition = condition1.or(condition2)
 
         val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
+
+        if (condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
     }
   }
