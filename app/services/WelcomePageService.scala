@@ -41,16 +41,9 @@ trait WelcomePageService {
 
   private def userHasPreviouslyLoggedIn()(implicit authContext: AuthContext): Future[Boolean] = Future.successful(authContext.user.previouslyLoggedInAt.isDefined)
 
-  def hasNeverSeenTheWelcomePage(implicit authContext: AuthContext, hc: HeaderCarrier): Future[Boolean] = {
-    for {
-      userHasPreviouslyLoggedIn <- userHasPreviouslyLoggedIn()
-      hasWelcomePageBeenSeenBefore <- hasWelcomePageBeenSeenBefore()
-    } yield !userHasPreviouslyLoggedIn && !hasWelcomePageBeenSeenBefore
-  }
-
   private def userCacheId(user: LoggedInUser) = user.userId.replace("/auth/oid/", "")
 
-  private def hasWelcomePageBeenSeenBefore()(implicit authContext: AuthContext, hc: HeaderCarrier): Future[Boolean] = {
+  def hasWelcomePageBeenSeenBefore(authContext: AuthContext)(implicit hc: HeaderCarrier): Future[Boolean] = {
     shortLivedCache.fetchAndGetEntry[Boolean](cacheId = userCacheId(authContext.user), key = welcomePageSeenKey).map {
       case Some(data) => true
       case None => false

@@ -57,6 +57,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       AuditContext.defaultReasons shouldBe Map(
         "is-a-verify-user" -> "-",
         "is-a-government-gateway-user" -> "-",
+        "logged-in-for-the-first-time" -> "-",
         "has-never-seen-welcome-page-before" -> "-",
         "has-print-preferences-already-set" -> "-",
         "has-business-enrolments" -> "-",
@@ -75,6 +76,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
       auditContext.setValue(IS_A_VERIFY_USER, true)
       auditContext.setValue(IS_A_GOVERNMENT_GATEWAY_USER, true)
+      auditContext.setValue(LOGGED_IN_FOR_THE_FIRST_TIME, true)
       auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, true)
       auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, true)
       auditContext.setValue(HAS_BUSINESS_ENROLMENTS, true)
@@ -93,6 +95,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       val reasonsMap = Map(
         "is-a-verify-user" -> "true",
         "is-a-government-gateway-user" -> "true",
+        "logged-in-for-the-first-time" -> "true",
         "has-never-seen-welcome-page-before" -> "true",
         "has-print-preferences-already-set" -> "true",
         "has-business-enrolments" -> "true",

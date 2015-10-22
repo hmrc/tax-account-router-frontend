@@ -89,7 +89,7 @@ object TarRules extends RuleEngine {
   import Condition._
 
   override val rules: List[Rule] = List(
-    when(LoggedInForTheFirstTime) thenGoTo Welcome,
+    when(LoggedInForTheFirstTime and not(HasSeenWelcomeBefore)) thenGoTo Welcome,
     when(LoggedInViaVerify) thenGoTo PersonalTaxAccount,
     when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,

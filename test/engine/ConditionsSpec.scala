@@ -19,6 +19,7 @@ package engine
 import connector.SaReturn
 import model.AuditEventType._
 import model._
+import org.joda.time.DateTime
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -29,7 +30,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.{LoggedInUser, AuthContext}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -205,7 +206,47 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "LoggedInForTheFirstTime" should {
 
     "have an audit type specified" in {
-      LoggedInForTheFirstTime.auditType shouldBe Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
+      LoggedInForTheFirstTime.auditType shouldBe Some(LOGGED_IN_FOR_THE_FIRST_TIME)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "previouslyLoggedInAt", "expectedResult"),
+        ("Logged in for the first time", None, true),
+        ("Not logged in for the first time", Some(DateTime.now), false)
+      )
+
+    forAll(scenarios) { (scenario: String, previouslyLoggedInAt: Option[DateTime], expectedResult: Boolean) =>
+
+      implicit val fakeRequest = FakeRequest()
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+      val authContext = mock[AuthContext]
+
+      s"be $expectedResult when $scenario" in {
+        //given
+        val ruleContext = mock[RuleContext]
+
+        //and
+        val user = mock[LoggedInUser]
+        when(user.previouslyLoggedInAt).thenReturn(previouslyLoggedInAt)
+        when(authContext.user).thenReturn(user)
+
+        //when
+        val result = await(LoggedInForTheFirstTime.isTrue(authContext, ruleContext))
+
+        //then
+        result shouldBe expectedResult
+      }
+
+    }
+
+  }
+
+  "HasSeenWelcomeBefore" should {
+
+    "have an audit type specified" in {
+      HasSeenWelcomeBefore.auditType shouldBe Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
     }
 
     val scenarios =
@@ -227,9 +268,9 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
 
         val mockWelcomePageService = mock[WelcomePageService]
-        when(mockWelcomePageService.hasNeverSeenTheWelcomePage(eqTo(authContext), eqTo(hc))).thenReturn(Future(hasNeverSeenTheWelcomePage))
+        when(mockWelcomePageService.hasWelcomePageBeenSeenBefore(eqTo(authContext))(eqTo(hc))).thenReturn(Future(hasNeverSeenTheWelcomePage))
 
-        val condition = new LoggedInForTheFirstTime {
+        val condition = new HasSeenWelcomeBefore {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
         }
 

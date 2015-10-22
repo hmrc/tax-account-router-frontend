@@ -68,17 +68,24 @@ object IsSelfEmployed extends Condition {
     ruleContext.lastSaReturn.map(_.selfEmployment)
 }
 
-trait LoggedInForTheFirstTime extends Condition {
+trait HasSeenWelcomeBefore extends Condition {
   val welcomePageService: WelcomePageService
 
   override val auditType: Option[AuditEventType] = Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    welcomePageService.hasNeverSeenTheWelcomePage(authContext, hc)
+    welcomePageService.hasWelcomePageBeenSeenBefore(authContext)
 }
 
-object LoggedInForTheFirstTime extends LoggedInForTheFirstTime {
+object HasSeenWelcomeBefore extends HasSeenWelcomeBefore {
   override val welcomePageService: WelcomePageService = WelcomePageService
+}
+
+object LoggedInForTheFirstTime extends Condition {
+  override val auditType: Option[AuditEventType] = Some(LOGGED_IN_FOR_THE_FIRST_TIME)
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    Future(authContext.user.previouslyLoggedInAt.isEmpty)
 }
 
 object LoggedInViaVerify extends Condition {

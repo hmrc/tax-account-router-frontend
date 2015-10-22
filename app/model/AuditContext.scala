@@ -38,6 +38,7 @@ object AuditEventType {
 
   val IS_A_VERIFY_USER = EventType("is-a-verify-user")
   val IS_A_GOVERNMENT_GATEWAY_USER = EventType("is-a-government-gateway-user")
+  val LOGGED_IN_FOR_THE_FIRST_TIME = EventType("logged-in-for-the-first-time")
   val HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE = EventType("has-never-seen-welcome-page-before")
   val HAS_PRINT_PREFERENCES_ALREADY_SET = EventType("has-print-preferences-already-set")
   val HAS_BUSINESS_ENROLMENTS = EventType("has-business-enrolments")
@@ -54,6 +55,7 @@ object AuditContext {
   def defaultReasons = scala.collection.mutable.Map[String, String](
     IS_A_VERIFY_USER.key -> "-" ,
     IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
+    LOGGED_IN_FOR_THE_FIRST_TIME.key -> "-" ,
     HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "-" ,
     HAS_PRINT_PREFERENCES_ALREADY_SET.key -> "-" ,
     HAS_BUSINESS_ENROLMENTS.key -> "-" ,
