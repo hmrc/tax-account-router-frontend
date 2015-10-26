@@ -12,6 +12,7 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -245,7 +246,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     }
   }
 
-  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: scala.collection.mutable.Map[String, String], expectedTransactionName: String): Unit = {
+  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
     val event = Json.parse(loggedRequests.filter(_.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName

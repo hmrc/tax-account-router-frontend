@@ -69,7 +69,7 @@ trait ThrottlingService {
       }
     }
     val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = throttlingChanceOption, location != throttledLocation, location, throttlingEnabled)
-    auditContext.setValue(throttlingAuditContext)
+    auditContext.setThrottlingDetails(throttlingAuditContext)
     throttledLocation
   }
 

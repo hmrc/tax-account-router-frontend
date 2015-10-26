@@ -70,7 +70,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         result shouldBe expectedResult
 
         eventually {
-          verify(mockAuditContext, expectedAuditContextInteractions).setValue(eqTo(auditEventType), eqTo(true))(any[ExecutionContext])
+          verify(mockAuditContext, expectedAuditContextInteractions).setRoutingReason(eqTo(auditEventType), eqTo(true))(any[ExecutionContext])
         }
       }
     }

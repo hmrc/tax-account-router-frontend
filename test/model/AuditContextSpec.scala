@@ -74,16 +74,16 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     "return an extended audit event" in {
       val auditContext: TAuditContext = AuditContext()
 
-      auditContext.setValue(IS_A_VERIFY_USER, result = true)
-      auditContext.setValue(IS_A_GOVERNMENT_GATEWAY_USER, result = true)
-      auditContext.setValue(LOGGED_IN_FOR_THE_FIRST_TIME, result = true)
-      auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, result = true)
-      auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, result = true)
-      auditContext.setValue(HAS_BUSINESS_ENROLMENTS, result = true)
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, result = true)
-      auditContext.setValue(IS_IN_A_PARTNERSHIP, result = true)
-      auditContext.setValue(IS_SELF_EMPLOYED, result = true)
-      auditContext.setValue(HAS_SA_ENROLMENTS, result = true)
+      auditContext.setRoutingReason(IS_A_VERIFY_USER, result = true)
+      auditContext.setRoutingReason(IS_A_GOVERNMENT_GATEWAY_USER, result = true)
+      auditContext.setRoutingReason(LOGGED_IN_FOR_THE_FIRST_TIME, result = true)
+      auditContext.setRoutingReason(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, result = true)
+      auditContext.setRoutingReason(HAS_PRINT_PREFERENCES_ALREADY_SET, result = true)
+      auditContext.setRoutingReason(HAS_BUSINESS_ENROLMENTS, result = true)
+      auditContext.setRoutingReason(HAS_PREVIOUS_RETURNS, result = true)
+      auditContext.setRoutingReason(IS_IN_A_PARTNERSHIP, result = true)
+      auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
+      auditContext.setRoutingReason(HAS_SA_ENROLMENTS, result = true)
 
       val path = "/some/path"
       val destination = Location.Type("/some/destination", "location-name")
@@ -186,7 +186,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
     forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Float], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
 
-      s"with the throttling audit context - scenario: $scenario" in {
+      s"add to the extended event throttling-related fields - scenario: $scenario" in {
         //given
         val auditContext: TAuditContext = AuditContext()
 
@@ -197,7 +197,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
         //and
         val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage, throttled, destination, enabled)
-        auditContext.setValue(throttlingAuditContext)
+        auditContext.setThrottlingDetails(throttlingAuditContext)
 
         //when
         val futureDataEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination)

@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
+import scala.collection.mutable.{Map => mutableMap}
 import scala.concurrent.{ExecutionContext, Future}
 
 object AuditEventType {
@@ -68,8 +69,8 @@ object AuditContext {
 
 trait TAuditContext {
 
-  private val reasons: scala.collection.mutable.Map[String, String] = defaultReasons
-  private val throttling: scala.collection.mutable.Map[String, String] = scala.collection.mutable.Map[String, String]()
+  private val reasons: mutableMap[String, String] = defaultReasons
+  private val throttling: mutableMap[String, String] = mutableMap.empty
 
   private val transactionNames: Map[LocationType, String] = Map(
     Location.Welcome -> "sent to welcome page",
@@ -77,7 +78,7 @@ trait TAuditContext {
     Location.BusinessTaxAccount -> "sent to business tax account"
   )
 
-  def setValue(throttlingAuditContext: ThrottlingAuditContext): Unit =
+  def setThrottlingDetails(throttlingAuditContext: ThrottlingAuditContext): Unit =
     throttling +=(
       "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
       "percentage" -> throttlingAuditContext.throttlingPercentage.getOrElse("-").toString,
@@ -85,7 +86,7 @@ trait TAuditContext {
       "destination-before-throttling" -> throttlingAuditContext.initialDestination.url
       )
 
-  def setValue(auditEventType: AuditEventType, result: Boolean)(implicit ec: ExecutionContext): Unit =
+  def setRoutingReason(auditEventType: AuditEventType, result: Boolean)(implicit ec: ExecutionContext): Unit =
     reasons += (auditEventType.key -> result.toString)
 
   def toAuditEvent(location: LocationType)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {

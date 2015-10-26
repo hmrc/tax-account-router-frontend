@@ -128,7 +128,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
 
           //and
           val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled)
-          verify(auditContextMock).setValue(throttlingAuditContext)
+          verify(auditContextMock).setThrottlingDetails(throttlingAuditContext)
         }
 
       }

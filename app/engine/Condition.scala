@@ -44,7 +44,7 @@ trait Condition {
   def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 
   def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    this.isTrue(authContext, ruleContext).andThen { case Success(result) if auditType.isDefined => auditContext.setValue(auditType.get, result) }
+    this.isTrue(authContext, ruleContext).andThen { case Success(result) if auditType.isDefined => auditContext.setRoutingReason(auditType.get, result) }
   }
 
   def and(c: Condition): Condition = new CompositeCondition {
