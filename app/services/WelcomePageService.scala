@@ -39,8 +39,6 @@ trait WelcomePageService {
 
   def shortLivedCache: ShortLivedCache
 
-  private def userHasPreviouslyLoggedIn()(implicit authContext: AuthContext): Future[Boolean] = Future.successful(authContext.user.previouslyLoggedInAt.isDefined)
-
   private def userCacheId(user: LoggedInUser) = user.userId.replace("/auth/oid/", "")
 
   def hasWelcomePageBeenSeenBefore(authContext: AuthContext)(implicit hc: HeaderCarrier): Future[Boolean] = {
