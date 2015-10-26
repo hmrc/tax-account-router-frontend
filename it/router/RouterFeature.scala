@@ -1,4 +1,4 @@
-package acceptance
+package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.test.FakeApplication
@@ -16,6 +16,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
 
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    stubSave4LaterWelcomePageSeen() // all the following scenarios are assuming the welcome page to be already seen
+  }
+
   feature("Router feature") {
 
     scenario("a user logged in through Verify should be redirected to PTA") {
@@ -24,9 +29,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(firstTimeLoggedIn = true, tokenPresent = false))
 
       createStubs(PtaHomeStubPage)
-
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -44,9 +46,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubProfileWithBusinessEnrolments()
 
       createStubs(BtaHomeStubPage)
-
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -72,9 +71,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       createStubs(BtaHomeStubPage)
-
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -104,9 +100,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       createStubs(BtaHomeStubPage)
 
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
-
       When("the user hits the router")
       go(RouterRootPath)
 
@@ -135,9 +128,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       createStubs(BtaHomeStubPage)
 
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
-
       When("the user hits the router")
       go(RouterRootPath)
 
@@ -165,9 +155,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true)
 
       createStubs(PtaHomeStubPage)
-
-      And("the welcome page has already been visited")
-      stubSave4LaterWelcomePageSeen()
 
       When("the user hits the router")
       go(RouterRootPath)

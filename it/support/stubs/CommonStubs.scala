@@ -4,6 +4,12 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.Json
 
 trait CommonStubs {
+
+  def stubSave4LaterToBeEmpty() =
+    stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
+      .willReturn(aResponse()
+        .withStatus(404)))
+
   def stubSave4LaterWelcomePageSeen() = {
     stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
       .willReturn(aResponse()
@@ -67,4 +73,6 @@ trait CommonStubs {
              |}
              | """.stripMargin)))
   }
+
+  def stubAuditEvent() = postRequestedFor(urlMatching("/write/audit.*"))
 }

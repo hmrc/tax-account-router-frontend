@@ -1,3 +1,5 @@
+package configuration
+
 /*
  * Copyright 2015 HM Revenue & Customs
  *
@@ -13,8 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package acceptance
 
 trait StubApplicationConfiguration {
 

@@ -16,10 +16,10 @@
 
 package support.stubs
 
-import acceptance.StubApplicationConfiguration
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import configuration.StubApplicationConfiguration
 import org.scalatest._
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication

@@ -52,14 +52,14 @@ class WelcomePageServiceSpec extends UnitSpec with MockitoSugar {
     //and
     val scenariosWelcomePageSeen = Table(
       ("scenario", "shortLivedCacheContent", "expectedResult"),
-      ("Welcome page seen before", Some(true), true),
-      ("Welcome page not seen before with false value", Some(false), false),
-      ("Welcome page not seen before with none value", None, false)
+      ("Welcome page seen before", Some(true), false),
+      ("Welcome page not seen before with false value", Some(false), true),
+      ("Welcome page not seen before with none value", None, true)
     )
 
     forAll(scenariosWelcomePageSeen) { (scenario: String, shortLivedCacheContent: Option[Boolean], expectedResult: Boolean) =>
 
-      s"return whether the welcome page has been seen - scenario:$scenario" in {
+      s"return true whether the welcome page has never been seen - scenario:$scenario" in {
         //and
         val shortLivedCache = mock[ShortLivedCache]
         when(shortLivedCache.fetchAndGetEntry[Boolean](cacheId, welcomePageSeenKey)).thenReturn(Future(shortLivedCacheContent))
@@ -68,7 +68,7 @@ class WelcomePageServiceSpec extends UnitSpec with MockitoSugar {
         val welcomePageService = new WelcomePageServiceTest(welcomePageSeenKey, shortLivedCache)
 
         //when
-        val result = await(welcomePageService.hasWelcomePageBeenSeenBefore(authContext))
+        val result = await(welcomePageService.hasNeverSeenWelcomePageBefore(authContext))
 
         //then
         result shouldBe expectedResult
@@ -96,9 +96,7 @@ class WelcomePageServiceSpec extends UnitSpec with MockitoSugar {
       //and
       verify(shortLivedCache).cache(eqTo(cacheId), eqTo(welcomePageSeenKey), eqTo(true))(eqTo(hc), any[Writes[Boolean]])
     }
-
   }
-
 }
 
 class WelcomePageServiceTest(override val welcomePageSeenKey: String, override val shortLivedCache: ShortLivedCache) extends WelcomePageService

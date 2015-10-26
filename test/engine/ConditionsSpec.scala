@@ -30,7 +30,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.WelcomePageService
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.{LoggedInUser, AuthContext}
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -246,7 +246,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasSeenWelcomeBefore" should {
 
     "have an audit type specified" in {
-      HasSeenWelcomeBefore.auditType shouldBe Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
+      HasNeverSeenWelcomeBefore.auditType shouldBe Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
     }
 
     val scenarios =
@@ -268,9 +268,9 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
 
         val mockWelcomePageService = mock[WelcomePageService]
-        when(mockWelcomePageService.hasWelcomePageBeenSeenBefore(eqTo(authContext))(eqTo(hc))).thenReturn(Future(hasNeverSeenTheWelcomePage))
+        when(mockWelcomePageService.hasNeverSeenWelcomePageBefore(eqTo(authContext))(eqTo(hc))).thenReturn(Future(hasNeverSeenTheWelcomePage))
 
-        val condition = new HasSeenWelcomeBefore {
+        val condition = new HasNeverSeenWelcomeBefore {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
         }
 

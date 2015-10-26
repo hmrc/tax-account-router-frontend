@@ -1,3 +1,5 @@
+package welcomepage
+
 /*
  * Copyright 2015 HM Revenue & Customs
  *
@@ -14,18 +16,11 @@
  * limitations under the License.
  */
 
-package acceptance
-
 import com.github.tomakehurst.wiremock.client.WireMock.{findAll => wmFindAll, _}
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 
 trait WelcomePageStubs extends CommonStubs {
-
-  def stubSave4LaterToBeEmpty() =
-    stubFor(get(urlMatching("/save4later/business-tax-account/.*"))
-      .willReturn(aResponse()
-      .withStatus(404)))
 
   def stubSaveForLaterPUT() =
     stubFor(put(urlMatching("/save4later/business-tax-account/.*/data/welcomePageSeen"))

@@ -41,14 +41,14 @@ trait WelcomePageService {
 
   private def userCacheId(user: LoggedInUser) = user.userId.replace("/auth/oid/", "")
 
-  def hasWelcomePageBeenSeenBefore(authContext: AuthContext)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def hasNeverSeenWelcomePageBefore(authContext: AuthContext)(implicit hc: HeaderCarrier): Future[Boolean] = {
     shortLivedCache.fetchAndGetEntry[Boolean](cacheId = userCacheId(authContext.user), key = welcomePageSeenKey).map {
-      case Some(true) => true
-      case _ => false
+      case Some(true) => false
+      case _ => true
     }.recover {
       case t: Throwable => {
         Logger.warn(s"Error retrieving $welcomePageSeenKey", t)
-        true
+        false
       }
     }
   }
