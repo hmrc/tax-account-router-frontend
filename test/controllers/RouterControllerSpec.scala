@@ -118,7 +118,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val mockAuditContext = mock[TAuditContext]
       val mockAuditEvent = mock[ExtendedDataEvent]
       val auditContextToAuditEventResult = Future(mockAuditEvent)
-      when(mockAuditContext.toAuditEvent(any[String])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
+      when(mockAuditContext.toAuditEvent(any[LocationType])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
 
       val mockThrottlingService = mock[ThrottlingService]
       val expectedThrottledLocation: LocationType = PersonalTaxAccount
@@ -137,7 +137,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       await(controller.route)
 
       //and
-      verify(mockAuditContext).toAuditEvent(eqTo(expectedThrottledLocation.url))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
+      verify(mockAuditContext).toAuditEvent(eqTo(expectedThrottledLocation))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
 
       eventually {
         val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])

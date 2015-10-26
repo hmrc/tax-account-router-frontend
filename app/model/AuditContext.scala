@@ -71,6 +71,12 @@ trait TAuditContext {
   private val reasons: scala.collection.mutable.Map[String, String] = defaultReasons
   private val throttling: scala.collection.mutable.Map[String, String] = scala.collection.mutable.Map[String, String]()
 
+  private val transactionNames: Map[LocationType, String] = Map(
+    Location.Welcome -> "sent to welcome page",
+    Location.PersonalTaxAccount -> "sent to personal tax account",
+    Location.BusinessTaxAccount -> "sent to business tax account"
+  )
+
   def setValue(throttlingAuditContext: ThrottlingAuditContext): Unit =
     throttling +=(
       "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
@@ -82,7 +88,7 @@ trait TAuditContext {
   def setValue(auditEventType: AuditEventType, result: Boolean)(implicit ec: ExecutionContext): Unit =
     reasons += (auditEventType.key -> result.toString)
 
-  def toAuditEvent(url: String)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
+  def toAuditEvent(location: LocationType)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
     Future {
       val accounts: Accounts = authContext.principal.accounts
       val accountMap = accounts.toMap
@@ -93,10 +99,10 @@ trait TAuditContext {
       ExtendedDataEvent(
         auditSource = AppName.appName,
         auditType = "Routing",
-        tags = hc.toAuditTags("transaction-name", request.path),
+        tags = hc.toAuditTags(transactionNames.getOrElse(location, "unknown transaction"), request.path),
         detail = Json.obj(
           "authId" -> authContext.user.userId,
-          "destination" -> url,
+          "destination" -> location.url,
           "reasons" -> reasons.toMap[String, String],
           "throttling" -> throttling.toMap[String, String]
         ) ++ optionalAccounts

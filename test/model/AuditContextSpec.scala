@@ -74,19 +74,19 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     "return an extended audit event" in {
       val auditContext: TAuditContext = AuditContext()
 
-      auditContext.setValue(IS_A_VERIFY_USER, true)
-      auditContext.setValue(IS_A_GOVERNMENT_GATEWAY_USER, true)
-      auditContext.setValue(LOGGED_IN_FOR_THE_FIRST_TIME, true)
-      auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, true)
-      auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, true)
-      auditContext.setValue(HAS_BUSINESS_ENROLMENTS, true)
-      auditContext.setValue(HAS_PREVIOUS_RETURNS, true)
-      auditContext.setValue(IS_IN_A_PARTNERSHIP, true)
-      auditContext.setValue(IS_SELF_EMPLOYED, true)
-      auditContext.setValue(HAS_SA_ENROLMENTS, true)
+      auditContext.setValue(IS_A_VERIFY_USER, result = true)
+      auditContext.setValue(IS_A_GOVERNMENT_GATEWAY_USER, result = true)
+      auditContext.setValue(LOGGED_IN_FOR_THE_FIRST_TIME, result = true)
+      auditContext.setValue(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, result = true)
+      auditContext.setValue(HAS_PRINT_PREFERENCES_ALREADY_SET, result = true)
+      auditContext.setValue(HAS_BUSINESS_ENROLMENTS, result = true)
+      auditContext.setValue(HAS_PREVIOUS_RETURNS, result = true)
+      auditContext.setValue(IS_IN_A_PARTNERSHIP, result = true)
+      auditContext.setValue(IS_SELF_EMPLOYED, result = true)
+      auditContext.setValue(HAS_SA_ENROLMENTS, result = true)
 
       val path = "/some/path"
-      val destination = "/some/destination"
+      val destination = Location.Type("/some/destination", "location-name")
       val authId: String = "authId"
       implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, LevelOfAssurance.LOA_1), Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
@@ -119,11 +119,11 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditEvent.tags.contains("X-Session-ID")
       auditEvent.tags.contains("X-Request-ID")
       auditEvent.tags.contains("clientPort")
-      auditEvent.tags("transactionName") shouldBe "transaction-name"
+      auditEvent.tags("transactionName") shouldBe "unknown transaction"
 
       auditEvent.detail shouldBe Json.obj(
         "authId" -> authId,
-        "destination" -> destination,
+        "destination" -> destination.url,
         "reasons" -> reasonsMap,
         "throttling" -> throttlingMap
       )
@@ -149,7 +149,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         val auditContext: TAuditContext = AuditContext()
 
         val path = "/some/path"
-        val destination = "/some/destination"
+        val destination = Location.Type("/some/destination", "location-name")
         val authId: String = "authId"
 
         val accounts: Accounts = Accounts(
@@ -200,7 +200,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         auditContext.setValue(throttlingAuditContext)
 
         //when
-        val futureDataEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination.url)
+        val futureDataEvent: Future[ExtendedDataEvent] = auditContext.toAuditEvent(destination)
         val auditEvent = await(futureDataEvent)
 
         //then

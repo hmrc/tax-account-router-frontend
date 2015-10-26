@@ -50,7 +50,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to welcome page"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
@@ -71,7 +72,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "true",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to personal tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
@@ -97,7 +99,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected and an audit event should be raised") {
@@ -130,7 +133,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {
@@ -164,7 +168,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected and an audit event should be raised") {
@@ -199,7 +204,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected and an audit event should be raised") {
@@ -234,22 +240,24 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
         )
-      verifyAuditEvent(auditEventStub, expectedReasons)
+      val expectedTransactionName = "sent to personal tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
   }
 
-  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, reasons: scala.collection.mutable.Map[String, String]): Unit = {
+  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: scala.collection.mutable.Map[String, String], expectedTransactionName: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
     val event = Json.parse(loggedRequests.filter(_.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
-    (event \ "detail" \ "reasons" \ "is-a-verify-user").as[String] shouldBe reasons(IS_A_VERIFY_USER.key)
-    (event \ "detail" \ "reasons" \ "has-print-preferences-already-set").as[String] shouldBe reasons(HAS_PRINT_PREFERENCES_ALREADY_SET.key)
-    (event \ "detail" \ "reasons" \ "has-self-assessment-enrolments").as[String] shouldBe reasons(HAS_SA_ENROLMENTS.key)
-    (event \ "detail" \ "reasons" \ "is-in-a-partnership").as[String] shouldBe reasons(IS_IN_A_PARTNERSHIP.key)
-    (event \ "detail" \ "reasons" \ "logged-in-for-the-first-time").as[String] shouldBe reasons(LOGGED_IN_FOR_THE_FIRST_TIME.key)
-    (event \ "detail" \ "reasons" \ "is-a-government-gateway-user").as[String] shouldBe reasons(IS_A_GOVERNMENT_GATEWAY_USER.key)
-    (event \ "detail" \ "reasons" \ "has-never-seen-welcome-page-before").as[String] shouldBe reasons(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key)
-    (event \ "detail" \ "reasons" \ "is-self-employed").as[String] shouldBe reasons(IS_SELF_EMPLOYED.key)
-    (event \ "detail" \ "reasons" \ "has-previous-returns").as[String] shouldBe reasons(HAS_PREVIOUS_RETURNS.key)
-    (event \ "detail" \ "reasons" \ "has-business-enrolments").as[String] shouldBe reasons(HAS_BUSINESS_ENROLMENTS.key)
+    (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
+    (event \ "detail" \ "reasons" \ "is-a-verify-user").as[String] shouldBe expectedReasons(IS_A_VERIFY_USER.key)
+    (event \ "detail" \ "reasons" \ "has-print-preferences-already-set").as[String] shouldBe expectedReasons(HAS_PRINT_PREFERENCES_ALREADY_SET.key)
+    (event \ "detail" \ "reasons" \ "has-self-assessment-enrolments").as[String] shouldBe expectedReasons(HAS_SA_ENROLMENTS.key)
+    (event \ "detail" \ "reasons" \ "is-in-a-partnership").as[String] shouldBe expectedReasons(IS_IN_A_PARTNERSHIP.key)
+    (event \ "detail" \ "reasons" \ "logged-in-for-the-first-time").as[String] shouldBe expectedReasons(LOGGED_IN_FOR_THE_FIRST_TIME.key)
+    (event \ "detail" \ "reasons" \ "is-a-government-gateway-user").as[String] shouldBe expectedReasons(IS_A_GOVERNMENT_GATEWAY_USER.key)
+    (event \ "detail" \ "reasons" \ "has-never-seen-welcome-page-before").as[String] shouldBe expectedReasons(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key)
+    (event \ "detail" \ "reasons" \ "is-self-employed").as[String] shouldBe expectedReasons(IS_SELF_EMPLOYED.key)
+    (event \ "detail" \ "reasons" \ "has-previous-returns").as[String] shouldBe expectedReasons(HAS_PREVIOUS_RETURNS.key)
+    (event \ "detail" \ "reasons" \ "has-business-enrolments").as[String] shouldBe expectedReasons(HAS_BUSINESS_ENROLMENTS.key)
   }
 }
