@@ -16,7 +16,7 @@
 
 package engine
 
-import model.AuditEventType.AuditEventType
+import model.RoutingReason.RoutingReason
 import model.{RuleContext, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
@@ -39,7 +39,7 @@ trait Condition {
 
   self =>
 
-  val auditType: Option[AuditEventType]
+  val auditType: Option[RoutingReason]
 
   def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 

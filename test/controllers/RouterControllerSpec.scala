@@ -16,10 +16,11 @@
 
 package controllers
 
+import com.codahale.metrics.{Meter, MetricRegistry}
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
-import model.AuditEventType._
 import model.Location._
+import model.RoutingReason._
 import model._
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -38,13 +39,14 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
+import scala.collection.mutable.{Map => mutableMap}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually with SpecHelpers {
 
   case class TestCondition(truth: Boolean) extends Condition {
-    override val auditType: Option[AuditEventType] = None
+    override val auditType: Option[RoutingReason] = None
 
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
   }
@@ -123,6 +125,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val auditContextToAuditEventResult = Future(mockAuditEvent)
       when(mockAuditContext.toAuditEvent(any[LocationType])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
+      when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
+      when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
 
       val mockThrottlingService = mock[ThrottlingService]
       val expectedThrottledLocation: LocationType = PersonalTaxAccount
@@ -159,11 +163,17 @@ object Mocks extends MockitoSugar {
 
   def mockAuditConnector = mock[AuditConnector]
 
-  def mockControllerMetrics = mock[ControllerMetrics]
+  def mockMonitoringMetrics = {
+    val mockMetricRegistry: MetricRegistry = mock[MetricRegistry]
+    val mockMonitoringMetrics: MonitoringMetrics = mock[MonitoringMetrics]
+    when(mockMonitoringMetrics.registry).thenReturn(mockMetricRegistry)
+    when(mockMetricRegistry.meter(anyString())).thenReturn(mock[Meter])
+    mockMonitoringMetrics
+  }
 }
 
 class TestRouterController(override val defaultLocation: LocationType = BusinessTaxAccount,
-                           override val controllerMetrics: ControllerMetrics = Mocks.mockControllerMetrics,
+                           override val monitoringMetrics: MonitoringMetrics = Mocks.mockMonitoringMetrics,
                            override val ruleEngine: RuleEngine,
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
                            override val auditConnector: AuditConnector = Mocks.mockAuditConnector,

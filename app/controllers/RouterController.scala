@@ -17,6 +17,7 @@
 package controllers
 
 import auth.RouterAuthenticationProvider
+import com.codahale.metrics.MetricRegistry
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.{Condition, Rule, RuleEngine}
@@ -38,7 +39,7 @@ object RouterController extends RouterController {
 
   override val defaultLocation: LocationType = BusinessTaxAccount
 
-  override val controllerMetrics: ControllerMetrics = ControllerMetrics
+  override val monitoringMetrics: MonitoringMetrics = MonitoringMetrics
 
   override val ruleEngine: RuleEngine = TarRules
 
@@ -51,7 +52,7 @@ object RouterController extends RouterController {
 
 trait RouterController extends FrontendController with Actions {
 
-  val controllerMetrics: ControllerMetrics
+  val monitoringMetrics: MonitoringMetrics
 
   def defaultLocation: LocationType
 
@@ -75,11 +76,32 @@ trait RouterController extends FrontendController with Actions {
 
     nextLocation.map(locationCandidate => {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
-      controllerMetrics.registerRedirectFor(location.name)
       val throttledLocation: LocationType = throttlingService.throttle(location, auditContext)
       sendAuditEvent(auditContext, throttledLocation)
+      sendMonitoringEvents(auditContext, throttledLocation)
       Redirect(throttledLocation.url)
     })
+  }
+
+  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
+    val registry: MetricRegistry = monitoringMetrics.registry
+    registry.meter("routed-users").mark()
+    registry.meter(s"routed-to-${throttledLocation.name}").mark()
+
+    val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
+    trueConditions.foreach(monitoringMetrics.registry.meter(_).mark())
+
+    val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
+    falseConditions.foreach(key => monitoringMetrics.registry.meter(s"not-$key").mark())
+
+    val destinationUrlBeforeThrottling = auditContext.getThrottlingDetails.get("destination-url-before-throttling")
+    val destinationUrlAfterThrottling = throttledLocation.url
+    if (destinationUrlBeforeThrottling.isDefined && destinationUrlBeforeThrottling.get != destinationUrlAfterThrottling) {
+
+      val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.getOrElse("destination-name-before-throttling", "")
+      val destinationNameAfterThrottling = throttledLocation.name
+      registry.meter(s"$destinationNameBeforeThrottling-throttled-to-$destinationNameAfterThrottling").mark()
+    }
   }
 
   def sendAuditEvent(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {

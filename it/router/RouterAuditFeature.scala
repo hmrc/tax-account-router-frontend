@@ -3,7 +3,7 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import model.AuditContext
-import model.AuditEventType._
+import model.RoutingReason._
 import play.api.libs.json.Json
 import play.api.test.FakeApplication
 import support.page._
@@ -47,7 +47,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true"
         )
@@ -69,7 +69,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "true",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false"
         )
@@ -94,7 +94,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
@@ -126,7 +126,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
@@ -160,7 +160,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "true",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
@@ -195,7 +195,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
@@ -231,7 +231,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       Then("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultReasons +=(
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
         LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",

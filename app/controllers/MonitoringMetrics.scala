@@ -19,15 +19,11 @@ package controllers
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.MetricsRegistry
 
-trait ControllerMetrics {
+trait MonitoringMetrics {
 
   val registry: MetricRegistry
-
-  def registerRedirectFor(name: String) = {
-    registry.meter(s"routing-to-$name").mark()
-  }
 }
 
-object ControllerMetrics extends ControllerMetrics {
+object MonitoringMetrics extends MonitoringMetrics {
   override val registry = MetricsRegistry.defaultRegistry
 }

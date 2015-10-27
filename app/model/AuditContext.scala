@@ -31,29 +31,29 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.collection.mutable.{Map => mutableMap}
 import scala.concurrent.{ExecutionContext, Future}
 
-object AuditEventType {
+object RoutingReason {
 
-  type AuditEventType = EventType
+  type RoutingReason = Reason
 
-  sealed case class EventType(key: String)
+  sealed case class Reason(key: String)
 
-  val IS_A_VERIFY_USER = EventType("is-a-verify-user")
-  val IS_A_GOVERNMENT_GATEWAY_USER = EventType("is-a-government-gateway-user")
-  val LOGGED_IN_FOR_THE_FIRST_TIME = EventType("logged-in-for-the-first-time")
-  val HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE = EventType("has-never-seen-welcome-page-before")
-  val HAS_PRINT_PREFERENCES_ALREADY_SET = EventType("has-print-preferences-already-set")
-  val HAS_BUSINESS_ENROLMENTS = EventType("has-business-enrolments")
-  val HAS_PREVIOUS_RETURNS = EventType("has-previous-returns")
-  val IS_IN_A_PARTNERSHIP = EventType("is-in-a-partnership")
-  val IS_SELF_EMPLOYED = EventType("is-self-employed")
-  val HAS_SA_ENROLMENTS = EventType("has-self-assessment-enrolments")
+  val IS_A_VERIFY_USER = Reason("is-a-verify-user")
+  val IS_A_GOVERNMENT_GATEWAY_USER = Reason("is-a-government-gateway-user")
+  val LOGGED_IN_FOR_THE_FIRST_TIME = Reason("logged-in-for-the-first-time")
+  val HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE = Reason("has-never-seen-welcome-page-before")
+  val HAS_PRINT_PREFERENCES_ALREADY_SET = Reason("has-print-preferences-already-set")
+  val HAS_BUSINESS_ENROLMENTS = Reason("has-business-enrolments")
+  val HAS_PREVIOUS_RETURNS = Reason("has-previous-returns")
+  val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
+  val IS_SELF_EMPLOYED = Reason("is-self-employed")
+  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
 }
 
-import model.AuditEventType._
+import model.RoutingReason._
 
 object AuditContext {
 
-  def defaultReasons = mutableMap[String, String](
+  def defaultRoutingReasons = mutableMap[String, String](
     IS_A_VERIFY_USER.key -> "-" ,
     IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
     LOGGED_IN_FOR_THE_FIRST_TIME.key -> "-" ,
@@ -69,8 +69,8 @@ object AuditContext {
 
 trait TAuditContext {
 
-  private val reasons: mutableMap[String, String] = defaultReasons
-  private val throttling: mutableMap[String, String] = mutableMap.empty
+  private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
+  private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
 
   private val transactionNames: Map[LocationType, String] = Map(
     Location.Welcome -> "sent to welcome page",
@@ -78,16 +78,21 @@ trait TAuditContext {
     Location.BusinessTaxAccount -> "sent to business tax account"
   )
 
+  def getReasons: mutableMap[String, String] = routingReasons
+
+  def getThrottlingDetails: mutableMap[String, String] = throttlingDetails
+
   def setThrottlingDetails(throttlingAuditContext: ThrottlingAuditContext): Unit =
-    throttling +=(
+    throttlingDetails +=(
       "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
       "percentage" -> throttlingAuditContext.throttlingPercentage.getOrElse("-").toString,
       "throttled" -> throttlingAuditContext.throttled.toString,
-      "destination-before-throttling" -> throttlingAuditContext.initialDestination.url
+      "destination-url-before-throttling" -> throttlingAuditContext.initialDestination.url,
+      "destination-name-before-throttling" -> throttlingAuditContext.initialDestination.name
       )
 
-  def setRoutingReason(auditEventType: AuditEventType, result: Boolean)(implicit ec: ExecutionContext): Unit =
-    reasons += (auditEventType.key -> result.toString)
+  def setRoutingReason(auditEventType: RoutingReason, result: Boolean)(implicit ec: ExecutionContext): Unit =
+    routingReasons += (auditEventType.key -> result.toString)
 
   def toAuditEvent(location: LocationType)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
     Future {
@@ -104,8 +109,8 @@ trait TAuditContext {
         detail = Json.obj(
           "authId" -> authContext.user.userId,
           "destination" -> location.url,
-          "reasons" -> reasons.toMap[String, String],
-          "throttling" -> throttling.toMap[String, String]
+          "reasons" -> routingReasons.toMap[String, String],
+          "throttling" -> throttlingDetails.toMap[String, String]
         ) ++ optionalAccounts
       )
     }

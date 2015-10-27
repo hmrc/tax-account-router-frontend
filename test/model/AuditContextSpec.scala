@@ -17,8 +17,8 @@
 package model
 
 import helpers.SpecHelpers
-import model.AuditEventType._
 import model.Location.LocationType
+import model.RoutingReason._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -54,7 +54,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
     "be the expected ones" in {
 
-      AuditContext.defaultReasons shouldBe Map(
+      AuditContext.defaultRoutingReasons shouldBe Map(
         "is-a-verify-user" -> "-",
         "is-a-government-gateway-user" -> "-",
         "logged-in-for-the-first-time" -> "-",
@@ -207,7 +207,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         (auditEvent.detail \ "throttling" \ "enabled").as[String] shouldBe enabled.toString
         (auditEvent.detail \ "throttling" \ "percentage").as[String] shouldBe throttlingPercentageString
         (auditEvent.detail \ "throttling" \ "throttled").as[String] shouldBe throttled.toString
-        (auditEvent.detail \ "throttling" \ "destination-before-throttling").as[String] shouldBe initialDestination.url
+        (auditEvent.detail \ "throttling" \ "destination-url-before-throttling").as[String] shouldBe initialDestination.url
+        (auditEvent.detail \ "throttling" \ "destination-name-before-throttling").as[String] shouldBe initialDestination.name
       }
     }
   }

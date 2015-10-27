@@ -19,8 +19,8 @@ package services
 import controllers.TarRules
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
-import model.AuditEventType.AuditEventType
 import model.Location._
+import model.RoutingReason.RoutingReason
 import model._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.{when, _}
@@ -37,7 +37,7 @@ import scala.concurrent.Future
 class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   case class BooleanCondition(b: Boolean) extends Condition {
-    override val auditType: Option[AuditEventType] = None
+    override val auditType: Option[RoutingReason] = None
 
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       Future(b)

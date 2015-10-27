@@ -17,7 +17,7 @@
 package engine
 
 import connector.SaReturn
-import model.AuditEventType._
+import model.RoutingReason._
 import model._
 import org.joda.time.DateTime
 import org.mockito.Matchers.{eq => eqTo}

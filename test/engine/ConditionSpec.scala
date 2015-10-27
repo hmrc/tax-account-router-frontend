@@ -17,9 +17,9 @@
 package engine
 
 import helpers.SpecHelpers
-import model.AuditEventType._
 import model.Location.LocationType
-import model.{AuditEventType, _}
+import model.RoutingReason._
+import model.{RoutingReason, _}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.mockito.verification.VerificationMode
@@ -54,12 +54,12 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
       s"return and eventually audit its own truth when evaluated - scenario: $scenario" in {
         val expectedResult = true
 
-        val auditEventType = AuditEventType.EventType("event-key")
+        val auditEventType = RoutingReason.Reason("event-key")
 
         val condition = new Condition {
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedResult)
 
-          override val auditType: Option[AuditEventType] = if (auditTypeDefined) Some(auditEventType) else None
+          override val auditType: Option[RoutingReason] = if (auditTypeDefined) Some(auditEventType) else None
         }
 
         val mockAuthContext = mock[AuthContext]
@@ -97,7 +97,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         val condition1 = new Condition {
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
-          override val auditType: Option[AuditEventType] = None
+          override val auditType: Option[RoutingReason] = None
         }
 
         val condition2 = mock[Condition]
@@ -134,7 +134,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         val condition1 = new Condition {
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
-          override val auditType: Option[AuditEventType] = None
+          override val auditType: Option[RoutingReason] = None
         }
 
         val condition2 = mock[Condition]
@@ -169,7 +169,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         val condition = new Condition {
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
-          override val auditType: Option[AuditEventType] = None
+          override val auditType: Option[RoutingReason] = None
         }
 
         val resultCondition: Condition = Condition.not(condition)
@@ -216,7 +216,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         val condition = new Condition {
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
-          override val auditType: Option[AuditEventType] = None
+          override val auditType: Option[RoutingReason] = None
         }
 
         val rule = Condition.when(condition).thenGoTo(location)
