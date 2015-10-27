@@ -25,6 +25,7 @@ import model._
 import play.api.Logger
 import play.api.mvc._
 import services._
+import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
@@ -76,12 +77,16 @@ trait RouterController extends FrontendController with Actions {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
       controllerMetrics.registerRedirectFor(location.name)
       val throttledLocation: LocationType = throttlingService.throttle(location, auditContext)
-      auditContext.toAuditEvent(throttledLocation).foreach { auditEvent =>
-        Logger.debug(s"Routing decision summary: ${auditEvent.detail}")
-        auditConnector.sendEvent(auditEvent)
-      }
+      sendAuditEvent(auditContext, throttledLocation)
       Redirect(throttledLocation.url)
     })
+  }
+
+  def sendAuditEvent(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
+    auditContext.toAuditEvent(throttledLocation).foreach { auditEvent =>
+      auditConnector.sendEvent(auditEvent)
+      Logger.debug(s"Routing decision summary: ${auditEvent.detail \ "reasons"}")
+    }
   }
 }
 

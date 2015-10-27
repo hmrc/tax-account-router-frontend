@@ -26,6 +26,7 @@ import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
+import play.api.libs.json.Json
 import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services._
@@ -116,7 +117,10 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       implicit lazy val ruleContext = new RuleContext(authContext)
 
       val mockAuditContext = mock[TAuditContext]
+
       val mockAuditEvent = mock[ExtendedDataEvent]
+      when(mockAuditEvent.detail).thenReturn(Json.parse("{}"))
+
       val auditContextToAuditEventResult = Future(mockAuditEvent)
       when(mockAuditContext.toAuditEvent(any[LocationType])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
 

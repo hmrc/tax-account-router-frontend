@@ -53,7 +53,7 @@ import model.AuditEventType._
 
 object AuditContext {
 
-  def defaultReasons = scala.collection.mutable.Map[String, String](
+  def defaultReasons = mutableMap[String, String](
     IS_A_VERIFY_USER.key -> "-" ,
     IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
     LOGGED_IN_FOR_THE_FIRST_TIME.key -> "-" ,
