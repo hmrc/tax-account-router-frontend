@@ -85,14 +85,14 @@ trait RouterController extends FrontendController with Actions {
 
   def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
     val registry: MetricRegistry = monitoringMetrics.registry
-    registry.meter("routed-users").mark()
-    registry.meter(s"routed-to-${throttledLocation.name}").mark()
+    registry.histogram("routed-users").update(1)
+    registry.histogram(s"routed-to-${throttledLocation.name}").update(1)
 
     val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
-    trueConditions.foreach(monitoringMetrics.registry.meter(_).mark())
+    trueConditions.foreach(monitoringMetrics.registry.histogram(_).update(1))
 
     val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
-    falseConditions.foreach(key => monitoringMetrics.registry.meter(s"not-$key").mark())
+    falseConditions.foreach(key => monitoringMetrics.registry.histogram(s"not-$key").update(1))
 
     val destinationUrlBeforeThrottling = auditContext.getThrottlingDetails.get("destination-url-before-throttling")
     val destinationUrlAfterThrottling = throttledLocation.url
@@ -100,7 +100,7 @@ trait RouterController extends FrontendController with Actions {
 
       val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.getOrElse("destination-name-before-throttling", "")
       val destinationNameAfterThrottling = throttledLocation.name
-      registry.meter(s"$destinationNameBeforeThrottling-throttled-to-$destinationNameAfterThrottling").mark()
+      registry.histogram(s"$destinationNameBeforeThrottling-throttled-to-$destinationNameAfterThrottling").update(1)
     }
   }
 

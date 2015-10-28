@@ -16,7 +16,7 @@
 
 package controllers
 
-import com.codahale.metrics.{Meter, MetricRegistry}
+import com.codahale.metrics.{Histogram, MetricRegistry}
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
 import model.Location._
@@ -167,7 +167,7 @@ object Mocks extends MockitoSugar {
     val mockMetricRegistry: MetricRegistry = mock[MetricRegistry]
     val mockMonitoringMetrics: MonitoringMetrics = mock[MonitoringMetrics]
     when(mockMonitoringMetrics.registry).thenReturn(mockMetricRegistry)
-    when(mockMetricRegistry.meter(anyString())).thenReturn(mock[Meter])
+    when(mockMetricRegistry.histogram(anyString())).thenReturn(mock[Histogram])
     mockMonitoringMetrics
   }
 }
