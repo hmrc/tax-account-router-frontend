@@ -24,6 +24,8 @@ object Location extends Enumeration {
 
   case class Type(url: String, name: String) extends Val
 
+  // TODO: this enum should be designed so that each location name is unique
+
   val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
   val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
   val Welcome = Type(routes.WelcomeController.welcome().url, "welcome")
