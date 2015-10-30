@@ -30,6 +30,8 @@ object Condition {
   def not(condition: Condition): Condition = new CompositeCondition {
     override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       condition.evaluate(authContext, ruleContext, auditContext).map(!_)
+
+    override def name: String = s"not-${condition.name}"
   }
 
   def when(condition: Condition): When = When(condition)
@@ -41,25 +43,31 @@ trait Condition {
 
   val auditType: Option[RoutingReason]
 
+  def name: String
+
   def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 
   def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
     this.isTrue(authContext, ruleContext).andThen { case Success(result) if auditType.isDefined => auditContext.setRoutingReason(auditType.get, result) }
   }
 
-  def and(c: Condition): Condition = new CompositeCondition {
+  def and(other: Condition): Condition = new CompositeCondition {
 
     override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
       val condition1FutureResult: Future[Boolean] = self.evaluate(authContext, ruleContext, auditContext)
-      condition1FutureResult.flatMap(c1r => if (c1r) c.evaluate(authContext, ruleContext, auditContext).map(c2r => c1r && c2r) else condition1FutureResult)
+      condition1FutureResult.flatMap(c1r => if (c1r) other.evaluate(authContext, ruleContext, auditContext).map(c2r => c1r && c2r) else condition1FutureResult)
     }
+
+    override def name: String = s"[${self.name}]-and-[${other.name}]"
   }
 
-  def or(c: Condition): Condition = new CompositeCondition {
+  def or(other: Condition): Condition = new CompositeCondition {
 
     override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
       val condition1FutureResult: Future[Boolean] = self.evaluate(authContext, ruleContext, auditContext)
-      condition1FutureResult.flatMap(c1r => if (c1r) condition1FutureResult else c.evaluate(authContext, ruleContext, auditContext))
+      condition1FutureResult.flatMap(c1r => if (c1r) condition1FutureResult else other.evaluate(authContext, ruleContext, auditContext))
     }
+
+    override def name: String = s"[${self.name}]-or-[${other.name}]"
   }
 }

@@ -101,6 +101,6 @@ object TarRules extends RuleEngine {
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount,
-    when(AllOtherRulesFailed) thenGoTo BusinessTaxAccount
+    when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount
   )
 }

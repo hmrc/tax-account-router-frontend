@@ -53,9 +53,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
         val mockMetricRegistry = mock[MetricRegistry]
 
-        val mockRoutedToMeter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo(s"routed-to-$destinationNameAfterThrottling"))).thenReturn(mockRoutedToMeter)
-
         val metricsMonitoringService = new MetricsMonitoringService {
           override val metricsRegistry: MetricRegistry = mockMetricRegistry
         }
@@ -72,6 +69,11 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
           "c4" -> "false"
         )
         when(mockAuditContext.getReasons).thenReturn(routingReasons)
+
+        val conditionApplied = "condition-applied"
+        when(mockAuditContext.conditionApplied).thenReturn(conditionApplied)
+        val mockRoutedToMeter = mock[Meter]
+        when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-[$conditionApplied]"))).thenReturn(mockRoutedToMeter)
 
         val c1Meter = mock[Meter]
         val c2Meter = mock[Meter]
@@ -93,6 +95,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)
 
         eventually {
+
           verify(mockRoutedToMeter).mark()
 
           verify(c1Meter).mark()
@@ -104,7 +107,14 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
             verify(throttlingMeter).mark()
           }
 
-          verifyNoMoreInteractions(mockRoutedToMeter, c1Meter, c2Meter, c3Meter, c4Meter, throttlingMeter)
+          verifyNoMoreInteractions(
+            mockRoutedToMeter,
+            c1Meter,
+            c2Meter,
+            c3Meter,
+            c4Meter,
+            throttlingMeter
+          )
         }
       }
     }

@@ -41,6 +41,8 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       Future(b)
+
+    override def name: String = "test-condition"
   }
 
   private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))

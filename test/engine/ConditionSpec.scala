@@ -60,6 +60,8 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedResult)
 
           override val auditType: Option[RoutingReason] = if (auditTypeDefined) Some(auditEventType) else None
+
+          override def name: String = ???
         }
 
         val mockAuthContext = mock[AuthContext]
@@ -98,16 +100,21 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
           override val auditType: Option[RoutingReason] = None
+
+          override def name: String = "condition-1"
         }
 
         val condition2 = mock[Condition]
         when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+        when(condition2.name).thenReturn("condition-2")
 
         val resultCondition: Condition = condition1.and(condition2)
 
         val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
+
+        resultCondition.name shouldBe "[condition-1]-and-[condition-2]"
 
         if (!condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
@@ -135,16 +142,21 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
           override val auditType: Option[RoutingReason] = None
+
+          override def name: String = "condition-1"
         }
 
         val condition2 = mock[Condition]
         when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+        when(condition2.name).thenReturn("condition-2")
 
         val resultCondition: Condition = condition1.or(condition2)
 
         val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
+
+        resultCondition.name shouldBe "[condition-1]-or-[condition-2]"
 
         if (condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
@@ -170,9 +182,13 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
           override val auditType: Option[RoutingReason] = None
+
+          override def name: String = "test-condition"
         }
 
         val resultCondition: Condition = Condition.not(condition)
+
+        resultCondition.name shouldBe "not-test-condition"
 
         val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
 
@@ -181,9 +197,27 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
     }
   }
 
+  it should {
+
+    "have a name" in {
+
+      object TestCondition extends Condition {
+        override val auditType: Option[RoutingReason] = None
+
+        override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = ???
+
+        override def name: String = "test-condition"
+      }
+
+      TestCondition.name shouldBe "test-condition"
+    }
+  }
+
   "a CompositeCondition" should {
     "never be evaluated by invoking isTrue" in {
-      val compositeCondition = new CompositeCondition {}
+      val compositeCondition = new CompositeCondition {
+        override def name: String = ???
+      }
 
       val mockAuthContext = mock[AuthContext]
       val mockRuleContext = mock[RuleContext]
@@ -202,7 +236,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
     val mockAuthContext = mock[AuthContext]
     val mockRuleContext = mock[RuleContext]
-    val mockAuditContext = mock[TAuditContext]
+    val auditContext = AuditContext()
 
     val scenarios = Table(
       ("scenario", "conditionTruth", "expectedLocation"),
@@ -217,13 +251,17 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
           override val auditType: Option[RoutingReason] = None
+
+          override def name: String = "test-condition"
         }
 
         val rule = Condition.when(condition).thenGoTo(location)
 
-        val ruleResult: Option[LocationType] = await(rule.apply(mockAuthContext, mockRuleContext, mockAuditContext))
+        val ruleResult: Option[LocationType] = await(rule.apply(mockAuthContext, mockRuleContext, auditContext))
 
         ruleResult shouldBe expectedLocation
+
+        if (conditionTruth) auditContext.conditionApplied shouldBe "test-condition"
       }
     }
   }

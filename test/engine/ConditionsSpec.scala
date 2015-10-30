@@ -51,6 +51,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       HasAnyBusinessEnrolment.auditType shouldBe Some(HAS_BUSINESS_ENROLMENTS)
     }
 
+    "have a name" in {
+      HasAnyBusinessEnrolment.name shouldBe "has-any-business-enrolment"
+    }
+
     val scenarios: TableFor3[String, Set[String], Boolean] =
       Table(
         ("scenario", "enrolments", "expectedResult"),
@@ -80,6 +84,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     "have an audit type specified" in {
       HasSelfAssessmentEnrolments.auditType shouldBe Some(HAS_SA_ENROLMENTS)
+    }
+
+    "have a name" in {
+      HasSelfAssessmentEnrolments.name shouldBe "has-self-assessment-enrolments"
     }
 
     val scenarios: TableFor3[String, Set[String], Boolean] =
@@ -116,6 +124,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       HasPreviousReturns.auditType shouldBe Some(HAS_PREVIOUS_RETURNS)
     }
 
+    "have a name" in {
+      HasPreviousReturns.name shouldBe "has-previous-returns"
+    }
+
     val scenarios =
       Table(
         ("scenario", "lastSaReturn", "expectedResult"),
@@ -145,6 +157,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     "have an audit type specified" in {
       IsInAPartnership.auditType shouldBe Some(IS_IN_A_PARTNERSHIP)
+    }
+
+    "have a name" in {
+      IsInAPartnership.name shouldBe "is-in-a-partnership"
     }
 
     val scenarios =
@@ -178,6 +194,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       IsSelfEmployed.auditType shouldBe Some(IS_SELF_EMPLOYED)
     }
 
+    "have a name" in {
+      IsSelfEmployed.name shouldBe "is-self-employed"
+    }
+
     val scenarios =
       Table(
         ("scenario", "lastSaReturn", "expectedResult"),
@@ -207,6 +227,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     "have an audit type specified" in {
       LoggedInForTheFirstTime.auditType shouldBe Some(LOGGED_IN_FOR_THE_FIRST_TIME)
+    }
+
+    "have a name" in {
+      LoggedInForTheFirstTime.name shouldBe "logged-in-for-the-first-time"
     }
 
     val scenarios =
@@ -243,10 +267,14 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   }
 
-  "HasSeenWelcomeBefore" should {
+  "HasNeverSeenWelcomeBefore" should {
 
     "have an audit type specified" in {
       HasNeverSeenWelcomeBefore.auditType shouldBe Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
+    }
+
+    "have a name" in {
+      HasNeverSeenWelcomeBefore.name shouldBe "has-never-seen-welcome-page-before"
     }
 
     val scenarios =
@@ -272,6 +300,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val condition = new HasNeverSeenWelcomeBefore {
           override val welcomePageService: WelcomePageService = mockWelcomePageService
+
+          override def name: String = ???
         }
 
         val result = await(condition.isTrue(authContext, ruleContext))
@@ -284,6 +314,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     "have an audit type specified" in {
       LoggedInViaVerify.auditType shouldBe Some(IS_A_VERIFY_USER)
+    }
+
+    "have a name" in {
+      LoggedInViaVerify.name shouldBe "logged-in-via-verify"
     }
 
     val scenarios =
@@ -322,6 +356,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       LoggedInViaGovernmentGateway.auditType shouldBe Some(IS_A_GOVERNMENT_GATEWAY_USER)
     }
 
+    "have a name" in {
+      LoggedInViaGovernmentGateway.name shouldBe "logged-in-via-government-gateway"
+    }
+
     val scenarios =
       Table(
         ("scenario", "tokenPresent", "expectedResult"),
@@ -352,10 +390,14 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "AllOtherRulesFailed" should {
+  "AnyOtherRuleApplied" should {
 
     "not have any audit type specified" in {
-      AllOtherRulesFailed.auditType shouldBe None
+      AnyOtherRuleApplied.auditType shouldBe None
+    }
+
+    "have a name" in {
+      AnyOtherRuleApplied.name shouldBe "any-other-rule-applied"
     }
 
     val authContext = mock[AuthContext]
@@ -367,7 +409,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       val ruleContext = mock[RuleContext]
 
-      val result = await(AllOtherRulesFailed.isTrue(authContext, ruleContext))
+      val result = await(AnyOtherRuleApplied.isTrue(authContext, ruleContext))
       result shouldBe true
     }
   }

@@ -39,7 +39,7 @@ trait MetricsMonitoringService {
 
     Future {
 
-      metricsRegistry.meter(s"routed-to-${throttledLocation.name}").mark()
+      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-[${auditContext.conditionApplied}]").mark()
 
       val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
       trueConditions.foreach(metricsRegistry.meter(_).mark())

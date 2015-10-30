@@ -48,6 +48,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     override val auditType: Option[RoutingReason] = None
 
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
+
+    override def name: String = "test-condition"
   }
 
   private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
