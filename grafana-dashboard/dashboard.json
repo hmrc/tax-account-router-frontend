@@ -127,7 +127,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "play.tax-account-router-frontend.*.routed.*.*.count"
+              "target": "sumSeries(play.tax-account-router-frontend.*.routed.*.*.count)"
             }
           ],
           "thresholds": "",
@@ -344,6 +344,6 @@
   },
   "refresh": false,
   "schemaVersion": 7,
-  "version": 5,
+  "version": 0,
   "links": []
 }
