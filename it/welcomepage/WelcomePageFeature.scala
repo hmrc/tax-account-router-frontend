@@ -17,6 +17,7 @@ package welcomepage
  */
 
 import com.github.tomakehurst.wiremock.client.WireMock.{findAll => wmFindAll, _}
+import org.openqa.selenium.By
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 
@@ -52,9 +53,9 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
 
   feature("Welcome page") {
 
-    scenario("is shown only once") {
+    scenario("is shown only when a user logs in for the first time") {
 
-      Given("a new BTA user")
+      Given("a new user")
       createStubs(TaxAccountUser(firstTimeLoggedIn = true))
 
       And("the welcome page has never been visited")
@@ -94,5 +95,34 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       Then("the user should be redirected to BTA home page")
       on(BtaHomePage)
     }
+  }
+
+  scenario("has a Home button that redirects to the Router root path") {
+
+    Given("a new user")
+    createStubs(TaxAccountUser(firstTimeLoggedIn = true))
+
+    And("the welcome page has never been visited")
+    stubSave4LaterToBeEmpty()
+    stubSaveForLaterPUT()
+
+    And("the user profile has a business related enrolment")
+    stubGovernmentGatewayProfileWithBusinessEnrolment()
+
+    And("the user navigates to the Welcome page")
+    go(WelcomePage)
+
+    And("the Welcome page has already been visited")
+    stubSave4LaterWelcomePageSeen()
+
+    And("the user is supposed to be routed to BTA")
+    createStubs(BtaHomeStubPage)
+
+    When("the user clicks on Home on the Welcome page")
+    val homeUrl = webDriver.findElement(By.id("homeNavHref")).getAttribute("href")
+    webDriver.get(homeUrl)
+
+    And("the user should be redirected to BTA home page")
+    on(BtaHomePage)
   }
 }
