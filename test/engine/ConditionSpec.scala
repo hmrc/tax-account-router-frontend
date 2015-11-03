@@ -114,7 +114,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
         resultConditionTruth shouldBe expectedResultConditionTruth
 
-        resultCondition.name shouldBe "[condition-1]-and-[condition-2]"
+        resultCondition.name shouldBe "condition-1-and-condition-2"
 
         if (!condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
@@ -156,7 +156,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
         resultConditionTruth shouldBe expectedResultConditionTruth
 
-        resultCondition.name shouldBe "[condition-1]-or-[condition-2]"
+        resultCondition.name shouldBe "condition-1-or-condition-2"
 
         if (condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }

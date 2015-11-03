@@ -15,86 +15,6 @@
       "height": "250px",
       "panels": [
         {
-          "aliasColors": {},
-          "annotate": {
-            "enable": false
-          },
-          "bars": true,
-          "datasource": null,
-          "editable": true,
-          "error": false,
-          "fill": 0,
-          "grid": {
-            "leftLogBase": 1,
-            "leftMax": null,
-            "leftMin": null,
-            "rightLogBase": 1,
-            "rightMax": null,
-            "rightMin": null,
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 2,
-          "legend": {
-            "alignAsTable": false,
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "resolution": 100,
-          "scale": 1,
-          "seriesOverrides": [],
-          "span": 12,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "hide": false,
-              "refId": "A",
-              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.routed.*.*.count, 4, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
-              "textEditor": false
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Routed users",
-          "tooltip": {
-            "query_as_alias": true,
-            "shared": true,
-            "value_type": "cumulative"
-          },
-          "type": "graph",
-          "x-axis": true,
-          "y-axis": true,
-          "y_formats": [
-            "short",
-            "short"
-          ],
-          "zerofill": true
-        }
-      ],
-      "title": "New row"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
-        {
           "cacheTimeout": null,
           "colorBackground": false,
           "colorValue": false,
@@ -110,7 +30,7 @@
           "id": 5,
           "interval": null,
           "links": [],
-          "maxDataPoints": 100,
+          "maxDataPoints": "100",
           "nullPointMode": "connected",
           "nullText": null,
           "postfix": "",
@@ -122,12 +42,14 @@
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
             "lineColor": "rgb(31, 120, 193)",
-            "show": true
+            "show": false
           },
           "targets": [
             {
+              "hide": false,
               "refId": "A",
-              "target": "sumSeries(play.tax-account-router-frontend.*.routed.*.*.count)"
+              "target": "integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count)))",
+              "textEditor": false
             }
           ],
           "thresholds": "",
@@ -177,7 +99,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.count, sumSeries(play.tax-account-router-frontend.*.routed.*.*.count))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -228,7 +150,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.count, sumSeries(play.tax-account-router-frontend.*.routed.*.*.count))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -279,7 +201,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(play.tax-account-router-frontend.*.routed.to-welcome.*.count, sumSeries(play.tax-account-router-frontend.*.routed.*.*.count))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -298,10 +220,234 @@
         }
       ],
       "title": "New row"
+    },
+    {
+      "collapse": false,
+      "editable": true,
+      "height": "250px",
+      "panels": [
+        {
+          "aliasColors": {},
+          "annotate": {
+            "enable": false
+          },
+          "bars": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 0,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": null,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": null,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 2,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "resolution": 100,
+          "scale": 1,
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": false,
+              "refId": "A",
+              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Routed users",
+          "tooltip": {
+            "query_as_alias": true,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ],
+          "zerofill": true
+        },
+        {
+          "aliasColors": {},
+          "annotate": {
+            "enable": false
+          },
+          "bars": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 0,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": null,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": null,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 9,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "resolution": 100,
+          "scale": 1,
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": false,
+              "refId": "A",
+              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "BTA Routed users breakdown",
+          "tooltip": {
+            "query_as_alias": true,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ],
+          "zerofill": true
+        },
+        {
+          "aliasColors": {},
+          "annotate": {
+            "enable": false
+          },
+          "bars": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "fill": 0,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": null,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": null,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 10,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "resolution": 100,
+          "scale": 1,
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": false,
+              "refId": "A",
+              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "textEditor": false
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "PTA Routed users breakdown",
+          "tooltip": {
+            "query_as_alias": true,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "short",
+            "short"
+          ],
+          "zerofill": true
+        }
+      ],
+      "title": "New row"
     }
   ],
   "time": {
-    "from": "now-30m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {

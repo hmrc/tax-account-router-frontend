@@ -58,7 +58,7 @@ trait Condition {
       condition1FutureResult.flatMap(c1r => if (c1r) other.evaluate(authContext, ruleContext, auditContext).map(c2r => c1r && c2r) else condition1FutureResult)
     }
 
-    override def name: String = s"[${self.name}]-and-[${other.name}]"
+    override def name: String = s"${self.name}-and-${other.name}"
   }
 
   def or(other: Condition): Condition = new CompositeCondition {
@@ -68,6 +68,6 @@ trait Condition {
       condition1FutureResult.flatMap(c1r => if (c1r) condition1FutureResult else other.evaluate(authContext, ruleContext, auditContext))
     }
 
-    override def name: String = s"[${self.name}]-or-[${other.name}]"
+    override def name: String = s"${self.name}-or-${other.name}"
   }
 }
