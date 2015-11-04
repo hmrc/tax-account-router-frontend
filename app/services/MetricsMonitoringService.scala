@@ -18,6 +18,7 @@ package services
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.MetricsRegistry
+import engine.ConditionGrammar._
 import model.Location._
 import model.TAuditContext
 import play.api.mvc.{AnyContent, Request}
@@ -39,7 +40,7 @@ trait MetricsMonitoringService {
 
     Future {
 
-      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${auditContext.conditionApplied}").mark()
+      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${<}${auditContext.conditionApplied}${>}").mark()
 
       val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
       trueConditions.foreach(metricsRegistry.meter(_).mark())
