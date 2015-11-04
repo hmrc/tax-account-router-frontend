@@ -94,13 +94,19 @@ object TarRules extends RuleEngine {
 
   import Condition._
 
+  private val showWelcomePage: Condition = LoggedInForTheFirstTime and HasNeverSeenWelcomeBefore
+
   override val rules: List[Rule] = List(
-    when(LoggedInForTheFirstTime and HasNeverSeenWelcomeBefore) thenGoTo Welcome,
     when(LoggedInViaVerify) thenGoTo PersonalTaxAccount,
+    when(showWelcomePage and (LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment)) thenGoTo WelcomeBTA,
     when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount,
+    when(showWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns))) thenGoTo WelcomeBTA,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount,
+    when(showWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed))) thenGoTo WelcomeBTA,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount,
+    when(showWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed))) thenGoTo WelcomePTA,
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount,
+    when(showWelcomePage) thenGoTo WelcomeBTA,
     when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount
   )
 }

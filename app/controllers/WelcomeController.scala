@@ -25,10 +25,17 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 trait WelcomeController extends FrontendController with Actions {
   val welcomeService: WelcomePageService
 
-  def welcome = AuthenticatedBy(RouterAuthenticationProvider) {
+  def welcomeBTA = AuthenticatedBy(RouterAuthenticationProvider) {
     implicit user => implicit request => {
       welcomeService.markWelcomePageAsSeen()
-      Ok(views.html.welcome())
+      Ok(views.html.welcomeBTA())
+    }
+  }
+
+  def welcomePTA = AuthenticatedBy(RouterAuthenticationProvider) {
+    implicit user => implicit request => {
+      welcomeService.markWelcomePageAsSeen()
+      Ok(views.html.welcomePTA())
     }
   }
 }

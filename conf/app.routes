@@ -1,4 +1,5 @@
 # microservice specific routes
 
-GET        /               controllers.RouterController.account
-GET        /welcome        controllers.WelcomeController.welcome
+GET        /                        controllers.RouterController.account
+GET        /welcome-business        controllers.WelcomeController.welcomeBTA
+GET        /welcome-personal        controllers.WelcomeController.welcomePTA

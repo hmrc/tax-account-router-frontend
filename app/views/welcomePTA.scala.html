@@ -1,0 +1,26 @@
+@()(implicit authContext: uk.gov.hmrc.play.frontend.auth.AuthContext, request: Request[_])
+
+@import uk.gov.hmrc.play.views.html.helpers.form
+
+@main_template(title = "Personal tax account", bodyClasses = None) {
+    <h1 class="form-title heading-large">File your Self Assessment in your new personal tax account</h1>
+
+    <p>We will:</p>
+    <ul class="list-bullet">
+        <li>ask you to set up secure access to your account using your mobile phone</li>
+        <li>ask you some security questions so we can check your identity</li>
+    </ul>
+    <p>This will take about 10 minutes.</p>
+
+    <p>If you skip either of these steps:</p>
+    <ul class="list-bullet">
+        <li>you’ll still be able to file your Self Assessment as normal</li>
+        <li>we’ll remind you the next time you sign in </li>
+        <li>you won't be able to see your full HM Revenue and Customs (HMRC) record</li>
+    </ul>
+    <br>
+
+    @form(action = routes.RouterController.account(), 'class -> "form") {
+        <input id="continue-button" type="submit" class="button" value="Continue" data-journey-click="welcome:Click:Continue"/>
+    }
+}

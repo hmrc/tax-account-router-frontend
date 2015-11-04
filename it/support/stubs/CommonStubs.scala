@@ -25,6 +25,20 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
+  def stubSaveForLaterPUT() =
+    stubFor(put(urlMatching("/save4later/business-tax-account/.*/data/welcomePageSeen"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody( """
+                     |{
+                     |    "id": "some-session-id",
+                     |    "data": {
+                     |        "welcomePageSeen": true
+                     |    }
+                     |}
+                     | """.stripMargin)))
+
+
   def stubProfileWithBusinessEnrolments() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()

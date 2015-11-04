@@ -143,7 +143,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
             s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 1,
             s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.fallback" -> Location.BusinessTaxAccount.name,
             s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 1,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.fallback" -> Location.Welcome.name
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.fallback" -> Location.WelcomeBTA.name
           )
     }
 
@@ -151,7 +151,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
       Table(
         ("scenario", "tokenPresent", "expectedLocation"),
         ("Should throttle to BTA when token present", true, Location.BusinessTaxAccount.name),
-        ("Should throttle to Welcome when token not present", false, Location.Welcome.name)
+        ("Should throttle to Welcome when token not present", false, Location.WelcomeBTA.name)
       )
     }
 

@@ -18,23 +18,13 @@ package welcomepage
 
 import com.github.tomakehurst.wiremock.client.WireMock.{findAll => wmFindAll, _}
 import org.openqa.selenium.By
+import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
+import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 trait WelcomePageStubs extends CommonStubs {
-
-  def stubSaveForLaterPUT() =
-    stubFor(put(urlMatching("/save4later/business-tax-account/.*/data/welcomePageSeen"))
-      .willReturn(aResponse()
-      .withStatus(200)
-      .withBody( """
-                   |{
-                   |    "id": "some-session-id",
-                   |    "data": {
-                   |        "welcomePageSeen": true
-                   |    }
-                   |}
-                   | """.stripMargin)))
 
   def stubGovernmentGatewayProfileWithBusinessEnrolment() =
     stubFor(get(urlMatching("/profile"))
@@ -51,7 +41,14 @@ trait WelcomePageStubs extends CommonStubs {
 
 class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
 
-  feature("Welcome page") {
+  val enrolmentConfiguration = Map[String, Any](
+        "business-enrolments" -> List("enr1", "enr2"),
+        "self-assessment-enrolments" -> List("enr3", "enr4")
+      )
+
+  override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
+
+  feature("BTA Welcome page") {
 
     scenario("is shown only when a user logs in for the first time") {
 
@@ -69,7 +66,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       go(RouterRootPath)
 
       Then("the user should be redirected to the Welcome page")
-      on(WelcomePage)
+      on(BusinessWelcomePage)
 
       And("the welcomePageSeen flag should be set to 'true'")
       verify(putRequestedFor(urlEqualTo("/save4later/business-tax-account/1234567890/data/welcomePageSeen")))
@@ -81,7 +78,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
       createStubs(BtaHomeStubPage)
 
       When("the user clicks on Continue on the Welcome page")
-      WelcomePage.clickContinue()
+      BusinessWelcomePage.clickContinue()
 
       Then("the user should be redirected to BTA home page")
       on(BtaHomePage)
@@ -94,6 +91,57 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
 
       Then("the user should be redirected to BTA home page")
       on(BtaHomePage)
+    }
+  }
+
+  feature("PTA Welcome page") {
+
+    scenario("is shown only when a user logs in for the first time") {
+
+      Given("a new user")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(firstTimeLoggedIn = true, accounts = accounts))
+
+      And("the welcome page has never been visited")
+      stubSave4LaterToBeEmpty()
+      stubSaveForLaterPUT()
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has business related enrolments")
+      stubSaReturn(saUtr = saUtr, previousReturns = true)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be redirected to the Welcome page")
+      on(PersonalWelcomePage)
+
+      And("the welcomePageSeen flag should be set to 'true'")
+      verify(putRequestedFor(urlEqualTo("/save4later/business-tax-account/1234567890/data/welcomePageSeen")))
+
+      Given("the Welcome page has already been visited")
+      stubSave4LaterWelcomePageSeen()
+
+      And("a stubbed PTA homepage")
+      createStubs(PtaHomeStubPage)
+
+      When("the user clicks on Continue on the Welcome page")
+      PersonalWelcomePage.clickContinue()
+
+      Then("the user should be redirected to BTA home page")
+      on(PtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      When("the user hits directly the router again")
+      go(RouterRootPath)
+
+      Then("the user should be redirected to BTA home page")
+      on(PtaHomePage)
     }
   }
 
@@ -110,7 +158,7 @@ class WelcomePageFeature extends StubbedFeatureSpec with WelcomePageStubs {
     stubGovernmentGatewayProfileWithBusinessEnrolment()
 
     And("the user navigates to the Welcome page")
-    go(WelcomePage)
+    go(BusinessWelcomePage)
 
     And("the Welcome page has already been visited")
     stubSave4LaterWelcomePageSeen()

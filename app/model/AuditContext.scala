@@ -73,7 +73,8 @@ trait TAuditContext {
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
 
   private val transactionNames: Map[LocationType, String] = Map(
-    Location.Welcome -> "sent to welcome page",
+    Location.WelcomeBTA -> "sent to business welcome page",
+    Location.WelcomePTA -> "sent to personal welcome page",
     Location.PersonalTaxAccount -> "sent to personal tax account",
     Location.BusinessTaxAccount -> "sent to business tax account"
   )

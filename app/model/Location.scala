@@ -28,7 +28,8 @@ object Location extends Enumeration {
 
   val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
   val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
-  val Welcome = Type(routes.WelcomeController.welcome().url, "welcome")
+  val WelcomeBTA = Type(routes.WelcomeController.welcomeBTA().url, "welcome")
+  val WelcomePTA = Type(routes.WelcomeController.welcomePTA().url, "welcome")
 
   val locations: Map[String, LocationType] = Location.values.toList.map(_.asInstanceOf[LocationType]).map(value => value.name -> value).toMap
 

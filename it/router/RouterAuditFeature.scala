@@ -30,13 +30,19 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   feature("Router audit feature") {
 
-    scenario("a user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
+    scenario("a BTA user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
 
       Given("a user logged in for the first time")
       createStubs(TaxAccountUser(firstTimeLoggedIn = true))
 
       And("user has never seen the Welcome page before")
       stubSave4LaterToBeEmpty()
+
+      And("stub add welcomePageSeen entry in save4Later")
+      stubSaveForLaterPUT()
+
+      And("the user has business related enrolments")
+      stubProfileWithBusinessEnrolments()
 
       val auditEventStub = stubAuditEvent()
 
@@ -49,9 +55,55 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the audit event raised should be the expected one")
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true"
+        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true",
+        IS_A_VERIFY_USER.key -> "false",
+        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
-      val expectedTransactionName = "sent to welcome page"
+      val expectedTransactionName = "sent to business welcome page"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+    }
+
+    scenario("a PTA user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
+
+      Given("a user logged in for the first time")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(firstTimeLoggedIn = true, accounts = accounts))
+
+      And("user has never seen the Welcome page before")
+      stubSave4LaterToBeEmpty()
+
+      And("stub add welcomePageSeen entry in save4Later")
+      stubSaveForLaterPUT()
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has business related enrolments")
+      stubSaReturn(saUtr = saUtr, previousReturns = true)
+
+      val auditEventStub = stubAuditEvent()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      And("the audit event raised should be the expected one")
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
+        HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
+        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true",
+        IS_A_VERIFY_USER.key -> "false",
+        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_BUSINESS_ENROLMENTS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "true",
+        IS_IN_A_PARTNERSHIP.key -> "false",
+        IS_SELF_EMPLOYED.key -> "false",
+        HAS_PREVIOUS_RETURNS.key -> "true"
+        )
+      val expectedTransactionName = "sent to personal welcome page"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
     }
 
@@ -70,8 +122,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the audit event raised should be the expected one")
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
-        IS_A_VERIFY_USER.key -> "true",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false"
+        IS_A_VERIFY_USER.key -> "true"
         )
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
@@ -248,7 +299,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
-    val event = Json.parse(loggedRequests.filter(_.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
+    val event = Json.parse(loggedRequests.filter(s => {println(s.getBodyAsString);s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")}).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
     (event \ "detail" \ "reasons" \ "is-a-verify-user").as[String] shouldBe expectedReasons(IS_A_VERIFY_USER.key)
     (event \ "detail" \ "reasons" \ "has-print-preferences-already-set").as[String] shouldBe expectedReasons(HAS_PRINT_PREFERENCES_ALREADY_SET.key)
