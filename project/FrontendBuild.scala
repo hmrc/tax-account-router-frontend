@@ -38,9 +38,7 @@ private object AppDependencies {
       "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % scope,
       "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
       "org.scalatestplus" %% "play" % "1.2.0" % scope,
-      "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
-      "uk.gov.hmrc" %% "scala-webdriver" % "4.27.0" % scope exclude("org.seleniumhq.selenium", "selenium-java"),
-      "org.seleniumhq.selenium" % "selenium-java" % "2.48.2"
+      "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope
     )
   }
 
