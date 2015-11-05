@@ -47,8 +47,8 @@
           "targets": [
             {
               "hide": false,
-              "refId": "A",
-              "target": "integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count)))",
+              "refId": "B",
+              "target": "integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count)))",
               "textEditor": false
             }
           ],
@@ -99,7 +99,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -150,7 +150,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -201,7 +201,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -277,7 +277,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
               "textEditor": false
             }
           ],
@@ -348,8 +348,14 @@
           "targets": [
             {
               "hide": false,
+              "refId": "B",
+              "target": "aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']')",
+              "textEditor": false
+            },
+            {
+              "hide": false,
               "refId": "A",
-              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "target": "alias(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 'throttled')",
               "textEditor": false
             }
           ],
@@ -421,7 +427,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "target": "aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']')",
               "textEditor": false
             }
           ],
@@ -447,8 +453,8 @@
     }
   ],
   "time": {
-    "from": "now-6h",
-    "to": "now"
+    "from": "2015-11-05T15:57:39.614Z",
+    "to": "2015-11-05T16:25:52.428Z"
   },
   "timepicker": {
     "collapse": false,
@@ -490,6 +496,6 @@
   },
   "refresh": false,
   "schemaVersion": 7,
-  "version": 0,
+  "version": 27,
   "links": []
 }
