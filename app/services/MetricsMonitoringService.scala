@@ -40,19 +40,19 @@ trait MetricsMonitoringService {
 
     Future {
 
-      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${<}${auditContext.conditionApplied}${>}").mark()
+      val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")
+      val destinationNameAfterThrottling = throttledLocation.name
+      val throttleKey = if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
+        s".throttled-from-${destinationNameBeforeThrottling.get}"
+      } else ".not-throttled"
+
+      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${<}${auditContext.conditionApplied}${>}$throttleKey").mark()
 
       val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
       trueConditions.foreach(metricsRegistry.meter(_).mark())
 
       val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
       falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
-
-      val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")
-      val destinationNameAfterThrottling = throttledLocation.name
-      if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-        metricsRegistry.meter(s"throttled.${destinationNameBeforeThrottling.get}.to-$destinationNameAfterThrottling").mark()
-      }
     }
   }
 

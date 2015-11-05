@@ -73,7 +73,12 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         val conditionApplied = "condition-applied"
         when(mockAuditContext.conditionApplied).thenReturn(conditionApplied)
         val mockRoutedToMeter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-O|$conditionApplied|C"))).thenReturn(mockRoutedToMeter)
+
+        if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
+          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-O|$conditionApplied|C.throttled-from-${destinationNameBeforeThrottling.get}"))).thenReturn(mockRoutedToMeter)
+        } else {
+          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-O|$conditionApplied|C.not-throttled"))).thenReturn(mockRoutedToMeter)
+        }
 
         val c1Meter = mock[Meter]
         val c2Meter = mock[Meter]
@@ -88,9 +93,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         val throttlingDetails = mutableMap() += entry
         when(mockAuditContext.getThrottlingDetails).thenReturn(throttlingDetails)
 
-        val throttlingMeter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo(s"throttled.${destinationNameBeforeThrottling.getOrElse("")}.to-$destinationNameAfterThrottling"))).thenReturn(throttlingMeter)
-
         // when
         metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)
 
@@ -103,17 +105,12 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
           verify(c3Meter).mark()
           verify(c4Meter).mark()
 
-          if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-            verify(throttlingMeter).mark()
-          }
-
           verifyNoMoreInteractions(
             mockRoutedToMeter,
             c1Meter,
             c2Meter,
             c3Meter,
-            c4Meter,
-            throttlingMeter
+            c4Meter
           )
         }
       }
