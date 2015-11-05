@@ -89,7 +89,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         when(mockAuditContext.getThrottlingDetails).thenReturn(throttlingDetails)
 
         val throttlingMeter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo(s"${destinationNameBeforeThrottling.getOrElse("")}-throttled-to-$destinationNameAfterThrottling"))).thenReturn(throttlingMeter)
+        when(mockMetricRegistry.meter(eqTo(s"throttled.${destinationNameBeforeThrottling.getOrElse("")}.to-$destinationNameAfterThrottling"))).thenReturn(throttlingMeter)
 
         // when
         metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)

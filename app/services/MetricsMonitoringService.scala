@@ -51,7 +51,7 @@ trait MetricsMonitoringService {
       val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")
       val destinationNameAfterThrottling = throttledLocation.name
       if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-        metricsRegistry.meter(s"${destinationNameBeforeThrottling.get}-throttled-to-$destinationNameAfterThrottling").mark()
+        metricsRegistry.meter(s"throttled.${destinationNameBeforeThrottling.get}.to-$destinationNameAfterThrottling").mark()
       }
     }
   }
