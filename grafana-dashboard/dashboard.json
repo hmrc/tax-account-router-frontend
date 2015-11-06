@@ -49,11 +49,11 @@
               "hide": false,
               "refId": "B",
               "target": "integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count)))",
-              "textEditor": false
+              "textEditor": true
             }
           ],
           "thresholds": "",
-          "title": "Routed Users",
+          "title": "Routed Request",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -248,7 +248,7 @@
             "threshold2": null,
             "threshold2Color": "rgba(234, 112, 112, 0.22)"
           },
-          "id": 2,
+          "id": 11,
           "legend": {
             "alignAsTable": false,
             "avg": false,
@@ -277,13 +277,13 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1')",
+              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
               "textEditor": false
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Routed users",
+          "title": "Routed users per second",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
@@ -349,19 +349,19 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']')",
+              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 'throttled')",
-              "textEditor": false
+              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "textEditor": true
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "BTA Routed users breakdown",
+          "title": "BTA Routed traffic breakdown [users per second]",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
@@ -427,13 +427,19 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']')",
+              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
               "textEditor": false
+            },
+            {
+              "hide": false,
+              "refId": "B",
+              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "textEditor": true
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "PTA Routed users breakdown",
+          "title": "PTA Routed traffic breakdown [users per second]",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
@@ -453,8 +459,8 @@
     }
   ],
   "time": {
-    "from": "2015-11-05T15:57:39.614Z",
-    "to": "2015-11-05T16:25:52.428Z"
+    "from": "now/d",
+    "to": "now/d"
   },
   "timepicker": {
     "collapse": false,
@@ -496,6 +502,6 @@
   },
   "refresh": false,
   "schemaVersion": 7,
-  "version": 27,
+  "version": 7,
   "links": []
 }
