@@ -24,6 +24,7 @@ import model.RoutingReason.RoutingReason
 import model._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.{when, _}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
@@ -34,21 +35,19 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with Eventually {
 
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[RoutingReason] = None
 
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       Future(b)
-
-    override def name: String = "test-condition"
   }
 
   private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
-  val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation)
+  val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
   private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false"))
-  val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation)
+  val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
 
 
   "a rule engine" should {
@@ -57,14 +56,20 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
+      val auditContext: AuditContext = AuditContext()
+
       //when
       val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
         override val rules: List[Rule] = List(falseRule, trueRule)
-      }.getLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
       location shouldBe Some(trueLocation)
+
+      eventually {
+        auditContext.ruleApplied shouldBe trueRule.name
+      }
     }
 
     "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
@@ -73,6 +78,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val firstRule = mock[Rule]
       val expectedLocation: LocationType = BusinessTaxAccount
       when(firstRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
+      when(firstRule.name) thenReturn "first-rule"
       val secondRule = mock[Rule]
       when(secondRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
@@ -80,10 +86,12 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
+      val auditContext = AuditContext()
+
       //when
       val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
         override val rules: List[Rule] = List(firstRule, secondRule)
-      }.getLocation(mock[AuthContext], mock[RuleContext], mock[AuditContext])(request, hc)
+      }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
 
       //then
       val location: Option[LocationType] = await(maybeLocation)
@@ -92,6 +100,10 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       //then
       verify(firstRule).apply(any[AuthContext], any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
       verify(secondRule, never()).apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+
+      eventually {
+        auditContext.ruleApplied shouldBe "first-rule"
+      }
     }
   }
 

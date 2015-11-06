@@ -79,7 +79,7 @@ trait TAuditContext {
     Location.BusinessTaxAccount -> "sent to business tax account"
   )
 
-  var conditionApplied: String = ""
+  var ruleApplied: String = ""
 
   def getReasons: mutableMap[String, String] = routingReasons
 

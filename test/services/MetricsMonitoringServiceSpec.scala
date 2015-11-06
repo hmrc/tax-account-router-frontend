@@ -70,14 +70,14 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         )
         when(mockAuditContext.getReasons).thenReturn(routingReasons)
 
-        val conditionApplied = "condition-applied"
-        when(mockAuditContext.conditionApplied).thenReturn(conditionApplied)
+        val ruleApplied = "condition-applied"
+        when(mockAuditContext.ruleApplied).thenReturn(ruleApplied)
         val mockRoutedToMeter = mock[Meter]
 
         if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-O|$conditionApplied|C.throttled-from-${destinationNameBeforeThrottling.get}"))).thenReturn(mockRoutedToMeter)
+          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.throttled-from-${destinationNameBeforeThrottling.get}"))).thenReturn(mockRoutedToMeter)
         } else {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-O|$conditionApplied|C.not-throttled"))).thenReturn(mockRoutedToMeter)
+          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.not-throttled"))).thenReturn(mockRoutedToMeter)
         }
 
         val c1Meter = mock[Meter]

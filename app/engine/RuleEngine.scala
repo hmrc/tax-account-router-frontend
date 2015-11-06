@@ -18,6 +18,7 @@ package engine
 
 import model.Location._
 import model._
+import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
@@ -32,7 +33,18 @@ trait RuleEngine {
   def getLocation(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] = {
 
     rules.foldLeft(Future[Option[LocationType]](None)) {
-      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location else rule.apply(authContext, ruleContext, auditContext))
+      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
+      else {
+        val ruleApplyResult: Future[Option[LocationType]] = rule.apply(authContext, ruleContext, auditContext)
+        val ruleName = rule.name
+        ruleApplyResult.foreach {
+          case Some(_) =>
+            auditContext.ruleApplied = ruleName
+            Logger.debug(s"rule applied: $ruleName")
+          case None => Logger.debug(s"rule evaluated but not applied: $ruleName")
+        }
+        ruleApplyResult
+      })
     }
   }
 }

@@ -35,8 +35,6 @@ object HasAnyBusinessEnrolment extends Condition {
     ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
 
   override val auditType: Option[RoutingReason] = Some(HAS_BUSINESS_ENROLMENTS)
-
-  override val name: String = "has-any-business-enrolment"
 }
 
 object HasSelfAssessmentEnrolments extends Condition {
@@ -46,8 +44,6 @@ object HasSelfAssessmentEnrolments extends Condition {
     ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
 
   override val auditType: Option[RoutingReason] = Some(HAS_SA_ENROLMENTS)
-
-  override val name: String = "has-self-assessment-enrolments"
 }
 
 object HasPreviousReturns extends Condition {
@@ -56,8 +52,6 @@ object HasPreviousReturns extends Condition {
     ruleContext.lastSaReturn.map(_.previousReturns)
 
   override val auditType: Option[RoutingReason] = Some(HAS_PREVIOUS_RETURNS)
-
-  override val name: String = "has-previous-returns"
 }
 
 object IsInAPartnership extends Condition {
@@ -65,8 +59,6 @@ object IsInAPartnership extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.lastSaReturn.map(_.partnership)
-
-  override def name: String = "is-in-a-partnership"
 }
 
 object IsSelfEmployed extends Condition {
@@ -74,8 +66,6 @@ object IsSelfEmployed extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.lastSaReturn.map(_.selfEmployment)
-
-  override def name: String = "is-self-employed"
 }
 
 trait HasNeverSeenWelcomeBefore extends Condition {
@@ -85,8 +75,6 @@ trait HasNeverSeenWelcomeBefore extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     welcomePageService.hasNeverSeenWelcomePageBefore(authContext)
-
-  override def name: String = "has-never-seen-welcome-page-before"
 }
 
 object HasNeverSeenWelcomeBefore extends HasNeverSeenWelcomeBefore {
@@ -98,8 +86,6 @@ object LoggedInForTheFirstTime extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     Future(authContext.user.previouslyLoggedInAt.isEmpty)
-
-  override def name: String = "logged-in-for-the-first-time"
 }
 
 object LoggedInViaVerify extends Condition {
@@ -107,8 +93,6 @@ object LoggedInViaVerify extends Condition {
     Future(!request.session.data.contains("token"))
 
   override val auditType: Option[RoutingReason] = Some(IS_A_VERIFY_USER)
-
-  override def name: String = "logged-in-via-verify"
 }
 
 object LoggedInViaGovernmentGateway extends Condition {
@@ -116,14 +100,10 @@ object LoggedInViaGovernmentGateway extends Condition {
     Future(request.session.data.contains("token"))
 
   override val auditType: Option[RoutingReason] = Some(IS_A_GOVERNMENT_GATEWAY_USER)
-
-  override def name: String = "logged-in-via-government-gateway"
 }
 
 object AnyOtherRuleApplied extends Condition {
   override val auditType: Option[RoutingReason] = None
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(true)
-
-  override def name: String = "any-other-rule-applied"
 }

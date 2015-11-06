@@ -26,6 +26,17 @@ import scala.concurrent.Future
 
 trait Rule {
 
+  self =>
+
+  val name: String
+
+  def withName(ruleName: String) = new Rule {
+
+    override val name: String = ruleName
+
+    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] = self.apply(authContext, ruleContext, auditContext)
+  }
+
   def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]]
 
 }

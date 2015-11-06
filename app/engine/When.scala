@@ -30,10 +30,10 @@ case class When(condition: Condition) {
   def thenGoTo(location: LocationType): Rule = new Rule {
     override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] =
       condition.evaluate(authContext, ruleContext, auditContext) map {
-        case true =>
-          auditContext.conditionApplied = condition.name
-          Some(location)
+        case true => Some(location)
         case false => None
       }
+
+    override val name: String = "none"
   }
 }
