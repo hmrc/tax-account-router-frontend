@@ -48,8 +48,8 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count)))",
-              "textEditor": true
+              "target": "integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0))))",
+              "textEditor": false
             }
           ],
           "thresholds": "",
@@ -99,7 +99,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -150,7 +150,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -201,7 +201,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome*.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-welcome*.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -277,13 +277,13 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Routed users per second",
+          "title": "Routed requests per second",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
@@ -349,13 +349,13 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 'throttled')",
+              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 0), 'throttled')",
               "textEditor": true
             }
           ],
@@ -427,13 +427,13 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 'throttled')",
+              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 0), 'throttled')",
               "textEditor": true
             }
           ],
@@ -502,6 +502,6 @@
   },
   "refresh": false,
   "schemaVersion": 7,
-  "version": 5,
+  "version": 1,
   "links": []
 }
