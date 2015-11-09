@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package services
+package engine
 
 import controllers.TarRules
-import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
 import model.Location._
 import model.RoutingReason.RoutingReason

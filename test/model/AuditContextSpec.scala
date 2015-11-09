@@ -85,6 +85,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
       auditContext.setRoutingReason(HAS_SA_ENROLMENTS, result = true)
 
+      auditContext.ruleApplied = "rule-name"
+
       val path = "/some/path"
       val destination = Location.Type("/some/destination", "location-name")
       val authId: String = "authId"
@@ -125,7 +127,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "authId" -> authId,
         "destination" -> destination.url,
         "reasons" -> reasonsMap,
-        "throttling" -> throttlingMap
+        "throttling" -> throttlingMap,
+        "ruleApplied" -> "rule-name"
       )
 
       auditEvent.generatedAt shouldBe fixedDateTime

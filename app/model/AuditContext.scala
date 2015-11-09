@@ -113,7 +113,8 @@ trait TAuditContext {
           "authId" -> authContext.user.userId,
           "destination" -> location.url,
           "reasons" -> routingReasons.toMap[String, String],
-          "throttling" -> throttlingDetails.toMap[String, String]
+          "throttling" -> throttlingDetails.toMap[String, String],
+          "ruleApplied" -> ruleApplied
         ) ++ optionalAccounts
       )
     }

@@ -61,7 +61,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business welcome page"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-welcome-page-for-user-with-business-enrolments")
     }
 
     scenario("a PTA user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
@@ -104,7 +104,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "true"
         )
       val expectedTransactionName = "sent to personal welcome page"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-welcome-page-for-user-with-no-partnership-and-no-self-employment")
     }
 
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
@@ -125,7 +125,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "true"
         )
       val expectedTransactionName = "sent to personal tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user")
     }
 
     scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
@@ -152,7 +152,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected and an audit event should be raised") {
@@ -186,7 +186,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {
@@ -221,7 +221,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-partnership-or-self-employment")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected and an audit event should be raised") {
@@ -257,7 +257,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-partnership-or-self-employment")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected and an audit event should be raised") {
@@ -293,14 +293,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to personal tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName)
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-user-with-no-partnership-and-no-self-employment")
     }
   }
 
-  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String): Unit = {
+  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String, ruleApplied: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
     val event = Json.parse(loggedRequests.filter(s => {println(s.getBodyAsString);s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")}).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
+    (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
     (event \ "detail" \ "reasons" \ "is-a-verify-user").as[String] shouldBe expectedReasons(IS_A_VERIFY_USER.key)
     (event \ "detail" \ "reasons" \ "has-print-preferences-already-set").as[String] shouldBe expectedReasons(HAS_PRINT_PREFERENCES_ALREADY_SET.key)
     (event \ "detail" \ "reasons" \ "has-self-assessment-enrolments").as[String] shouldBe expectedReasons(HAS_SA_ENROLMENTS.key)
