@@ -201,7 +201,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.to-welcome*.*.*.count))), integral(nonNegativeDerivative(sumSeries(play.tax-account-router-frontend.*.*.routed.*.*.*.count))))",
               "textEditor": true
             }
           ],
@@ -349,13 +349,13 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "alias(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 'throttled')",
               "textEditor": true
             }
           ],
@@ -427,13 +427,13 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "aliasSub(scaleToSeconds(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(scaleToSeconds(aliasSub(aliasSub(aliasSub(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), '^nonNegativeDerivative\\((.*)\\)$', '\\1'), 'O\\|', '['), '\\|C', ']'), 1), '^scaleToSeconds\\((.*),1\\)$', '\\1')",
+              "target": "alias(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 'throttled')",
               "textEditor": true
             }
           ],
@@ -502,6 +502,6 @@
   },
   "refresh": false,
   "schemaVersion": 7,
-  "version": 7,
+  "version": 5,
   "links": []
 }
