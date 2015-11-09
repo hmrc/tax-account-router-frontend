@@ -123,4 +123,4 @@ trait TAuditContext {
 
 case class AuditContext() extends TAuditContext
 
-case class ThrottlingAuditContext(throttlingPercentage: Option[Float], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean)
+case class ThrottlingAuditContext(throttlingPercentage: Option[Int], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean)

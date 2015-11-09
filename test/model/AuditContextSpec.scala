@@ -184,10 +184,10 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     val scenarios = Table(
       ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),
       ("without percentage configured", None, "-", false, destination, false),
-      ("with percentage configured", Option(1f), "1.0", true, destination, true)
+      ("with percentage configured", Option(100), "100", true, destination, true)
     )
 
-    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Float], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
+    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Int], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
 
       s"add to the extended event throttling-related fields - scenario: $scenario" in {
         //given

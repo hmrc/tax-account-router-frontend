@@ -31,7 +31,7 @@ import scala.util.Random
 
 class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers {
 
-  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Float = 0, fallbackLocation: String = "default-fallback-location") = {
+  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Int = 0, fallbackLocation: String = "default-fallback-location") = {
     Map[String, Any](
       "throttling.enabled" -> enabled,
       s"throttling.locations.$locationName.percentageBeToThrottled" -> percentageBeToThrottled,
@@ -75,7 +75,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
 
       val locationName = "location-name"
 
-      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = 1, fallbackLocation = ""))) {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = 100, fallbackLocation = ""))) {
         //given
         val initialLocation = mock[LocationType]
         when(initialLocation.name) thenReturn locationName
@@ -90,7 +90,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     }
 
     "throttle to BTA welcome page when going to PTA welcome" in {
-      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${Location.PersonalTaxAccount.name}-gg", percentageBeToThrottled = 1, fallbackLocation = ""))) {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${Location.PersonalTaxAccount.name}-gg", percentageBeToThrottled = 100, fallbackLocation = ""))) {
         //given
         val randomMock = mock[Random]
         when(randomMock.nextFloat()) thenReturn 0
@@ -122,13 +122,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val scenarios = evaluateUsingPlay {
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
-        ("Should throttle to fallback when random number is less than percentage", 0.5f, 0.1f, Location.BusinessTaxAccount, true),
-        ("Should throttle to fallback when random number is equal than percentage", 0.5f, 0.5f, Location.BusinessTaxAccount, true),
-        ("Should not throttle to fallback when random number is equal than percentage", 0.5f, 0.7f, initialLocation, false)
+        ("Should throttle to fallback when random number is less than percentage", 50, 10, Location.BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is equal than percentage", 50, 50, Location.BusinessTaxAccount, true),
+        ("Should not throttle to fallback when random number is equal than percentage", 50, 70, initialLocation, false)
       )
     }
 
-    forAll(scenarios) { (scenario: String, percentageBeToThrottled: Float, randomNumber: Float, expectedLocation: LocationType, throttled: Boolean) =>
+    forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, randomNumber: Int, expectedLocation: LocationType, throttled: Boolean) =>
       s"return the right location after throttling or not and update audit context - scenario: $scenario" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
@@ -162,9 +162,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val configuration = evaluateUsingPlay {
       Map[String, Any](
             "throttling.enabled" -> true,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
             s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.fallback" -> Location.BusinessTaxAccount.name,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 1,
+            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
             s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.fallback" -> Location.WelcomeBTA.name
           )
     }

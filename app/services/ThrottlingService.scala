@@ -45,8 +45,8 @@ trait ThrottlingService {
     configurationForLocation.getString("fallback").getOrElse(location.name)
   }
 
-  private def findPercentageToThrottleFor(configurationForLocation: Configuration): Option[Float] = {
-    configurationForLocation.getString("percentageBeToThrottled").map(_.toFloat)
+  private def findPercentageToThrottleFor(configurationForLocation: Configuration): Option[Int] = {
+    configurationForLocation.getString("percentageBeToThrottled").map(_.toInt)
   }
 
   def findLocationByName(fallbackLocationName: String): Option[LocationType] = {
@@ -54,13 +54,13 @@ trait ThrottlingService {
   }
 
   def throttle(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent]): LocationType = {
-    var throttlingChanceOption: Option[Float] = None
+    var throttlingChanceOption: Option[Int] = None
     val throttledLocation: LocationType = throttlingEnabled match {
       case false => location
       case true if location != Location.WelcomePTA => {
         val configurationForLocation: Configuration = findConfigurationFor(location)
         throttlingChanceOption = findPercentageToThrottleFor(configurationForLocation)
-        val throttlingChance: Float = throttlingChanceOption.getOrElse(0)
+        val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
         val randomNumber = random.nextFloat()
         randomNumber match {
           case x if x <= throttlingChance => findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location)
@@ -68,8 +68,8 @@ trait ThrottlingService {
         }
       }
       case true if location == Location.WelcomePTA => {
-        throttlingChanceOption = Play.configuration.getString(s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled").map(_.toFloat)
-        val throttlingChance: Float = throttlingChanceOption.getOrElse(0)
+        throttlingChanceOption = Play.configuration.getString(s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled").map(_.toInt)
+        val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
         val randomNumber = random.nextFloat()
         randomNumber match {
           case x if x <= throttlingChance => Location.WelcomeBTA
