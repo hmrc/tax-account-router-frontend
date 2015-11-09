@@ -108,6 +108,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         //then
         returnedLocation shouldBe Location.WelcomeBTA
 
+        //and
+        verify(randomMock).nextInt(100)
       }
     }
   }
@@ -123,7 +125,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
         ("Should throttle to fallback when random number is less than percentage", 50, 10, Location.BusinessTaxAccount, true),
-        ("Should throttle to fallback when random number is equal than percentage", 50, 50, Location.BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is equal than percentage", 50, 49, Location.BusinessTaxAccount, true),
         ("Should not throttle to fallback when random number is equal than percentage", 50, 70, initialLocation, false)
       )
     }
@@ -151,6 +153,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
           //and
           val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled)
           verify(auditContextMock).setThrottlingDetails(throttlingAuditContext)
+
+          //and
+          verify(randomMock).nextInt(100)
         }
 
       }

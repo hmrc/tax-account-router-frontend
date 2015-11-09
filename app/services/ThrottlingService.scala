@@ -61,7 +61,7 @@ trait ThrottlingService {
         val configurationForLocation: Configuration = findConfigurationFor(location)
         throttlingChanceOption = findPercentageToThrottleFor(configurationForLocation)
         val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
-        val randomNumber = random.nextFloat()
+        val randomNumber = random.nextInt(100) + 1
         randomNumber match {
           case x if x <= throttlingChance => findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location)
           case _ => location
