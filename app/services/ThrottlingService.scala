@@ -70,7 +70,7 @@ trait ThrottlingService {
       case true if location == Location.WelcomePTA => {
         throttlingChanceOption = Play.configuration.getString(s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled").map(_.toInt)
         val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
-        val randomNumber = random.nextFloat()
+        val randomNumber = random.nextInt(100) + 1
         randomNumber match {
           case x if x <= throttlingChance => Location.WelcomeBTA
           case _ => location

@@ -93,7 +93,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
       running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${Location.PersonalTaxAccount.name}-gg", percentageBeToThrottled = 100, fallbackLocation = ""))) {
         //given
         val randomMock = mock[Random]
-        when(randomMock.nextFloat()) thenReturn 0
+        when(randomMock.nextInt(100)) thenReturn 0
         implicit val mockRequest = FakeRequest()
 
         //and
@@ -133,7 +133,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
           val randomMock = mock[Random]
-          when(randomMock.nextFloat()) thenReturn randomNumber
+          when(randomMock.nextInt(100)) thenReturn randomNumber
           implicit val mockRequest = FakeRequest()
 
           //and
