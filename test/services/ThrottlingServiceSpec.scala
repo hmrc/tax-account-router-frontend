@@ -88,6 +88,28 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         returnedLocation shouldBe initialLocation
       }
     }
+
+    "throttle to BTA welcome page when going to PTA welcome" in {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${Location.PersonalTaxAccount.name}-gg", percentageBeToThrottled = 1, fallbackLocation = ""))) {
+        //given
+        val randomMock = mock[Random]
+        when(randomMock.nextFloat()) thenReturn 0
+        implicit val mockRequest = FakeRequest()
+
+        //and
+        val auditContextMock = mock[AuditContext]
+
+        //and
+        val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
+
+        //when
+        val returnedLocation: LocationType = throttlingServiceTest.throttle(Location.WelcomePTA, auditContextMock)
+
+        //then
+        returnedLocation shouldBe Location.WelcomeBTA
+
+      }
+    }
   }
 
   it should {

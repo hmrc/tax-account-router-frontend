@@ -57,13 +57,22 @@ trait ThrottlingService {
     var throttlingChanceOption: Option[Float] = None
     val throttledLocation: LocationType = throttlingEnabled match {
       case false => location
-      case true => {
+      case true if location != Location.WelcomePTA => {
         val configurationForLocation: Configuration = findConfigurationFor(location)
         throttlingChanceOption = findPercentageToThrottleFor(configurationForLocation)
         val throttlingChance: Float = throttlingChanceOption.getOrElse(0)
         val randomNumber = random.nextFloat()
         randomNumber match {
           case x if x <= throttlingChance => findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location)
+          case _ => location
+        }
+      }
+      case true if location == Location.WelcomePTA => {
+        throttlingChanceOption = Play.configuration.getString(s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled").map(_.toFloat)
+        val throttlingChance: Float = throttlingChanceOption.getOrElse(0)
+        val randomNumber = random.nextFloat()
+        randomNumber match {
+          case x if x <= throttlingChance => Location.WelcomeBTA
           case _ => location
         }
       }
