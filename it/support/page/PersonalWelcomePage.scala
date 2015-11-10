@@ -22,12 +22,12 @@ import support.stubs.{Stub, StubbedPage}
 
 object PersonalWelcomeStubPage extends Stub with StubbedPage {
   override def create() = {
-    stubOut(urlMatching("/tax-account-router/welcome-personal"), "PTA welcome Page")
+    stubOut(urlMatching("/account/welcome-personal"), "PTA welcome Page")
   }
 }
 
 object PersonalWelcomePage extends WebPage {
-  override val url: String = s"${Env.host}/tax-account-router/welcome-personal"
+  override val url: String = s"${Env.host}/account/welcome-personal"
 
   override def isCurrentPage: Boolean = {
     bodyText contains "File your Self Assessment in your new personal tax account"

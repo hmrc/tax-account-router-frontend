@@ -66,11 +66,11 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, acc
     ) ++ token
 
 
-    stubFor(get(urlEqualTo("/account/sign-in?continue=/tax-account-router"))
+    stubFor(get(urlEqualTo("/account/sign-in?continue=/account"))
       .willReturn(aResponse()
       .withStatus(303)
       .withHeader(HeaderNames.SET_COOKIE, cookieValue(data))
-      .withHeader(HeaderNames.LOCATION, "http://localhost:9000/tax-account-router")))
+      .withHeader(HeaderNames.LOCATION, "http://localhost:9000/account")))
 
 
     stubFor(post(urlEqualTo("/login"))
