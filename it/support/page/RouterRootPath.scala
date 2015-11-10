@@ -20,5 +20,5 @@ import support.Env
 
 object RouterRootPath extends WebPage {
 
-  override val url: String = s"${Env.host}/tax-account-router"
+  override val url: String = s"${Env.host}/account"
 }

@@ -22,12 +22,12 @@ import support.stubs.{Stub, StubbedPage}
 
 object BusinessWelcomeStubPage extends Stub with StubbedPage {
   override def create() = {
-    stubOut(urlMatching("/tax-account-router/welcome-business"), "BTA welcome Page")
+    stubOut(urlMatching("/account/welcome-business"), "BTA welcome Page")
   }
 }
 
 object BusinessWelcomePage extends WebPage {
-  override val url: String = s"${Env.host}/tax-account-router/welcome-business"
+  override val url: String = s"${Env.host}/account/welcome-business"
 
   override def isCurrentPage: Boolean = {
     bodyText contains "Welcome to the new HMRC online"
