@@ -63,7 +63,7 @@ trait RouterController extends FrontendController with Actions {
 
   def createAuditContext(): TAuditContext
 
-  val account = AuthenticatedBy(RouterAuthenticationProvider).async { implicit user => request => route(user, request) }
+  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
