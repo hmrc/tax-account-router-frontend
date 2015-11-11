@@ -100,7 +100,8 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, acc
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
               |    ${if(firstTimeLoggedIn) "" else "\"previouslyLoggedInAt\": \"2014-05-09T14:48:24.841Z\","}
                |    "accounts":${Json.toJson(accounts)},
-              |    "levelOfAssurance": "2"
+               |    "levelOfAssurance": "2",
+               |    "confidenceLevel": 500
               |}
               |
             """.stripMargin
