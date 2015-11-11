@@ -30,7 +30,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services._
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector

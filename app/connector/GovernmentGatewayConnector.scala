@@ -18,9 +18,8 @@ package connector
 
 import config.WSHttp
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.{HttpGet, HttpPost}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 
 import scala.concurrent.Future
 

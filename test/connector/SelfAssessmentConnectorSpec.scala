@@ -18,8 +18,9 @@ package connector
 
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.http.hooks.HttpHook
 import uk.gov.hmrc.play.http.{HttpGet, HttpResponse}
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
@@ -42,8 +43,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
       }
         Future.successful(HttpResponse(200, Some(Json.parse(response))))
 
-      override def appName: String = ???
-      override def auditConnector: AuditConnector = ???
+      override val hooks: Seq[HttpHook] = Seq.empty
     }
 
     override val serviceUrl: String = ""

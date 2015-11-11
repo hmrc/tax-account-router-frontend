@@ -24,7 +24,7 @@ import org.scalatest.prop.Tables.Table
 import play.api.libs.json.{Reads, Writes}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.UnitSpec

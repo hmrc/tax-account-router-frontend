@@ -19,14 +19,14 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "frontend-bootstrap" % "2.0.0",
+    "uk.gov.hmrc" %% "frontend-bootstrap" % "3.0.0",
     "uk.gov.hmrc" %% "play-config" % "2.0.0",
     "uk.gov.hmrc" %% "play-json-logger" % "2.1.0",
     "uk.gov.hmrc" %% "play-health" % "1.1.0",
     "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
     "uk.gov.hmrc" %% "play-ui" % "4.1.0",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "3.1.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "5.0.0"
+    "uk.gov.hmrc" %% "play-authorised-frontend" % "3.5.0",
+    "uk.gov.hmrc" %% "http-caching-client" % "5.2.0"
   )
 
   abstract class TestDependencies(scope: String) {

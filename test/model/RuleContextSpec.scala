@@ -22,7 +22,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}

@@ -17,8 +17,8 @@
 package model
 
 import connector._
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future

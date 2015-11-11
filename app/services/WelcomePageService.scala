@@ -20,9 +20,9 @@ import config.WSHttp
 import play.api.Logger
 import uk.gov.hmrc.crypto.ApplicationCrypto
 import uk.gov.hmrc.http.cache.client.{ShortLivedCache, ShortLivedHttpCaching}
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser}
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future

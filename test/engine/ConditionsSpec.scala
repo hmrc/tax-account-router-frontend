@@ -29,7 +29,7 @@ import org.scalatest.prop.Tables.Table
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.WelcomePageService
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
