@@ -22,8 +22,8 @@ import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
 import services.WelcomePageService
-import uk.gov.hmrc.play.audit.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
