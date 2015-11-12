@@ -1,7 +1,5 @@
 @()(implicit authContext: uk.gov.hmrc.play.frontend.auth.AuthContext, request: Request[_])
 
-@import uk.gov.hmrc.play.views.html.helpers.form
-
 @main_template(title = "Personal tax account", bodyClasses = None) {
     <h1 class="form-title heading-large">File your Self Assessment in your new personal tax account</h1>
 
@@ -20,7 +18,10 @@
     </ul>
     <br>
 
-    @form(action = routes.RouterController.account(), 'class -> "form") {
-        <input id="continue-button" type="submit" class="button" value="Continue" data-journey-click="welcome:Click:Continue"/>
-    }
+    <a  id="continue-button"
+    href="@ExternalUrls.personalTaxAccountUrl"
+    class="button"
+    data-journey-click="welcome:Click:Continue">
+        Continue
+    </a>
 }
