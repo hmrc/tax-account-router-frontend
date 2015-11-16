@@ -22,8 +22,10 @@ import connector.FrontendAuthConnector
 import engine.{Condition, Rule, RuleEngine}
 import model.Location._
 import model._
-import play.api.Logger
+import org.joda.time.{DateTime, Seconds}
+import play.api.Play.current
 import play.api.mvc._
+import play.api.{Logger, Play}
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
@@ -51,6 +53,21 @@ object RouterController extends RouterController {
 
 trait RouterController extends FrontendController with Actions {
 
+  val cookieMaxAge = Map(
+    (PersonalTaxAccount, PersonalTaxAccount) -> Instant(DateTime.parse("2020-01-01T00:00")),
+    (BusinessTaxAccount, BusinessTaxAccount) -> Duration(14400),
+    (PersonalTaxAccount, BusinessTaxAccount) -> Duration(14400)
+  )
+
+  val cookieValues = Map(
+    PersonalTaxAccount -> PersonalTaxAccount,
+    BusinessTaxAccount -> BusinessTaxAccount,
+    WelcomeBTA -> BusinessTaxAccount,
+    WelcomePTA -> PersonalTaxAccount
+  )
+
+  val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
+
   val metricsMonitoringService: MetricsMonitoringService
 
   def defaultLocation: LocationType
@@ -71,15 +88,41 @@ trait RouterController extends FrontendController with Actions {
 
     val auditContext: TAuditContext = createAuditContext()
 
-    val nextLocation: Future[Option[LocationType]] = ruleEngine.getLocation(authContext, ruleContext, auditContext)
+    val nextLocation = ruleEngine.getLocation(authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
-      val location: LocationType = locationCandidate.getOrElse(defaultLocation)
-      val throttledLocation: LocationType = throttlingService.throttle(location, auditContext)
-      Logger.debug(s"routing to: ${throttledLocation.name}")
-      sendAuditEvent(auditContext, throttledLocation)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, throttledLocation)
-      Redirect(throttledLocation.url)
+      val location = locationCandidate.getOrElse(defaultLocation)
+
+      // TODO: read cookies (if throttling enabled?)
+      val routedDestinationCookie: Option[Cookie] = request.cookies.get("routed_destination")
+      val finalDestination = routedDestinationCookie match {
+        case Some(cookie) if Location.locations.get(cookie.value).contains(location) && throttlingEnabled =>
+          request.cookies.get("throttled_destination").flatMap(cookie => Location.locations.get(cookie.value)).get
+        case _ =>
+          throttlingService.throttle(location, auditContext)
+      }
+
+      Logger.debug(s"routing to: ${finalDestination.name}")
+      sendAuditEvent(auditContext, finalDestination)
+      metricsMonitoringService.sendMonitoringEvents(auditContext, finalDestination)
+
+      if (throttlingEnabled) {
+        // TODO: should the cookies max-age be refreshed?
+        val maxAge = for {
+          routedDestination <- cookieValues.get(location)
+          throttledDestination <- cookieValues.get(finalDestination)
+          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination))
+        } yield maxAge.getMaxAge
+
+        Redirect(finalDestination.url).withCookies(
+          Cookie("routed_destination", location.name, maxAge = maxAge.fold(Some(0))(v => Some(v))),
+          Cookie("throttled_destination", finalDestination.name, maxAge = maxAge.fold(Some(0))(v => Some(v)))
+        )
+      } else {
+        // TODO: create the cookie (if throttling enabled?)
+        // TODO: delete cookies in this case?
+        Redirect(finalDestination.url).discardingCookies(DiscardingCookie("routed_destination"), DiscardingCookie("throttled_destination"))
+      }
     })
   }
 
@@ -114,4 +157,16 @@ object TarRules extends RuleEngine {
     when(shouldShowWelcomePage) thenGoTo WelcomeBTA withName "bta-welcome-page-passed-through",
     when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount withName "bta-home-page-passed-through"
   )
+}
+
+trait CookieMaxAge {
+  def getMaxAge: Int
+}
+
+case class Duration(seconds: Int) extends CookieMaxAge {
+  override def getMaxAge: Int = seconds
+}
+
+case class Instant(expirationTime: DateTime) extends CookieMaxAge {
+  override def getMaxAge: Int = Seconds.secondsBetween(DateTime.now(), expirationTime).getSeconds
 }
