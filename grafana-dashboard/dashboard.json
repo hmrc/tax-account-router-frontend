@@ -37,7 +37,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -48,7 +48,7 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0))))",
+              "target": "integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0))))",
               "textEditor": false
             }
           ],
@@ -89,7 +89,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -99,7 +99,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.{to-business-tax-account,to-welcome-bta}.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -140,7 +140,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -150,63 +150,12 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.{to-personal-tax-account,to-welcome-pta}.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
           "thresholds": "",
           "title": "Routed to PTA",
-          "type": "singlestat",
-          "valueFontSize": "100%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": false,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "datasource": null,
-          "decimals": 1,
-          "editable": true,
-          "error": false,
-          "format": "percent",
-          "id": 8,
-          "interval": null,
-          "links": [],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "span": 3,
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": true
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.to-welcome*.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 0)))))",
-              "textEditor": true
-            }
-          ],
-          "thresholds": "",
-          "title": "Welcome Page visited",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -277,7 +226,7 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.*.*.*.count, 5, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.routed.*.*.*.count, 4, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             }
           ],
@@ -349,14 +298,14 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.not-throttled.count, 6, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.not-throttled.count, 5, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 0), 'throttled')",
-              "textEditor": true
+              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.throttled-from-*.count, 6, 'sum'))), 1), 0), 'throttled')",
+              "textEditor": false
             }
           ],
           "timeFrom": null,
@@ -427,14 +376,14 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.not-throttled.count, 6, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
+              "target": "aliasSub(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.not-throttled.count, 5, 'sum')), 1), 0), '^transformNull\\(scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\).*\\)$', '\\1')",
               "textEditor": false
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(groupByNode(play.tax-account-router-frontend.*.*.routed.to-personal-tax-account.*.throttled-from-*.count, 6, 'sum')), 1), 0), 'throttled')",
-              "textEditor": true
+              "target": "alias(transformNull(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.throttled-from-*.select metric, 6, 'sum'))), 1), 0), 'throttled')",
+              "textEditor": false
             }
           ],
           "timeFrom": null,
