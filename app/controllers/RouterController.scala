@@ -93,35 +93,44 @@ trait RouterController extends FrontendController with Actions {
     val nextLocation = ruleEngine.getLocation(authContext, ruleContext, auditContext)
 
     nextLocation.map(locationCandidate => {
-      val location = locationCandidate.getOrElse(defaultLocation)
 
-      val routingCookie: Option[Cookie] = request.cookies.get(CookieNames.mdtpRouting)
-      val routingCookieValues: Option[RoutingCookieValues] = routingCookie.map(cookie => RoutingCookieValues(cookie.value))
-      val finalDestination = routingCookieValues match {
-        case Some(cookie) if Location.locations.get(cookie.routedDestination).contains(location) && stickyRoutingEnabled =>
-          Location.locations.get(cookie.throttledDestination).get
-        case _ =>
-          throttlingService.throttle(location, auditContext)
-      }
+      val location = locationCandidate.getOrElse(defaultLocation)
+      val finalDestination = getFinalDestination(auditContext, location)
 
       Logger.debug(s"routing to: ${finalDestination.name}")
       sendAuditEvent(auditContext, finalDestination)
       metricsMonitoringService.sendMonitoringEvents(auditContext, finalDestination)
 
-      if (stickyRoutingEnabled) {
-        val maxAge = for {
-          routedDestination <- cookieValues.get(location)
-          throttledDestination <- cookieValues.get(finalDestination)
-          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(v => v)
-        } yield maxAge.getMaxAge
-
-        Redirect(finalDestination.url).withCookies(
-          Cookie(CookieNames.mdtpRouting, RoutingCookieValues(location.name, finalDestination.name).toString, maxAge = maxAge.fold(Some(0))(v => Some(v)))
-        )
-      } else {
-        Redirect(finalDestination.url).discardingCookies(DiscardingCookie(CookieNames.mdtpRouting))
-      }
+      returnRedirect(location, finalDestination)
     })
+  }
+
+  def returnRedirect(location: LocationType, finalDestination: LocationType): Result = {
+    if (stickyRoutingEnabled) {
+      val maxAge = for {
+        routedDestination <- cookieValues.get(location)
+        throttledDestination <- cookieValues.get(finalDestination)
+        maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(identity)
+      } yield maxAge.getMaxAge
+
+      Redirect(finalDestination.url).withCookies(
+        Cookie(CookieNames.mdtpRouting, RoutingCookieValues(location.name, finalDestination.name).toString, maxAge = maxAge.fold(Some(0))(v => Some(v)))
+      )
+    } else {
+      Redirect(finalDestination.url).discardingCookies(DiscardingCookie(CookieNames.mdtpRouting))
+    }
+  }
+
+  def getFinalDestination(auditContext: TAuditContext, location: LocationType)(implicit request: Request[AnyContent]): LocationType = {
+    val routingCookie = request.cookies.get(CookieNames.mdtpRouting)
+    val routingCookieValues = routingCookie.map(cookie => RoutingCookieValues(cookie.value))
+    val finalDestination = routingCookieValues match {
+      case Some(cookie) if Location.locations.get(cookie.routedDestination).contains(location) && stickyRoutingEnabled =>
+        Location.locations.get(cookie.throttledDestination).get
+      case _ =>
+        throttlingService.throttle(location, auditContext)
+    }
+    finalDestination
   }
 
   def sendAuditEvent(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
