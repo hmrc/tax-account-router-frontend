@@ -53,10 +53,14 @@ object RouterController extends RouterController {
 
 trait RouterController extends FrontendController with Actions {
 
+  val longLiveCookieExpirationTime = Play.configuration.getString("sticky-routing.long-live-cookie-expiration-time")
+  val shortLiveCookieDuration = Play.configuration.getInt("sticky-routing.short-live-cookie-duration")
+  val stickyRoutingEnabled = Play.configuration.getBoolean("sticky-routing.enabled").getOrElse(false)
+
   val cookieMaxAge = Map(
-    (PersonalTaxAccount, PersonalTaxAccount) -> Instant(DateTime.parse("2020-01-01T00:00")),
-    (BusinessTaxAccount, BusinessTaxAccount) -> Duration(14400),
-    (PersonalTaxAccount, BusinessTaxAccount) -> Duration(14400)
+    (PersonalTaxAccount, PersonalTaxAccount) -> longLiveCookieExpirationTime.map(t => Instant(DateTime.parse(t))),
+    (BusinessTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t)),
+    (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t))
   )
 
   val cookieValues = Map(
@@ -65,8 +69,6 @@ trait RouterController extends FrontendController with Actions {
     WelcomeBTA -> BusinessTaxAccount,
     WelcomePTA -> PersonalTaxAccount
   )
-
-  val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
 
   val metricsMonitoringService: MetricsMonitoringService
 
@@ -93,11 +95,11 @@ trait RouterController extends FrontendController with Actions {
     nextLocation.map(locationCandidate => {
       val location = locationCandidate.getOrElse(defaultLocation)
 
-      // TODO: read cookies (if throttling enabled?)
-      val routedDestinationCookie: Option[Cookie] = request.cookies.get("routed_destination")
-      val finalDestination = routedDestinationCookie match {
-        case Some(cookie) if Location.locations.get(cookie.value).contains(location) && throttlingEnabled =>
-          request.cookies.get("throttled_destination").flatMap(cookie => Location.locations.get(cookie.value)).get
+      val routingCookie: Option[Cookie] = request.cookies.get(CookieNames.mdtpRouting)
+      val routingCookieValues: Option[RoutingCookieValues] = routingCookie.map(cookie => RoutingCookieValues(cookie.value))
+      val finalDestination = routingCookieValues match {
+        case Some(cookie) if Location.locations.get(cookie.routedDestination).contains(location) && stickyRoutingEnabled =>
+          Location.locations.get(cookie.throttledDestination).get
         case _ =>
           throttlingService.throttle(location, auditContext)
       }
@@ -106,22 +108,18 @@ trait RouterController extends FrontendController with Actions {
       sendAuditEvent(auditContext, finalDestination)
       metricsMonitoringService.sendMonitoringEvents(auditContext, finalDestination)
 
-      if (throttlingEnabled) {
-        // TODO: should the cookies max-age be refreshed?
+      if (stickyRoutingEnabled) {
         val maxAge = for {
           routedDestination <- cookieValues.get(location)
           throttledDestination <- cookieValues.get(finalDestination)
-          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination))
+          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(v => v)
         } yield maxAge.getMaxAge
 
         Redirect(finalDestination.url).withCookies(
-          Cookie("routed_destination", location.name, maxAge = maxAge.fold(Some(0))(v => Some(v))),
-          Cookie("throttled_destination", finalDestination.name, maxAge = maxAge.fold(Some(0))(v => Some(v)))
+          Cookie(CookieNames.mdtpRouting, RoutingCookieValues(location.name, finalDestination.name).toString, maxAge = maxAge.fold(Some(0))(v => Some(v)))
         )
       } else {
-        // TODO: create the cookie (if throttling enabled?)
-        // TODO: delete cookies in this case?
-        Redirect(finalDestination.url).discardingCookies(DiscardingCookie("routed_destination"), DiscardingCookie("throttled_destination"))
+        Redirect(finalDestination.url).discardingCookies(DiscardingCookie(CookieNames.mdtpRouting))
       }
     })
   }
@@ -169,4 +167,25 @@ case class Duration(seconds: Int) extends CookieMaxAge {
 
 case class Instant(expirationTime: DateTime) extends CookieMaxAge {
   override def getMaxAge: Int = Seconds.secondsBetween(DateTime.now(), expirationTime).getSeconds
+}
+
+case class RoutingCookieValues(routedDestination: String, throttledDestination: String) {
+
+  override def toString = s"$routedDestination#$throttledDestination"
+
+}
+
+object RoutingCookieValues {
+
+  def apply(cookieValue: String): RoutingCookieValues = {
+    val tokens = cookieValue.split("#")
+    RoutingCookieValues(tokens(0), tokens(1))
+  }
+
+}
+
+object CookieNames {
+
+  val mdtpRouting = "mdtprouting"
+
 }
