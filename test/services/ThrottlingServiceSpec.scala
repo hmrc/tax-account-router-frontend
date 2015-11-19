@@ -17,45 +17,56 @@
 package services
 
 import helpers.SpecHelpers
-import model.Location.LocationType
-import model.{AuditContext, Location, ThrottlingAuditContext}
+import model.Location._
+import model.{AuditContext, ThrottlingAuditContext}
+import org.joda.time.{DateTime, DateTimeUtils}
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
+import play.api.mvc.{Cookie, DiscardingCookie}
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.duration._
 import scala.util.Random
 
-class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers {
+class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with SpecHelpers {
 
-  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Int = 0, fallbackLocation: String = "default-fallback-location") = {
+  private val longLiveCookieExpirationTime: String = "2016-02-15T00:00"
+
+  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false) = {
     Map[String, Any](
       "throttling.enabled" -> enabled,
       s"throttling.locations.$locationName.percentageBeToThrottled" -> percentageBeToThrottled,
-      s"throttling.locations.$locationName.fallback" -> fallbackLocation
+      s"throttling.locations.$locationName.fallback" -> fallbackLocation,
+      "sticky-routing.enabled" -> stickyRoutingEnabled,
+      "sticky-routing.long-live-cookie-expiration-time" -> longLiveCookieExpirationTime,
+      "sticky-routing.short-live-cookie-duration" -> 1
     )
   }
 
   "ThrottlingService" should {
 
-    "not throttle if disabled" in {
+    "not throttle if throttling disabled and sticky routing disabled" in {
       running(FakeApplication(additionalConfiguration = createConfiguration(enabled = false))) {
         //given
         val initialLocation = mock[LocationType]
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
-        returnedLocation shouldBe initialLocation
+        throttlingResult.throttledLocation shouldBe initialLocation
+        throttlingResult.cookiesToAdd shouldBe Seq.empty
+        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
       }
     }
 
-    "return location passed as argument when no configuration found" in {
+    "return location passed as argument when no configuration found when sticky routing is disabled" in {
       running(FakeApplication(additionalConfiguration = createConfiguration())) {
         //given
         val locationName = "location-name"
@@ -64,14 +75,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
-        returnedLocation shouldBe initialLocation
+        throttlingResult.throttledLocation shouldBe initialLocation
+        throttlingResult.cookiesToAdd shouldBe Seq.empty
+        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
       }
     }
 
-    "return location passed as argument when configuration found but fallback not configured" in {
+    "return location passed as argument when configuration found but fallback not configured when sticky routing is disabled" in {
 
       val locationName = "location-name"
 
@@ -82,15 +95,17 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         implicit val mockRequest = FakeRequest()
 
         //when
-        val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
 
         //then
-        returnedLocation shouldBe initialLocation
+        throttlingResult.throttledLocation shouldBe initialLocation
+        throttlingResult.cookiesToAdd shouldBe Seq.empty
+        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
       }
     }
 
-    "throttle to BTA welcome page when going to PTA welcome" in {
-      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${Location.PersonalTaxAccount.name}-gg", percentageBeToThrottled = 100, fallbackLocation = ""))) {
+    "throttle to BTA welcome page when going to PTA welcome when sticky routing is disabled" in {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${PersonalTaxAccount.name}-gg", percentageBeToThrottled = 100, fallbackLocation = ""))) {
         //given
         val randomMock = mock[Random]
         when(randomMock.nextInt(100)) thenReturn 0
@@ -103,10 +118,12 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
         val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
 
         //when
-        val returnedLocation: LocationType = throttlingServiceTest.throttle(Location.WelcomePTA, auditContextMock)
+        val throttlingResult: ThrottlingResult = throttlingServiceTest.throttle(WelcomePTA, auditContextMock)
 
         //then
-        returnedLocation shouldBe Location.WelcomeBTA
+        throttlingResult.throttledLocation shouldBe WelcomeBTA
+        throttlingResult.cookiesToAdd shouldBe Seq.empty
+        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
 
         //and
         verify(randomMock).nextInt(100)
@@ -124,14 +141,14 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val scenarios = evaluateUsingPlay {
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
-        ("Should throttle to fallback when random number is less than percentage", 50, 10, Location.BusinessTaxAccount, true),
-        ("Should throttle to fallback when random number is equal than percentage", 50, 49, Location.BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is less than percentage", 50, 10, BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is equal than percentage", 50, 49, BusinessTaxAccount, true),
         ("Should not throttle to fallback when random number is equal than percentage", 50, 70, initialLocation, false)
       )
     }
 
     forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, randomNumber: Int, expectedLocation: LocationType, throttled: Boolean) =>
-      s"return the right location after throttling or not and update audit context - scenario: $scenario" in {
+      s"return the right location after throttling or not and update audit context when sticky routing is disabled - scenario: $scenario" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
           val randomMock = mock[Random]
@@ -145,13 +162,15 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
           val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
 
           //when
-          val returnedLocation: LocationType = throttlingServiceTest.throttle(initialLocation, auditContextMock)
+          val throttlingResult: ThrottlingResult = throttlingServiceTest.throttle(initialLocation, auditContextMock)
 
           //then
-          returnedLocation.name shouldBe expectedLocation.name
+          throttlingResult.throttledLocation.name shouldBe expectedLocation.name
+          throttlingResult.cookiesToAdd shouldBe Seq.empty
+          throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
 
           //and
-          val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled)
+          val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled, followingPreviouslyRoutedDestination = false)
           verify(auditContextMock).setThrottlingDetails(throttlingAuditContext)
 
           //and
@@ -167,23 +186,25 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
     val configuration = evaluateUsingPlay {
       Map[String, Any](
             "throttling.enabled" -> true,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.fallback" -> Location.BusinessTaxAccount.name,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
-            s"throttling.locations.${Location.PersonalTaxAccount.name}-verify.fallback" -> Location.WelcomeBTA.name
+            "sticky-routing.enabled" -> true,
+            s"throttling.locations.${PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
+            s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
+            s"throttling.locations.${PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
+            s"throttling.locations.${PersonalTaxAccount.name}-verify.fallback" -> WelcomeBTA.name,
+            "sticky-routing.short-live-cookie-duration" -> 1
           )
     }
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("scenario", "tokenPresent", "expectedLocation"),
-        ("Should throttle to BTA when token present", true, Location.BusinessTaxAccount.name),
-        ("Should throttle to Welcome when token not present", false, Location.WelcomeBTA.name)
+        ("scenario", "tokenPresent", "expectedLocation", "cookieExpectedLocation"),
+        ("Should throttle to BTA when token present", true, BusinessTaxAccount.name, BusinessTaxAccount.name),
+        ("Should throttle to Welcome when token not present", false, WelcomeBTA.name, BusinessTaxAccount.name)
       )
     }
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String) =>
-      s"return the right location after throttling PTA or not - scenario: $scenario" in {
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String, cookieExpectedLocation: String) =>
+      s"return the right location after throttling PTA or not when sticky routing is enabled but cookie is not present - scenario: $scenario" in {
         running(FakeApplication(additionalConfiguration = configuration)) {
           //given
           implicit lazy val fakeRequest = tokenPresent match {
@@ -192,10 +213,84 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with SpecHelpers 
           }
 
           //when
-          val returnedLocation: LocationType = new ThrottlingServiceTest().throttle(Location.PersonalTaxAccount, mock[AuditContext])
+          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(PersonalTaxAccount, mock[AuditContext])
 
           //then
-          returnedLocation.name shouldBe expectedLocation
+          throttlingResult.throttledLocation.name shouldBe expectedLocation
+          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${PersonalTaxAccount.name}#$cookieExpectedLocation", maxAge = Some(1)))
+          throttlingResult.cookiesToRemove shouldBe Seq.empty
+        }
+      }
+    }
+  }
+
+  val expirationDate: DateTime = DateTime.parse(longLiveCookieExpirationTime)
+
+  val longLiveCookieInSeconds = 2 seconds
+
+  override protected def beforeEach(): Unit = DateTimeUtils.setCurrentMillisFixed(expirationDate.getMillis - longLiveCookieInSeconds.toMillis)
+
+  override protected def afterEach(): Unit = DateTimeUtils.setCurrentMillisSystem()
+
+  it should {
+
+    val scenarios = evaluateUsingPlay {
+      Table(
+        ("routedLocation", "throttledLocation", "expectedRoutedLocation", "expectedThrottledLocation", "cookieMaxAge"),
+        (PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
+        (PersonalTaxAccount, BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, 1),
+        (BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, 1),
+        (WelcomePTA, WelcomePTA, PersonalTaxAccount, PersonalTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
+        (WelcomePTA, WelcomeBTA, PersonalTaxAccount, BusinessTaxAccount, 1),
+        (WelcomeBTA, WelcomeBTA, BusinessTaxAccount, BusinessTaxAccount, 1)
+      )
+    }
+
+    forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedRoutedLocation: LocationType, expectedThrottledLocation: LocationType, cookieMaxAge: Int) =>
+      s"return the right location after throttling when sticky routing is enabled and cookie is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
+        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
+          //given
+          implicit lazy val fakeRequest = FakeRequest().withCookies(Cookie(name = "mdtprouting", value = s"${routedLocation.name}#${throttledLocation.name}", maxAge = None))
+
+          //when
+          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(routedLocation, mock[AuditContext])
+
+          //then
+          throttlingResult.throttledLocation.name shouldBe throttledLocation.name
+          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${expectedRoutedLocation.name}#${expectedThrottledLocation.name}", maxAge = Some(cookieMaxAge)))
+          throttlingResult.cookiesToRemove shouldBe Seq.empty
+        }
+      }
+    }
+  }
+
+  it should {
+
+    val scenarios = evaluateUsingPlay {
+      Table(
+        ("routedLocation", "cookieRoutedLocation", "cookieThrottledLocation", "cookieMaxAge"),
+        (BusinessTaxAccount, PersonalTaxAccount, PersonalTaxAccount, 1),
+        (BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, 1),
+        (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
+        (BusinessTaxAccount, WelcomePTA, WelcomePTA, 1),
+        (PersonalTaxAccount, WelcomePTA, WelcomeBTA, longLiveCookieInSeconds.toSeconds.toInt),
+        (BusinessTaxAccount, WelcomeBTA, WelcomeBTA, 1)
+      )
+    }
+
+    forAll(scenarios) { (routedLocation: LocationType, cookieRoutedLocation: LocationType, cookieThrottledLocation: LocationType, cookieMaxAge: Int) =>
+      s"return the right location after throttling when sticky routing is enabled and cookie is present but routedLocation is different: routedLocation -> $cookieRoutedLocation, throttledLocation -> $cookieThrottledLocation" in {
+        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
+          //given
+          implicit lazy val fakeRequest = FakeRequest().withCookies(Cookie(name = "mdtprouting", value = s"${cookieRoutedLocation.name}#${cookieThrottledLocation.name}", maxAge = None))
+
+          //when
+          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(routedLocation, mock[AuditContext])
+
+          //then
+          throttlingResult.throttledLocation.name shouldBe routedLocation.name
+          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${routedLocation.name}#${routedLocation.name}", maxAge = Some(cookieMaxAge)))
+          throttlingResult.cookiesToRemove shouldBe Seq.empty
         }
       }
     }
