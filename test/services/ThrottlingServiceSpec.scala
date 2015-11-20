@@ -29,7 +29,6 @@ import org.scalatest.prop.Tables.Table
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import play.modules.reactivemongo.MongoDbConnection
 import reactivemongo.api.ReadPreference
 import reactivemongo.api.commands.WriteResult
 import repositories.RoutingCacheRepository
@@ -270,8 +269,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation).name shouldBe expectedLocation
 
           //and
-          //TODO: check why mockito is saying the method is called twice
-          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
           verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, PersonalTaxAccount.name, cacheExpectedLocation)))))
         }
       }
@@ -324,8 +322,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe throttledLocation
 
           //and
-          //TODO: check why mockito is saying the method is called twice
-          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
           verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, expectedRoutedLocation.name, expectedThrottledLocation.name)))))
         }
       }
@@ -370,8 +367,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe routedLocation
 
           //and
-          //TODO: check why mockito is saying the method is called twice
-          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
           verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, routedLocation.name)))))
         }
       }
@@ -380,14 +376,3 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 }
 
 class ThrottlingServiceTest(override val random: Random = Random, override val routingCacheRepository: RoutingCacheRepository) extends ThrottlingService
-
-object RoutingCacheRepositoryTest extends MongoDbConnection {
-
-  def apply(stubValue: Future[Option[Cache]]): RoutingCacheRepository = new RoutingCacheRepository {
-    override def findById(id: Id, readPreference: ReadPreference)(implicit ec: ExecutionContext): Future[Option[Cache]] = {
-      println("calling find by Id")
-      stubValue
-    }
-  }
-
-}
