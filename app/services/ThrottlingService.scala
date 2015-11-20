@@ -17,12 +17,18 @@
 package services
 
 import model.Location._
-import model.{Location, TAuditContext, ThrottlingAuditContext}
+import model.{Location, RoutingInfo, TAuditContext, ThrottlingAuditContext}
 import org.joda.time.DateTime
 import play.api.Play.current
-import play.api.mvc.{AnyContent, Cookie, DiscardingCookie, Request}
-import play.api.{Configuration, Play}
+import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.mvc.{AnyContent, Request}
+import play.api.{Configuration, Logger, Play}
+import reactivemongo.api.commands.WriteResult
+import repositories.RoutingCacheRepository
+import uk.gov.hmrc.cache.model.{Cache, Id}
+import uk.gov.hmrc.play.frontend.auth.AuthContext
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 trait ThrottlingService {
@@ -48,6 +54,8 @@ trait ThrottlingService {
     WelcomePTA -> PersonalTaxAccount
   )
 
+  def routingCacheRepository: RoutingCacheRepository
+
   private def findConfigurationFor(location: LocationType)(implicit request: Request[AnyContent]): Configuration = {
 
     val suffix = request.session.data.contains("token") match {
@@ -71,21 +79,45 @@ trait ThrottlingService {
     Location.locations.get(fallbackLocationName)
   }
 
-  def throttle(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent]): ThrottlingResult = {
-    val routingCookie = request.cookies.get(CookieNames.mdtpRouting)
-    val routingCookieValues = routingCookie.map(cookie => RoutingCookieValues(cookie.value))
+  def throttle(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[LocationType] = {
+    val utr: String = authContext.principal.accounts.sa.fold("")(saAccount => saAccount.utr.value)
 
-    val followingPreviouslyRoutedDestination = routingCookieValues.exists(cookie => Location.locations.get(cookie.routedDestination).contains(location) && stickyRoutingEnabled)
-    val throttledLocation = followingPreviouslyRoutedDestination match {
+    stickyRoutingEnabled match {
       case true =>
-        val finalLocation = Location.locations.get(routingCookieValues.get.throttledDestination).get
-        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, location != finalLocation, location, throttlingEnabled, followingPreviouslyRoutedDestination))
-        finalLocation
-      case false =>
-        doThrottling(location, auditContext)
-    }
+        routingCacheRepository.findById(id = Id(utr)).map { optionalCache =>
 
-    getThrottlingResult(location, throttledLocation)
+          optionalCache.flatMap { cache =>
+
+            cache.data.map { data =>
+              val jsResult = Json.fromJson[RoutingInfo](data)
+              jsResult match {
+                case JsSuccess(routingInfo, _) =>
+                  val followingPreviouslyRoutedDestination = Location.locations.get(routingInfo.routedDestination).contains(location)
+                  val throttledLocation = followingPreviouslyRoutedDestination match {
+                    case true =>
+                      val finalLocation = Location.locations.get(routingInfo.throttledDestination).get
+                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, location != finalLocation, location, throttlingEnabled, followingPreviouslyRoutedDestination))
+                      finalLocation
+                    case false =>
+                      doThrottling(location, auditContext)
+                  }
+
+                  getThrottlingResult(location, throttledLocation, utr)
+                case JsError(e) =>
+                  Logger.error(s"Error reading document $e")
+                  location
+              }
+            }
+
+          }.getOrElse {
+            val throttledLocation: LocationType = doThrottling(location, auditContext)
+            getThrottlingResult(location, throttledLocation, utr)
+          }
+        }
+      case false =>
+        val throttledLocation: LocationType = doThrottling(location, auditContext)
+        Future(getThrottlingResult(location, throttledLocation, utr))
+    }
   }
 
   case class DoThrottlingResult(location: LocationType, throttlingPercentage: Int)
@@ -118,26 +150,31 @@ trait ThrottlingService {
     }
   }
 
-  def getThrottlingResult(location: LocationType, throttledLocation: LocationType): ThrottlingResult = {
-    val throttlingResult: ThrottlingResult = stickyRoutingEnabled match {
+  def getThrottlingResult(location: LocationType, throttledLocation: LocationType, utr: String)(implicit executionContext: ExecutionContext): LocationType = {
+    stickyRoutingEnabled match {
       case true =>
-        val throttlingResult: Option[ThrottlingResult] = for {
+        val throttlingResult: Option[LocationType] = for {
           routedDestination <- cookieValues.get(location)
           throttledDestination <- cookieValues.get(throttledLocation)
-          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(identity)
-        } yield ThrottlingResult(throttledLocation = throttledLocation, cookiesToAdd = Seq(Cookie(CookieNames.mdtpRouting, RoutingCookieValues(routedDestination.name, throttledDestination.name).toString, maxAge = Some(maxAge.getMaxAge))))
-        throttlingResult.getOrElse(ThrottlingResult(throttledLocation = throttledLocation))
+        //          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(identity)
+        } yield {
+            val insertResult: Future[WriteResult] = routingCacheRepository.insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedDestination.name, throttledDestination.name)))))
+            insertResult.filter(_.hasErrors).foreach { r =>
+              Logger.debug("There was an error inserting document insert document " + r.inError)
+            }
+            throttledLocation
+          }
+        throttlingResult.getOrElse(throttledLocation)
       case false =>
-        ThrottlingResult(throttledLocation = throttledLocation, cookiesToRemove = Seq(DiscardingCookie(CookieNames.mdtpRouting)))
+        throttledLocation
     }
-    throttlingResult
   }
 }
-
-case class ThrottlingResult(throttledLocation: LocationType, cookiesToAdd: Seq[Cookie] = Seq.empty, cookiesToRemove: Seq[DiscardingCookie] = Seq.empty)
 
 object ThrottlingService extends ThrottlingService {
 
   override val random = Random
+
+  override val routingCacheRepository: RoutingCacheRepository = RoutingCacheRepository()
 
 }

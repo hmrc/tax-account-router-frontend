@@ -26,7 +26,8 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
     "uk.gov.hmrc" %% "play-ui" % "4.1.0",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "4.0.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "5.2.0"
+    "uk.gov.hmrc" %% "http-caching-client" % "5.2.0",
+    "uk.gov.hmrc" %% "mongo-caching" % "3.0.0"
   )
 
   abstract class TestDependencies(scope: String) {

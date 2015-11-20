@@ -73,14 +73,15 @@ trait RouterController extends FrontendController with Actions {
 
     val nextLocation: Future[Option[LocationType]] = ruleEngine.getLocation(authContext, ruleContext, auditContext)
 
-    nextLocation.map(locationCandidate => {
+    nextLocation.flatMap(locationCandidate => {
       val location: LocationType = locationCandidate.getOrElse(defaultLocation)
-      val throttlingResult: ThrottlingResult = throttlingService.throttle(location, auditContext)
-      val throttledLocation: LocationType = throttlingResult.throttledLocation
-      Logger.debug(s"routing to: ${throttledLocation.name}")
-      sendAuditEvent(auditContext, throttledLocation)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, throttledLocation)
-      Redirect(throttledLocation.url).withCookies(throttlingResult.cookiesToAdd: _*).discardingCookies(throttlingResult.cookiesToRemove: _*)
+      val eventualLocationType: Future[LocationType] = throttlingService.throttle(location, auditContext)
+      eventualLocationType.map { throttledLocation =>
+        Logger.debug(s"routing to: ${throttledLocation.name}")
+        sendAuditEvent(auditContext, throttledLocation)
+        metricsMonitoringService.sendMonitoringEvents(auditContext, throttledLocation)
+        Redirect(throttledLocation.url)
+      }
     })
   }
 
