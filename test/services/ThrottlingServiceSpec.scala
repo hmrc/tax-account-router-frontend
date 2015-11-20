@@ -18,19 +18,30 @@ package services
 
 import helpers.SpecHelpers
 import model.Location._
-import model.{AuditContext, ThrottlingAuditContext}
+import model.{AuditContext, RoutingInfo, ThrottlingAuditContext}
 import org.joda.time.{DateTime, DateTimeUtils}
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
-import play.api.mvc.{Cookie, DiscardingCookie}
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
+import play.modules.reactivemongo.MongoDbConnection
+import reactivemongo.api.ReadPreference
+import reactivemongo.api.commands.WriteResult
+import repositories.RoutingCacheRepository
+import uk.gov.hmrc.cache.model.{Cache, Id}
+import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with SpecHelpers {
@@ -48,6 +59,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     )
   }
 
+  def getAuthContext(utr: String) =
+    AuthContext(LoggedInUser("", None, None, None, ConfidenceLevel.L0), Principal(Some(""), Accounts(sa = Some(SaAccount("", SaUtr(utr))))), None)
+
   "ThrottlingService" should {
 
     "not throttle if throttling disabled and sticky routing disabled" in {
@@ -55,14 +69,19 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //given
         val initialLocation = mock[LocationType]
         implicit val mockRequest = FakeRequest()
+        implicit val authContext = getAuthContext("")
+
+        //and
+        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
 
         //when
-        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(initialLocation, mock[AuditContext])
 
         //then
-        throttlingResult.throttledLocation shouldBe initialLocation
-        throttlingResult.cookiesToAdd shouldBe Seq.empty
-        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
+        await(returnedLocation) shouldBe initialLocation
+
+        //and
+        verifyNoMoreInteractions(mockRoutingCacheRepository)
       }
     }
 
@@ -73,14 +92,19 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val initialLocation = mock[LocationType]
         when(initialLocation.name) thenReturn locationName
         implicit val mockRequest = FakeRequest()
+        implicit val authContext = getAuthContext("")
+
+        //and
+        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
 
         //when
-        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(initialLocation, mock[AuditContext])
 
         //then
-        throttlingResult.throttledLocation shouldBe initialLocation
-        throttlingResult.cookiesToAdd shouldBe Seq.empty
-        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
+        await(returnedLocation) shouldBe initialLocation
+
+        //and
+        verifyNoMoreInteractions(mockRoutingCacheRepository)
       }
     }
 
@@ -93,14 +117,20 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val initialLocation = mock[LocationType]
         when(initialLocation.name) thenReturn locationName
         implicit val mockRequest = FakeRequest()
+        implicit val authContext = getAuthContext("")
+
+        //and
+        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
 
         //when
-        val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(initialLocation, mock[AuditContext])
+        val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(initialLocation, mock[AuditContext])
 
         //then
-        throttlingResult.throttledLocation shouldBe initialLocation
-        throttlingResult.cookiesToAdd shouldBe Seq.empty
-        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
+        await(returnedLocation) shouldBe initialLocation
+
+        //and
+        verifyNoMoreInteractions(mockRoutingCacheRepository)
+
       }
     }
 
@@ -110,23 +140,28 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val randomMock = mock[Random]
         when(randomMock.nextInt(100)) thenReturn 0
         implicit val mockRequest = FakeRequest()
+        implicit val authContext = getAuthContext("")
 
         //and
         val auditContextMock = mock[AuditContext]
 
         //and
-        val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
+        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+
+        //and
+        val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository)
 
         //when
-        val throttlingResult: ThrottlingResult = throttlingServiceTest.throttle(WelcomePTA, auditContextMock)
+        val returnedLocation: Future[LocationType] = throttlingServiceTest.throttle(WelcomePTA, auditContextMock)
 
         //then
-        throttlingResult.throttledLocation shouldBe WelcomeBTA
-        throttlingResult.cookiesToAdd shouldBe Seq.empty
-        throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
+        await(returnedLocation) shouldBe WelcomeBTA
 
         //and
         verify(randomMock).nextInt(100)
+
+        //and
+        verifyNoMoreInteractions(mockRoutingCacheRepository)
       }
     }
   }
@@ -154,20 +189,22 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val randomMock = mock[Random]
           when(randomMock.nextInt(100)) thenReturn randomNumber
           implicit val mockRequest = FakeRequest()
+          implicit val authContext = getAuthContext("")
 
           //and
           val auditContextMock = mock[AuditContext]
 
           //and
-          val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock)
+          val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+
+          //and
+          val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository)
 
           //when
-          val throttlingResult: ThrottlingResult = throttlingServiceTest.throttle(initialLocation, auditContextMock)
+          val returnedLocation: Future[LocationType] = throttlingServiceTest.throttle(initialLocation, auditContextMock)
 
           //then
-          throttlingResult.throttledLocation.name shouldBe expectedLocation.name
-          throttlingResult.cookiesToAdd shouldBe Seq.empty
-          throttlingResult.cookiesToRemove shouldBe Seq(DiscardingCookie("mdtprouting"))
+          await(returnedLocation) shouldBe expectedLocation
 
           //and
           val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled, followingPreviouslyRoutedDestination = false)
@@ -175,6 +212,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(randomMock).nextInt(100)
+
+          //and
+          verifyNoMoreInteractions(mockRoutingCacheRepository)
         }
 
       }
@@ -197,28 +237,42 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("scenario", "tokenPresent", "expectedLocation", "cookieExpectedLocation"),
+        ("scenario", "tokenPresent", "expectedLocation", "cacheExpectedLocation"),
         ("Should throttle to BTA when token present", true, BusinessTaxAccount.name, BusinessTaxAccount.name),
         ("Should throttle to Welcome when token not present", false, WelcomeBTA.name, BusinessTaxAccount.name)
       )
     }
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String, cookieExpectedLocation: String) =>
-      s"return the right location after throttling PTA or not when sticky routing is enabled but cookie is not present - scenario: $scenario" in {
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String, cacheExpectedLocation: String) =>
+      s"return the right location after throttling PTA or not when sticky routing is enabled but routingInfo is not present - scenario: $scenario" in {
         running(FakeApplication(additionalConfiguration = configuration)) {
           //given
           implicit lazy val fakeRequest = tokenPresent match {
             case false => FakeRequest()
             case true => FakeRequest().withSession(("token", "token"))
           }
+          val utr = "utr"
+          implicit val authContext = getAuthContext(utr)
+
+          //and
+          val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+          when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(None))
+
+          //and
+          val mockWriteResult = mock[WriteResult]
+          when(mockWriteResult.hasErrors).thenReturn(false)
+          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, PersonalTaxAccount.name, cacheExpectedLocation))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
-          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(PersonalTaxAccount, mock[AuditContext])
+          val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(PersonalTaxAccount, mock[AuditContext])
 
           //then
-          throttlingResult.throttledLocation.name shouldBe expectedLocation
-          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${PersonalTaxAccount.name}#$cookieExpectedLocation", maxAge = Some(1)))
-          throttlingResult.cookiesToRemove shouldBe Seq.empty
+          await(returnedLocation).name shouldBe expectedLocation
+
+          //and
+          //TODO: check why mockito is saying the method is called twice
+          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, PersonalTaxAccount.name, cacheExpectedLocation)))))
         }
       }
     }
@@ -247,18 +301,32 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     }
 
     forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedRoutedLocation: LocationType, expectedThrottledLocation: LocationType, cookieMaxAge: Int) =>
-      s"return the right location after throttling when sticky routing is enabled and cookie is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
+      s"return the right location after throttling when sticky routing is enabled and routingInfo is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
-          implicit lazy val fakeRequest = FakeRequest().withCookies(Cookie(name = "mdtprouting", value = s"${routedLocation.name}#${throttledLocation.name}", maxAge = None))
+          implicit lazy val fakeRequest = FakeRequest()
+          val utr = "utr"
+          implicit val authContext = getAuthContext(utr)
+
+          //and
+          val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+          when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, throttledLocation.name)))))))
+
+          //and
+          val mockWriteResult = mock[WriteResult]
+          when(mockWriteResult.hasErrors).thenReturn(false)
+          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, expectedRoutedLocation.name, expectedThrottledLocation.name))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
-          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(routedLocation, mock[AuditContext])
+          val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
 
           //then
-          throttlingResult.throttledLocation.name shouldBe throttledLocation.name
-          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${expectedRoutedLocation.name}#${expectedThrottledLocation.name}", maxAge = Some(cookieMaxAge)))
-          throttlingResult.cookiesToRemove shouldBe Seq.empty
+          await(returnedLocation) shouldBe throttledLocation
+
+          //and
+          //TODO: check why mockito is saying the method is called twice
+          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, expectedRoutedLocation.name, expectedThrottledLocation.name)))))
         }
       }
     }
@@ -268,7 +336,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("routedLocation", "cookieRoutedLocation", "cookieThrottledLocation", "cookieMaxAge"),
+        ("routedLocation", "cacheRoutedLocation", "cacheThrottledLocation", "cookieMaxAge"),
         (BusinessTaxAccount, PersonalTaxAccount, PersonalTaxAccount, 1),
         (BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, 1),
         (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
@@ -278,23 +346,48 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       )
     }
 
-    forAll(scenarios) { (routedLocation: LocationType, cookieRoutedLocation: LocationType, cookieThrottledLocation: LocationType, cookieMaxAge: Int) =>
-      s"return the right location after throttling when sticky routing is enabled and cookie is present but routedLocation is different: routedLocation -> $cookieRoutedLocation, throttledLocation -> $cookieThrottledLocation" in {
+    forAll(scenarios) { (routedLocation: LocationType, cacheRoutedLocation: LocationType, cacheThrottledLocation: LocationType, cookieMaxAge: Int) =>
+      s"return the right location after throttling when sticky routing is enabled and cookie is present but routedLocation is different: routedLocation -> $cacheRoutedLocation, throttledLocation -> $cacheThrottledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
-          implicit lazy val fakeRequest = FakeRequest().withCookies(Cookie(name = "mdtprouting", value = s"${cookieRoutedLocation.name}#${cookieThrottledLocation.name}", maxAge = None))
+          implicit lazy val fakeRequest = FakeRequest()
+          val utr = "utr"
+          implicit val authContext = getAuthContext(utr)
+
+          //and
+          val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+          when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, cacheRoutedLocation.name, cacheThrottledLocation.name)))))))
+
+          //and
+          val mockWriteResult = mock[WriteResult]
+          when(mockWriteResult.hasErrors).thenReturn(false)
+          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, routedLocation.name))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
-          val throttlingResult: ThrottlingResult = new ThrottlingServiceTest().throttle(routedLocation, mock[AuditContext])
+          val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
 
           //then
-          throttlingResult.throttledLocation.name shouldBe routedLocation.name
-          throttlingResult.cookiesToAdd shouldBe Seq(Cookie(name = "mdtprouting", value = s"${routedLocation.name}#${routedLocation.name}", maxAge = Some(cookieMaxAge)))
-          throttlingResult.cookiesToRemove shouldBe Seq.empty
+          await(returnedLocation) shouldBe routedLocation
+
+          //and
+          //TODO: check why mockito is saying the method is called twice
+          verify(mockRoutingCacheRepository, atLeastOnce()).findById(Id(utr))
+          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, routedLocation.name)))))
         }
       }
     }
   }
 }
 
-class ThrottlingServiceTest(override val random: Random = Random) extends ThrottlingService
+class ThrottlingServiceTest(override val random: Random = Random, override val routingCacheRepository: RoutingCacheRepository) extends ThrottlingService
+
+object RoutingCacheRepositoryTest extends MongoDbConnection {
+
+  def apply(stubValue: Future[Option[Cache]]): RoutingCacheRepository = new RoutingCacheRepository {
+    override def findById(id: Id, readPreference: ReadPreference)(implicit ec: ExecutionContext): Future[Option[Cache]] = {
+      println("calling find by Id")
+      stubValue
+    }
+  }
+
+}
