@@ -16,12 +16,22 @@
 
 package model
 
-import play.api.libs.json.{Format, Json}
+import org.joda.time.DateTime
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-case class RoutingInfo(utr: String, routedDestination: String, throttledDestination: String)
+case class RoutingInfo(routedDestination: String, throttledDestination: String, expirationTime: DateTime)
 
 object RoutingInfo {
 
-  implicit val routingInfoFormat: Format[RoutingInfo] = Json.format[RoutingInfo]
+  implicit val dateTimeRead = ReactiveMongoFormats.dateTimeRead
+  implicit val dateTimeWrite = ReactiveMongoFormats.dateTimeWrite
+  implicit val routingInfoWrites: Writes[RoutingInfo] = Json.writes[RoutingInfo]
+  implicit val routingInfoReads: Reads[RoutingInfo] = (
+    (JsPath \ "routingInfo" \ "routedDestination").read[String] and
+    (JsPath \ "routingInfo" \ "throttledDestination").read[String] and
+    (JsPath \ "routingInfo" \ "expirationTime").read[DateTime]
+    )(RoutingInfo.apply _)
 
 }

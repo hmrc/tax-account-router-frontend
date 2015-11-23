@@ -16,18 +16,18 @@
 
 package services
 
-import org.joda.time.{DateTime, Seconds}
+import org.joda.time.{DateTime, DateTimeZone}
 
-trait CookieMaxAge {
-  def getMaxAge: Int
+trait DocumentExpirationTime {
+  def getExpirationTime: DateTime
 }
 
-case class Duration(seconds: Int) extends CookieMaxAge {
-  override def getMaxAge: Int = seconds
+case class Duration(seconds: Int) extends DocumentExpirationTime {
+  override def getExpirationTime: DateTime = DateTime.now().withZone(DateTimeZone.UTC).plusSeconds(seconds)
 }
 
-case class Instant(expirationTime: DateTime) extends CookieMaxAge {
-  override def getMaxAge: Int = Seconds.secondsBetween(DateTime.now(), expirationTime).getSeconds
+case class Instant(expirationTime: DateTime) extends DocumentExpirationTime {
+  override def getExpirationTime: DateTime = expirationTime
 }
 
 case class RoutingCookieValues(routedDestination: String, throttledDestination: String) {

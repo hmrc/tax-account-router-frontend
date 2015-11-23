@@ -19,10 +19,10 @@ package services
 import helpers.SpecHelpers
 import model.Location._
 import model.{AuditContext, RoutingInfo, ThrottlingAuditContext}
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
@@ -43,9 +43,22 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with SpecHelpers {
+class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with SpecHelpers {
 
-  private val longLiveCookieExpirationTime: String = "2016-02-15T00:00"
+  private val longLiveDocumentExpirationTime: String = "2016-02-15T00:00"
+  private val shortLiveDocumentExpirationSeconds: Int = 1
+
+  val expirationDate: DateTime = DateTime.parse(longLiveDocumentExpirationTime)
+
+  val fixedDateTime = DateTime.now().withZone(DateTimeZone.UTC)
+
+  override protected def beforeAll(): Unit = {
+    DateTimeUtils.setCurrentMillisFixed(fixedDateTime.getMillis)
+  }
+
+  override protected def afterAll(): Unit = {
+    DateTimeUtils.setCurrentMillisSystem()
+  }
 
   def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false) = {
     Map[String, Any](
@@ -53,8 +66,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       s"throttling.locations.$locationName.percentageBeToThrottled" -> percentageBeToThrottled,
       s"throttling.locations.$locationName.fallback" -> fallbackLocation,
       "sticky-routing.enabled" -> stickyRoutingEnabled,
-      "sticky-routing.long-live-cookie-expiration-time" -> longLiveCookieExpirationTime,
-      "sticky-routing.short-live-cookie-duration" -> 1
+      "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime,
+      "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds
     )
   }
 
@@ -230,7 +243,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
             s"throttling.locations.${PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
             s"throttling.locations.${PersonalTaxAccount.name}-verify.fallback" -> WelcomeBTA.name,
-            "sticky-routing.short-live-cookie-duration" -> 1
+            "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds,
+            "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime
           )
     }
 
@@ -260,7 +274,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           //and
           val mockWriteResult = mock[WriteResult]
           when(mockWriteResult.hasErrors).thenReturn(false)
-          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, PersonalTaxAccount.name, cacheExpectedLocation))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          val expectedExpirationTime: DateTime = DateTime.now(DateTimeZone.UTC).plusSeconds(shortLiveDocumentExpirationSeconds)
+          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
           val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(PersonalTaxAccount, mock[AuditContext])
@@ -270,35 +285,76 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, PersonalTaxAccount.name, cacheExpectedLocation)))))
+          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))))
         }
       }
     }
   }
 
-  val expirationDate: DateTime = DateTime.parse(longLiveCookieExpirationTime)
+  it should {
+
+    // configuration to always throttle PTA to BTA
+    val configuration = evaluateUsingPlay {
+      Map[String, Any](
+            "throttling.enabled" -> true,
+            "sticky-routing.enabled" -> true,
+            s"throttling.locations.${PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
+            s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
+            "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds,
+            "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime
+          )
+    }
+
+    "throttle when the cache document is expired" in {
+      running(FakeApplication(additionalConfiguration = configuration)) {
+        //given
+        implicit val fakeRequest = FakeRequest().withSession(("token", "token"))
+        val utr = "utr"
+        implicit val authContext = getAuthContext(utr)
+        val id = Id(utr)
+
+        //and
+        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
+        when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, PersonalTaxAccount.name, DateTime.now(DateTimeZone.UTC).minusHours(1))))))))
+
+        //and
+        val mockWriteResult = mock[WriteResult]
+        when(mockWriteResult.hasErrors).thenReturn(false)
+        val expectedExpirationTime = fixedDateTime.plusSeconds(shortLiveDocumentExpirationSeconds)
+        when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+
+        //when
+        val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(PersonalTaxAccount, mock[AuditContext])
+
+        //then
+        await(returnedLocation).name shouldBe BusinessTaxAccount.name
+
+        //and
+        verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
+        verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))))
+      }
+    }
+  }
 
   val longLiveCookieInSeconds = 2 seconds
 
-  override protected def beforeEach(): Unit = DateTimeUtils.setCurrentMillisFixed(expirationDate.getMillis - longLiveCookieInSeconds.toMillis)
-
-  override protected def afterEach(): Unit = DateTimeUtils.setCurrentMillisSystem()
-
   it should {
+
+    val expectedShortExpirationTime: DateTime = fixedDateTime.plusSeconds(shortLiveDocumentExpirationSeconds)
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("routedLocation", "throttledLocation", "expectedRoutedLocation", "expectedThrottledLocation", "cookieMaxAge"),
-        (PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
-        (PersonalTaxAccount, BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, 1),
-        (BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, 1),
-        (WelcomePTA, WelcomePTA, PersonalTaxAccount, PersonalTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
-        (WelcomePTA, WelcomeBTA, PersonalTaxAccount, BusinessTaxAccount, 1),
-        (WelcomeBTA, WelcomeBTA, BusinessTaxAccount, BusinessTaxAccount, 1)
+        ("routedLocation", "throttledLocation", "expectedRoutedLocation", "expectedThrottledLocation", "expectedExpirationTime"),
+        (PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
+        (PersonalTaxAccount, BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
+        (BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
+        (WelcomePTA, WelcomePTA, PersonalTaxAccount, PersonalTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
+        (WelcomePTA, WelcomeBTA, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
+        (WelcomeBTA, WelcomeBTA, BusinessTaxAccount, BusinessTaxAccount, expectedShortExpirationTime)
       )
     }
 
-    forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedRoutedLocation: LocationType, expectedThrottledLocation: LocationType, cookieMaxAge: Int) =>
+    forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedRoutedLocation: LocationType, expectedThrottledLocation: LocationType, expectedExpirationTime: DateTime) =>
       s"return the right location after throttling when sticky routing is enabled and routingInfo is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
@@ -306,14 +362,17 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val utr = "utr"
           implicit val authContext = getAuthContext(utr)
 
+          val id = Id(utr)
+
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-          when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, throttledLocation.name)))))))
+          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))))))
 
           //and
           val mockWriteResult = mock[WriteResult]
           when(mockWriteResult.hasErrors).thenReturn(false)
-          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, expectedRoutedLocation.name, expectedThrottledLocation.name))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          val cache = Cache(id, Some(Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime))))
+          when(mockRoutingCacheRepository.insert(eqTo(cache))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
           val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
@@ -322,8 +381,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe throttledLocation
 
           //and
-          verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, expectedRoutedLocation.name, expectedThrottledLocation.name)))))
+          verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
+          verify(mockRoutingCacheRepository).insert(Cache(id, Some(Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))))
         }
       }
     }
@@ -331,19 +390,21 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
   it should {
 
+    val expectedShortExpirationTime: DateTime = fixedDateTime.plusSeconds(shortLiveDocumentExpirationSeconds)
+
     val scenarios = evaluateUsingPlay {
       Table(
-        ("routedLocation", "cacheRoutedLocation", "cacheThrottledLocation", "cookieMaxAge"),
-        (BusinessTaxAccount, PersonalTaxAccount, PersonalTaxAccount, 1),
-        (BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, 1),
-        (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, longLiveCookieInSeconds.toSeconds.toInt),
-        (BusinessTaxAccount, WelcomePTA, WelcomePTA, 1),
-        (PersonalTaxAccount, WelcomePTA, WelcomeBTA, longLiveCookieInSeconds.toSeconds.toInt),
-        (BusinessTaxAccount, WelcomeBTA, WelcomeBTA, 1)
+        ("routedLocation", "cacheRoutedLocation", "cacheThrottledLocation", "expectedExpirationTime"),
+        (BusinessTaxAccount, PersonalTaxAccount, PersonalTaxAccount, expectedShortExpirationTime),
+        (BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
+        (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
+        (BusinessTaxAccount, WelcomePTA, WelcomePTA, expectedShortExpirationTime),
+        (PersonalTaxAccount, WelcomePTA, WelcomeBTA, DateTime.parse(longLiveDocumentExpirationTime)),
+        (BusinessTaxAccount, WelcomeBTA, WelcomeBTA, expectedShortExpirationTime)
       )
     }
 
-    forAll(scenarios) { (routedLocation: LocationType, cacheRoutedLocation: LocationType, cacheThrottledLocation: LocationType, cookieMaxAge: Int) =>
+    forAll(scenarios) { (routedLocation: LocationType, cacheRoutedLocation: LocationType, cacheThrottledLocation: LocationType, expectedExpirationTime: DateTime) =>
       s"return the right location after throttling when sticky routing is enabled and cookie is present but routedLocation is different: routedLocation -> $cacheRoutedLocation, throttledLocation -> $cacheThrottledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
@@ -351,14 +412,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val utr = "utr"
           implicit val authContext = getAuthContext(utr)
 
+          val id = Id(utr)
+
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-          when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, cacheRoutedLocation.name, cacheThrottledLocation.name)))))))
+          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(cacheRoutedLocation.name, cacheThrottledLocation.name, expectedExpirationTime)))))))
 
           //and
           val mockWriteResult = mock[WriteResult]
           when(mockWriteResult.hasErrors).thenReturn(false)
-          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, routedLocation.name))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          when(mockRoutingCacheRepository.insert(eqTo(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
 
           //when
           val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
@@ -367,8 +430,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe routedLocation
 
           //and
-          verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedLocation.name, routedLocation.name)))))
+          verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
+          verify(mockRoutingCacheRepository).insert(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))))
         }
       }
     }
