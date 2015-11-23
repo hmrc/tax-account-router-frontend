@@ -30,10 +30,10 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import reactivemongo.api.ReadPreference
-import reactivemongo.api.commands.WriteResult
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.{Cache, Id}
 import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.mongo.DatabaseUpdate
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, SaAccount}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -272,10 +272,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(None))
 
           //and
-          val mockWriteResult = mock[WriteResult]
-          when(mockWriteResult.hasErrors).thenReturn(false)
+          val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
           val expectedExpirationTime: DateTime = DateTime.now(DateTimeZone.UTC).plusSeconds(shortLiveDocumentExpirationSeconds)
-          when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          when(mockRoutingCacheRepository.createOrUpdate(Id(utr), "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
           //when
           val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(PersonalTaxAccount, mock[AuditContext])
@@ -285,7 +284,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))))
+          verify(mockRoutingCacheRepository).createOrUpdate(Id(utr), "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))
         }
       }
     }
@@ -315,13 +314,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-        when(mockRoutingCacheRepository.findById(Id(utr))).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, PersonalTaxAccount.name, DateTime.now(DateTimeZone.UTC).minusHours(1))))))))
+        when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.obj("routingInfo" -> Json.toJson(RoutingInfo(PersonalTaxAccount.name, PersonalTaxAccount.name, DateTime.now(DateTimeZone.UTC).minusHours(1)))))))))
 
         //and
-        val mockWriteResult = mock[WriteResult]
-        when(mockWriteResult.hasErrors).thenReturn(false)
+        val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
         val expectedExpirationTime = fixedDateTime.plusSeconds(shortLiveDocumentExpirationSeconds)
-        when(mockRoutingCacheRepository.insert(eqTo(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+        when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
+
 
         //when
         val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(PersonalTaxAccount, mock[AuditContext])
@@ -330,8 +329,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         await(returnedLocation).name shouldBe BusinessTaxAccount.name
 
         //and
-        verify(mockRoutingCacheRepository).findById(eqTo(Id(utr)), any[ReadPreference])(any[ExecutionContext])
-        verify(mockRoutingCacheRepository).insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))))
+        verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
+        verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))
+
       }
     }
   }
@@ -366,13 +366,12 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))))))
+          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.obj("routingInfo" -> Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime))))))))
 
           //and
-          val mockWriteResult = mock[WriteResult]
-          when(mockWriteResult.hasErrors).thenReturn(false)
-          val cache = Cache(id, Some(Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime))))
-          when(mockRoutingCacheRepository.insert(eqTo(cache))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
+          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
+
 
           //when
           val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
@@ -382,7 +381,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(id, Some(Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))))
+          verify(mockRoutingCacheRepository).createOrUpdate(Id(utr), "routingInfo", Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))
         }
       }
     }
@@ -416,12 +415,11 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.toJson(RoutingInfo(cacheRoutedLocation.name, cacheThrottledLocation.name, expectedExpirationTime)))))))
+          when(mockRoutingCacheRepository.findById(id)).thenReturn(Future(Some(Cache(id, Some(Json.obj("routingInfo" -> Json.toJson(RoutingInfo(cacheRoutedLocation.name, cacheThrottledLocation.name, expectedExpirationTime))))))))
 
           //and
-          val mockWriteResult = mock[WriteResult]
-          when(mockWriteResult.hasErrors).thenReturn(false)
-          when(mockRoutingCacheRepository.insert(eqTo(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime))))))(any[ExecutionContext])).thenReturn(Future(mockWriteResult))
+          val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
+          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
           //when
           val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(routedLocation, mock[AuditContext])
@@ -431,7 +429,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).insert(Cache(id, Some(Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))))
+          verify(mockRoutingCacheRepository).createOrUpdate(Id(utr), "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))
+
         }
       }
     }
