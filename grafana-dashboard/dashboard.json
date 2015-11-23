@@ -166,6 +166,110 @@
             }
           ],
           "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": 1,
+          "editable": true,
+          "error": false,
+          "format": "percent",
+          "id": 14,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "span": 6,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
+              "textEditor": true,
+              "hide": false
+            }
+          ],
+          "thresholds": "",
+          "title": "BTA  users",
+          "type": "singlestat",
+          "valueFontSize": "100%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": 1,
+          "editable": true,
+          "error": false,
+          "format": "percent",
+          "id": 13,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "span": 6,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
+              "textEditor": true,
+              "hide": false
+            }
+          ],
+          "thresholds": "",
+          "title": "PTA users",
+          "type": "singlestat",
+          "valueFontSize": "100%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
         }
       ],
       "title": "New row"
@@ -408,8 +512,8 @@
     }
   ],
   "time": {
-    "from": "now/d",
-    "to": "now/d"
+    "from": "now-30m",
+    "to": "now"
   },
   "timepicker": {
     "collapse": false,
@@ -449,8 +553,8 @@
     "enable": false,
     "list": []
   },
-  "refresh": false,
+  "refresh": "1m",
   "schemaVersion": 7,
-  "version": 1,
+  "version": 2,
   "links": []
 }
