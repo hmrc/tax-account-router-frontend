@@ -16,7 +16,7 @@
 
 package services
 
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -61,18 +61,18 @@ class RoutingCookieValuesSpec extends UnitSpec with BeforeAndAfterEach {
       val maxAgeReturned = Duration(seconds)
 
       //then
-      maxAgeReturned.getExpirationTime shouldBe seconds
+      maxAgeReturned.getExpirationTime shouldBe DateTime.now(DateTimeZone.UTC).plusSeconds(seconds)
     }
 
     "Instant" in {
       //given
-      val now = DateTime.now().plusSeconds(1)
+      val now = DateTime.now()
 
       //when
       val maxAgeReturned = Instant(now)
 
       //then
-      maxAgeReturned.getExpirationTime shouldBe 1
+      maxAgeReturned.getExpirationTime shouldBe DateTime.now()
     }
 
   }
