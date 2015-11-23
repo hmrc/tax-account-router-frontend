@@ -23,15 +23,15 @@ import play.api.Play.current
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc.{AnyContent, Request}
 import play.api.{Configuration, Logger, Play}
-import reactivemongo.api.commands.WriteResult
 import repositories.RoutingCacheRepository
-import uk.gov.hmrc.cache.model.{Cache, Id}
+import uk.gov.hmrc.cache.model.Id
+import uk.gov.hmrc.mongo.BSONBuilderHelpers
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-trait ThrottlingService {
+trait ThrottlingService extends BSONBuilderHelpers {
 
   def random: Random
 
@@ -41,7 +41,7 @@ trait ThrottlingService {
   val longLiveCookieExpirationTime = Play.configuration.getString("sticky-routing.long-live-cookie-expiration-time")
   val shortLiveCookieDuration = Play.configuration.getInt("sticky-routing.short-live-cookie-duration")
 
-  val cookieMaxAge = Map(
+  val documentExpirationTime = Map(
     (PersonalTaxAccount, PersonalTaxAccount) -> longLiveCookieExpirationTime.map(t => Instant(DateTime.parse(t))),
     (BusinessTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t)),
     (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t))
@@ -92,7 +92,7 @@ trait ThrottlingService {
               val jsResult = Json.fromJson[RoutingInfo](data)
               jsResult match {
                 case JsSuccess(routingInfo, _) =>
-                  val followingPreviouslyRoutedDestination = Location.locations.get(routingInfo.routedDestination).contains(location)
+                  val followingPreviouslyRoutedDestination = Location.locations.get(routingInfo.routedDestination).contains(location) && routingInfo.expirationTime.isAfterNow
                   val throttledLocation = followingPreviouslyRoutedDestination match {
                     case true =>
                       val finalLocation = Location.locations.get(routingInfo.throttledDestination).get
@@ -156,12 +156,10 @@ trait ThrottlingService {
         val throttlingResult: Option[LocationType] = for {
           routedDestination <- cookieValues.get(location)
           throttledDestination <- cookieValues.get(throttledLocation)
-        //          maxAge <- cookieMaxAge.get((routedDestination, throttledDestination)).flatMap(identity)
+          documentExpirationTime <- documentExpirationTime.get((routedDestination, throttledDestination)).flatMap(identity)
         } yield {
-            val insertResult: Future[WriteResult] = routingCacheRepository.insert(Cache(Id(utr), Some(Json.toJson(RoutingInfo(utr, routedDestination.name, throttledDestination.name)))))
-            insertResult.filter(_.hasErrors).foreach { r =>
-              Logger.debug("There was an error inserting document insert document " + r.inError)
-            }
+            val expirationTime: DateTime = documentExpirationTime.getExpirationTime
+            routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(routedDestination.name, throttledDestination.name, expirationTime)))
             throttledLocation
           }
         throttlingResult.getOrElse(throttledLocation)

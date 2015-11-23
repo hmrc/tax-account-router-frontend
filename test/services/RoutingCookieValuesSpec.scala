@@ -61,7 +61,7 @@ class RoutingCookieValuesSpec extends UnitSpec with BeforeAndAfterEach {
       val maxAgeReturned = Duration(seconds)
 
       //then
-      maxAgeReturned.getMaxAge shouldBe seconds
+      maxAgeReturned.getExpirationTime shouldBe seconds
     }
 
     "Instant" in {
@@ -72,7 +72,7 @@ class RoutingCookieValuesSpec extends UnitSpec with BeforeAndAfterEach {
       val maxAgeReturned = Instant(now)
 
       //then
-      maxAgeReturned.getMaxAge shouldBe 1
+      maxAgeReturned.getExpirationTime shouldBe 1
     }
 
   }
