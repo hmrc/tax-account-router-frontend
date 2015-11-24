@@ -50,8 +50,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
   }
 
-  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
-  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false"))
+  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true", LocationGroup.Type("TRUE")))
+  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false", LocationGroup.Type("FALSE")))
 
   private val cookiesToAdd: Seq[Cookie] = Seq(Cookie(name = "cookieToAdd", value = "cookieToAdd"))
   private val cookiesToDelete: Seq[DiscardingCookie] = Seq(DiscardingCookie(name = "cookieToRemove"))

@@ -17,20 +17,32 @@
 package model
 
 import controllers.{ExternalUrls, routes}
+import model.LocationGroup.LocationCategoryType
 
 object Location extends Enumeration {
 
   type LocationType = Type
 
-  case class Type(url: String, name: String) extends Val
+  case class Type(url: String, name: String, group: LocationCategoryType) extends Val
 
   // TODO: this enum should be designed so that each location name is unique
 
-  val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account")
-  val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account")
-  val WelcomeBTA = Type(routes.WelcomeController.welcomeBTA().url, "welcome-bta")
-  val WelcomePTA = Type(routes.WelcomeController.welcomePTA().url, "welcome-pta")
+  val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account", LocationGroup.PTA)
+  val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account", LocationGroup.BTA)
+  val WelcomeBTA = Type(routes.WelcomeController.welcomeBTA().url, "welcome-bta", LocationGroup.BTA)
+  val WelcomePTA = Type(routes.WelcomeController.welcomePTA().url, "welcome-pta", LocationGroup.PTA)
 
   val locations: Map[String, LocationType] = Location.values.toList.map(_.asInstanceOf[LocationType]).map(value => value.name -> value).toMap
+
+}
+
+object LocationGroup extends Enumeration {
+
+  type LocationCategoryType = Type
+
+  case class Type(name: String) extends Val
+
+  val PTA = Type("PTA")
+  val BTA = Type("BTA")
 
 }

@@ -17,7 +17,7 @@
 package services
 
 import model.Location._
-import model.{Location, RoutingInfo, TAuditContext, ThrottlingAuditContext}
+import model._
 import org.joda.time.DateTime
 import play.api.Play.current
 import play.api.libs.json.{JsError, JsSuccess, Json}
@@ -59,16 +59,25 @@ trait ThrottlingService extends BSONBuilderHelpers {
   private def findConfigurationFor(location: LocationType)(implicit request: Request[AnyContent]): Configuration = {
 
     val suffix = request.session.data.contains("token") match {
-      case true if location == Location.PersonalTaxAccount => "-gg"
-      case false if location == Location.PersonalTaxAccount => "-verify"
+      case true if location.group == LocationGroup.PTA => "-gg"
+      case false if location.group == LocationGroup.PTA => "-verify"
       case _ => ""
     }
 
-    Play.configuration.getConfig(s"throttling.locations.${location.name}$suffix").getOrElse(Configuration.empty)
+    Play.configuration.getConfig(s"throttling.locations.${location.name}$suffix")
+      .getOrElse(
+        Play.configuration.getConfig(s"throttling.locations.${location.group}$suffix")
+          .getOrElse(Configuration.empty)
+      )
   }
 
   private def findFallbackFor(configurationForLocation: Configuration, location: LocationType): String = {
-    configurationForLocation.getString("fallback").getOrElse(location.name)
+    val fallbackName: String = configurationForLocation.getString("fallback").getOrElse(location.name)
+    if (location == Location.WelcomePTA && fallbackName == Location.BusinessTaxAccount.name) {
+      Location.WelcomeBTA.name
+    } else {
+      fallbackName
+    }
   }
 
   private def findPercentageToThrottleFor(configurationForLocation: Configuration): Option[Int] = {
@@ -125,7 +134,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
   def doThrottling(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent]): LocationType = {
     throttlingEnabled match {
       case false => location
-      case true if location != Location.WelcomePTA => {
+      case true => {
         val configurationForLocation: Configuration = findConfigurationFor(location)
         val throttlingChanceOption = findPercentageToThrottleFor(configurationForLocation)
         val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
@@ -137,16 +146,6 @@ trait ThrottlingService extends BSONBuilderHelpers {
         auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = throttlingChanceOption, location != finalLocation, location, throttlingEnabled, followingPreviouslyRoutedDestination = false))
         finalLocation
       }
-      case true if location == Location.WelcomePTA =>
-        val throttlingChanceOption = Play.configuration.getString(s"throttling.locations.${Location.PersonalTaxAccount.name}-gg.percentageBeToThrottled").map(_.toInt)
-        val throttlingChance: Int = throttlingChanceOption.getOrElse(0)
-        val randomNumber = random.nextInt(100) + 1
-        val finalLocation: LocationType = randomNumber match {
-          case x if x <= throttlingChance => Location.WelcomeBTA
-          case _ => location
-        }
-        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = throttlingChanceOption, location != finalLocation, location, throttlingEnabled, followingPreviouslyRoutedDestination = false))
-        finalLocation
     }
   }
 
