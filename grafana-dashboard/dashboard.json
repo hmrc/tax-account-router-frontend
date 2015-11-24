@@ -200,10 +200,10 @@
           },
           "targets": [
             {
+              "hide": false,
               "refId": "A",
               "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
-              "textEditor": true,
-              "hide": false
+              "textEditor": true
             }
           ],
           "thresholds": "",
@@ -252,10 +252,10 @@
           },
           "targets": [
             {
+              "hide": false,
               "refId": "A",
               "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
-              "textEditor": true,
-              "hide": false
+              "textEditor": true
             }
           ],
           "thresholds": "",
@@ -288,6 +288,84 @@
           "datasource": null,
           "editable": true,
           "error": false,
+          "fill": 6,
+          "grid": {
+            "leftLogBase": 1,
+            "leftMax": null,
+            "leftMin": 0,
+            "rightLogBase": 1,
+            "rightMax": null,
+            "rightMin": 0,
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 11,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": true,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "resolution": 100,
+          "scale": 1,
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": true,
+          "steppedLine": false,
+          "targets": [
+            {
+              "hide": false,
+              "refId": "A",
+              "target": "alias(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count, 0))),'BTA users')",
+              "textEditor": true
+            },
+            {
+              "hide": false,
+              "refId": "B",
+              "target": "alias(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count, 0))),'PTA users')",
+              "textEditor": true
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Routed users",
+          "tooltip": {
+            "query_as_alias": true,
+            "shared": true,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "x-axis": true,
+          "y-axis": true,
+          "y_formats": [
+            "percent",
+            "short"
+          ],
+          "zerofill": true
+        },
+        {
+          "aliasColors": {},
+          "annotate": {
+            "enable": false
+          },
+          "bars": false,
+          "datasource": null,
+          "editable": true,
+          "error": false,
           "fill": 0,
           "grid": {
             "leftLogBase": 1,
@@ -301,7 +379,7 @@
             "threshold2": null,
             "threshold2Color": "rgba(234, 112, 112, 0.22)"
           },
-          "id": 11,
+          "id": 15,
           "legend": {
             "alignAsTable": false,
             "avg": false,
@@ -555,6 +633,6 @@
   },
   "refresh": "1m",
   "schemaVersion": 7,
-  "version": 2,
+  "version": 3,
   "links": []
 }
