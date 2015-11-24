@@ -27,8 +27,8 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,9 +43,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       Future(b)
   }
 
-  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true"))
+  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true", LocationGroup.Type("TRUE")))
   val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
-  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false"))
+  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false", LocationGroup.Type("FALSE")))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
 
 

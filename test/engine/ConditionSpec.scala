@@ -29,8 +29,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -197,7 +197,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
   "the 'when' operator" should {
 
     val location = evaluateUsingPlay {
-      Location.Type("url", "name")
+      Location.Type("url", "name", LocationGroup.Type("CATEGORY"))
     }
 
     val mockAuthContext = mock[AuthContext]
