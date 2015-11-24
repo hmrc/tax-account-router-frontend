@@ -29,24 +29,3 @@ case class Duration(seconds: Int) extends DocumentExpirationTime {
 case class Instant(expirationTime: DateTime) extends DocumentExpirationTime {
   override def getExpirationTime: DateTime = expirationTime
 }
-
-case class RoutingCookieValues(routedDestination: String, throttledDestination: String) {
-
-  override def toString = s"$routedDestination#$throttledDestination"
-
-}
-
-object RoutingCookieValues {
-
-  def apply(cookieValue: String): RoutingCookieValues = {
-    val tokens = cookieValue.split("#")
-    RoutingCookieValues(tokens(0), tokens(1))
-  }
-
-}
-
-object CookieNames {
-
-  val mdtpRouting = "mdtprouting"
-
-}
