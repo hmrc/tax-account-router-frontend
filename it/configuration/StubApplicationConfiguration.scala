@@ -21,6 +21,8 @@ trait StubApplicationConfiguration {
   val stubPort = 11111
   val stubHost = "localhost"
 
+  val databaseName = "tar-test"
+
   val config = Map[String, Any](
     "auditing.consumer.baseUri.host" -> stubHost,
     "auditing.consumer.baseUri.port" -> stubPort,
@@ -37,6 +39,7 @@ trait StubApplicationConfiguration {
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
     "personal-tax-account.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> "",
-    "throttling.enabled" -> false
+    "throttling.enabled" -> false,
+    "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName"
   )
 }

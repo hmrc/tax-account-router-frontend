@@ -182,12 +182,12 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
     val destination = evaluateUsingPlay(Location.PersonalTaxAccount)
 
     val scenarios = Table(
-      ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled"),
-      ("without percentage configured", None, "-", false, destination, false),
-      ("with percentage configured", Option(100), "100", true, destination, true)
+      ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled", "followingPreviouslyRoutedDestination"),
+      ("without percentage configured", None, "-", false, destination, false, false),
+      ("with percentage configured", Option(100), "100", true, destination, true, true)
     )
 
-    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Int], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean) =>
+    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Int], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean, followingPreviouslyRoutedDestination: Boolean) =>
 
       s"add to the extended event throttling-related fields - scenario: $scenario" in {
         //given
@@ -199,7 +199,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         //and
-        val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage, throttled, destination, enabled)
+        val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage, throttled, destination, enabled, followingPreviouslyRoutedDestination = followingPreviouslyRoutedDestination)
         auditContext.setThrottlingDetails(throttlingAuditContext)
 
         //when
@@ -212,6 +212,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         (auditEvent.detail \ "throttling" \ "throttled").as[String] shouldBe throttled.toString
         (auditEvent.detail \ "throttling" \ "destination-url-before-throttling").as[String] shouldBe initialDestination.url
         (auditEvent.detail \ "throttling" \ "destination-name-before-throttling").as[String] shouldBe initialDestination.name
+        (auditEvent.detail \ "throttling" \ "following-previously-routed-destination").as[String] shouldBe followingPreviouslyRoutedDestination.toString
       }
     }
   }
