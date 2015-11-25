@@ -133,7 +133,10 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
   def doThrottling(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent]): LocationType = {
     throttlingEnabled match {
-      case false => location
+      case false => {
+        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, throttled = false, location, throttlingEnabled, followingPreviouslyRoutedDestination = false))
+        location
+      }
       case true => {
         val configurationForLocation: Configuration = findConfigurationFor(location)
         val throttlingChanceOption = findPercentageToThrottleFor(configurationForLocation)
