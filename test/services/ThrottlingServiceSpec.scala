@@ -19,7 +19,6 @@ package services
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import controllers.Mocks
 import cryptography.Encryption
 import helpers.SpecHelpers
 import model.Location._
@@ -110,7 +109,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     }
 
     "return location passed as argument when no configuration found when sticky routing is disabled" in {
-      running(FakeApplication(additionalConfiguration = createConfiguration())) {
+      val configuration = createConfiguration()
+      running(FakeApplication(additionalConfiguration = configuration)) {
         //given
         val locationName = "location-name"
         val initialLocation = mock[LocationType]
@@ -123,14 +123,25 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
         val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
+        val mockHourlyLimitService = Mocks.mockHourlyLimitService()
+        val configurationForLocation = Configuration.empty
+        when(
+          mockHourlyLimitService.applyHourlyLimit(
+            eqTo(initialLocation), eqTo(initialLocation), eqTo(encryptedUserId), eqTo(configurationForLocation)
+          )(any[ExecutionContext])
+        ).thenReturn(Future(initialLocation))
+
         //when
-        val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(initialLocation, mockAuditContext)
+        val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(initialLocation, mockAuditContext)
 
         //then
         await(returnedLocation) shouldBe initialLocation
 
         //and
         verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(None, false, initialLocation, true, false))
+
+        //and
+        verify(mockHourlyLimitService).applyHourlyLimit(eqTo(initialLocation), eqTo(initialLocation), eqTo(encryptedUserId), eqTo(configurationForLocation))(any[ExecutionContext])
 
         //and
         verifyNoMoreInteractions(mockRoutingCacheRepository)
@@ -483,11 +494,14 @@ object Mocks extends MockitoSugar {
     when(mockEncryption.getSha256(stringToEncrypt)).thenReturn(encryptedString)
     mockEncryption
   }
+
+  def mockHourlyLimitService(): HourlyLimitService = mock[HourlyLimitService]
 }
 
 class ThrottlingServiceTest(override val random: Random = Random,
                             override val routingCacheRepository: RoutingCacheRepository,
-                            override val encryption: Encryption) extends ThrottlingService
+                            override val encryption: Encryption,
+                            override val hourlyLimitService: HourlyLimitService = Mocks.mockHourlyLimitService()) extends ThrottlingService
 
 class GlobalSettingsTest extends GlobalSettings {
 
