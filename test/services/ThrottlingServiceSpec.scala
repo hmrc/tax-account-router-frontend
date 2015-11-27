@@ -34,7 +34,7 @@ import play.api.Mode.Mode
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import play.api.{Configuration, GlobalSettings}
+import play.api.{Configuration, GlobalSettings, Play}
 import reactivemongo.api.ReadPreference
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.{Cache, Id}
@@ -245,11 +245,23 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val auditContextMock = mock[AuditContext]
 
           //and
+          val mockHourlyLimitService = Mocks.mockHourlyLimitService()
+
+          import play.api.Play.current
+          val configurationForLocation = Play.configuration.getConfig(s"throttling.locations.$locationName").getOrElse(Configuration.empty)
+
+          when(
+            mockHourlyLimitService.applyHourlyLimit(
+              eqTo(initialLocation), eqTo(initialLocation), eqTo(encryptedUserId), eqTo(configurationForLocation)
+            )(any[ExecutionContext])
+          ).thenReturn(Future(initialLocation))
+
+          //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
           val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
           //and
-          val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption)
+          val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService)
 
           //when
           val returnedLocation: Future[LocationType] = throttlingServiceTest.throttle(initialLocation, auditContextMock)
@@ -469,8 +481,20 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
+          //and
+          val mockHourlyLimitService = Mocks.mockHourlyLimitService()
+
+          import play.api.Play.current
+          val configurationForLocation = Play.configuration.getConfig(s"throttling.locations.$routedLocation").getOrElse(Configuration.empty)
+
+          when(
+            mockHourlyLimitService.applyHourlyLimit(
+              eqTo(routedLocation), eqTo(routedLocation), eqTo(encryptedUserId), eqTo(configurationForLocation)
+            )(any[ExecutionContext])
+          ).thenReturn(Future(routedLocation))
+
           //when
-          val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(routedLocation, mockAuditContext)
+          val returnedLocation: Future[LocationType] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext)
 
           //then
           await(returnedLocation) shouldBe routedLocation
