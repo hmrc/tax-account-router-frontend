@@ -37,20 +37,24 @@ object RoutingCacheRepository extends MongoDbConnection {
 
 }
 
-case class HourlyLimitId(location: LocationType, hourlyLimit: Int) {
-  def value: String = s"${location.name}-$hourlyLimit"
+case class HourlyLimitId(location: LocationType, hour: Int) {
+  def value: String = s"${location.name}-$hour"
+}
+
+object CacheFormat {
+  val format = ReactiveMongoFormats.mongoEntity(Cache.cacheFormat)
 }
 
 class HourlyLimitsCacheRepository(implicit mongo: () => DB) extends CacheMongoRepository(collName = "hourlyLimits", expireAfterSeconds = 7200) {
 
-  implicit val myCacheFormat = ReactiveMongoFormats.mongoEntity(Cache.cacheFormat)
+  implicit val myCacheFormat = CacheFormat.format
 
   def createOrUpdate(id: HourlyLimitId, hourlyLimit: Int, userId: String)(implicit ec: ExecutionContext): Future[Option[DatabaseUpdate[Cache]]] = {
 
     val selector = BSONDocument(
       "_id" -> BSONString(id.value),
       "data.users" -> BSONDocument("$not" -> BSONDocument("$in" -> BSONArray(BSONString(userId)))),
-      "$where" -> BSONString(s"this.users.length < $hourlyLimit")
+      "$where" -> BSONString(s"this.data.users.length < $hourlyLimit")
     )
 
     val modifier = withCurrentTime { time =>
