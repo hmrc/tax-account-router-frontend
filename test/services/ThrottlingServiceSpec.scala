@@ -73,8 +73,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       s"throttling.locations.$locationName.percentageBeToThrottled" -> percentageBeToThrottled,
       s"throttling.locations.$locationName.fallback" -> fallbackLocation,
       "sticky-routing.enabled" -> stickyRoutingEnabled,
-      "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime,
-      "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds
+      "sticky-routing.long-live-cache-expiration-time" -> longLiveDocumentExpirationTime,
+      "sticky-routing.short-live-cache-duration" -> shortLiveDocumentExpirationSeconds
     )
   }
 
@@ -292,8 +292,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
             s"throttling.locations.${PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
             s"throttling.locations.${PersonalTaxAccount.name}-verify.fallback" -> WelcomeBTA.name,
-            "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds,
-            "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime
+            "sticky-routing.short-live-cache-duration" -> shortLiveDocumentExpirationSeconds,
+            "sticky-routing.long-live-cache-expiration-time" -> longLiveDocumentExpirationTime
           )
     }
 
@@ -354,8 +354,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             "sticky-routing.enabled" -> true,
             s"throttling.locations.${PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
             s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
-            "sticky-routing.short-live-cookie-duration" -> shortLiveDocumentExpirationSeconds,
-            "sticky-routing.long-live-cookie-expiration-time" -> longLiveDocumentExpirationTime
+            "sticky-routing.short-live-cache-duration" -> shortLiveDocumentExpirationSeconds,
+            "sticky-routing.long-live-cache-expiration-time" -> longLiveDocumentExpirationTime
           )
     }
 
@@ -463,7 +463,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     }
 
     forAll(scenarios) { (routedLocation: LocationType, cacheRoutedLocation: LocationType, cacheThrottledLocation: LocationType, expectedExpirationTime: DateTime) =>
-      s"return the right location after throttling when sticky routing is enabled and cookie is present but routedLocation is different: routedLocation -> $cacheRoutedLocation, throttledLocation -> $cacheThrottledLocation" in {
+      s"return the right location after throttling when sticky routing is enabled and cache is present but routedLocation is different: routedLocation -> $cacheRoutedLocation, throttledLocation -> $cacheThrottledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
           //given
           implicit lazy val fakeRequest = FakeRequest()

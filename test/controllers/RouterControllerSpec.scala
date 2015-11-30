@@ -53,9 +53,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true", LocationGroup.Type("TRUE")))
   private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false", LocationGroup.Type("FALSE")))
 
-  private val cookiesToAdd: Seq[Cookie] = Seq(Cookie(name = "cookieToAdd", value = "cookieToAdd"))
-  private val cookiesToDelete: Seq[DiscardingCookie] = Seq(DiscardingCookie(name = "cookieToRemove"))
-
   val ruleEngineStubReturningSomeLocation = new RuleEngine {
     override val rules: List[Rule] = List(When(TestCondition(true)).thenGoTo(trueLocation))
   }

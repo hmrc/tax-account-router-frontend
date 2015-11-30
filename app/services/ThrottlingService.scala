@@ -41,16 +41,16 @@ trait ThrottlingService extends BSONBuilderHelpers {
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
   val stickyRoutingEnabled = Play.configuration.getBoolean("sticky-routing.enabled").getOrElse(false)
 
-  val longLiveCookieExpirationTime = Play.configuration.getString("sticky-routing.long-live-cookie-expiration-time")
-  val shortLiveCookieDuration = Play.configuration.getInt("sticky-routing.short-live-cookie-duration")
+  val longLiveCacheExpirationTime = Play.configuration.getString("sticky-routing.long-live-cache-expiration-time")
+  val shortLiveCacheDuration = Play.configuration.getInt("sticky-routing.short-live-cache-duration")
 
   val documentExpirationTime = Map(
-    (PersonalTaxAccount, PersonalTaxAccount) -> longLiveCookieExpirationTime.map(t => Instant(DateTime.parse(t))),
-    (BusinessTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t)),
-    (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCookieDuration.map(t => Duration(t))
+    (PersonalTaxAccount, PersonalTaxAccount) -> longLiveCacheExpirationTime.map(t => Instant(DateTime.parse(t))),
+    (BusinessTaxAccount, BusinessTaxAccount) -> shortLiveCacheDuration.map(t => Duration(t)),
+    (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCacheDuration.map(t => Duration(t))
   )
 
-  val cookieValues = Map(
+  val cacheDestinations = Map(
     PersonalTaxAccount -> PersonalTaxAccount,
     BusinessTaxAccount -> BusinessTaxAccount,
     WelcomeBTA -> BusinessTaxAccount,
@@ -169,8 +169,8 @@ trait ThrottlingService extends BSONBuilderHelpers {
       case true =>
         futureThrottledLocation.map { throttledLocation =>
           val throttlingResult: Option[LocationType] = for {
-            routedDestination <- cookieValues.get(location)
-            throttledDestination <- cookieValues.get(throttledLocation)
+            routedDestination <- cacheDestinations.get(location)
+            throttledDestination <- cacheDestinations.get(throttledLocation)
             documentExpirationTime <- documentExpirationTime.get((routedDestination, throttledDestination)).flatMap(identity)
           } yield {
               val expirationTime: DateTime = documentExpirationTime.getExpirationTime
