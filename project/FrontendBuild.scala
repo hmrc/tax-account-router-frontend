@@ -40,7 +40,7 @@ private object AppDependencies {
       "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
       "org.scalatestplus" %% "play" % "1.2.0" % scope,
       "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
-      "uk.gov.hmrc" %% "reactivemongo-test" % "1.1.0" % scope
+      "uk.gov.hmrc" %% "reactivemongo-test" % "1.2.0" % scope
     )
   }
 
