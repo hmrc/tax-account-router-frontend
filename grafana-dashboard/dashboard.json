@@ -99,7 +99,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.{to-business-tax-account,to-welcome-bta}.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -150,7 +150,7 @@
           "targets": [
             {
               "refId": "A",
-              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.{to-personal-tax-account,to-welcome-pta}.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
+              "target": "asPercent(integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.*.count, 0)))), integral(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.*.*.count, 0)))))",
               "textEditor": true
             }
           ],
@@ -633,6 +633,6 @@
   },
   "refresh": "1m",
   "schemaVersion": 7,
-  "version": 3,
+  "version": 4,
   "links": []
 }

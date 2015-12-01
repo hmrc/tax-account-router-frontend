@@ -178,42 +178,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
       }
     }
-
-    "throttle to BTA welcome page when going to PTA welcome when sticky routing is disabled" in {
-
-      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = s"${PersonalTaxAccount.group}-gg", percentageBeToThrottled = 100, fallbackLocation = BusinessTaxAccount.name), withGlobal = Some(new GlobalSettingsTest()))) {
-        //given
-        val randomMock = mock[Random]
-        when(randomMock.nextInt(100)) thenReturn 0
-        implicit val mockRequest = FakeRequest().withSession(("token", "token"))
-        implicit val authContext = authContextStub(userId)
-
-        //and
-        val auditContextMock = mock[AuditContext]
-
-        //and
-        val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-        val mockEncryption = Mocks.encryption(userId, encryptedUserId)
-
-        //and
-        val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption)
-
-        //when
-        val returnedLocation: Future[LocationType] = throttlingServiceTest.throttle(WelcomePTA, auditContextMock)
-
-        //then
-        await(returnedLocation) shouldBe WelcomeBTA
-
-        //and
-        verify(randomMock).nextInt(100)
-
-        //and
-        verify(auditContextMock).setThrottlingDetails(ThrottlingAuditContext(Some(100), true, WelcomePTA, true, false))
-
-        //and
-        verifyNoMoreInteractions(mockRoutingCacheRepository)
-      }
-    }
   }
 
   it should {
@@ -291,7 +255,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             s"throttling.locations.${PersonalTaxAccount.name}-gg.percentageBeToThrottled" -> 100,
             s"throttling.locations.${PersonalTaxAccount.name}-gg.fallback" -> BusinessTaxAccount.name,
             s"throttling.locations.${PersonalTaxAccount.name}-verify.percentageBeToThrottled" -> 100,
-            s"throttling.locations.${PersonalTaxAccount.name}-verify.fallback" -> WelcomeBTA.name,
+            s"throttling.locations.${PersonalTaxAccount.name}-verify.fallback" -> BusinessTaxAccount.name,
             "sticky-routing.short-live-cache-duration" -> shortLiveDocumentExpirationSeconds,
             "sticky-routing.long-live-cache-expiration-time" -> longLiveDocumentExpirationTime
           )
@@ -299,13 +263,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("scenario", "tokenPresent", "expectedLocation", "cacheExpectedLocation"),
-        ("Should throttle to BTA when token present", true, BusinessTaxAccount.name, BusinessTaxAccount.name),
-        ("Should throttle to Welcome when token not present", false, WelcomeBTA.name, BusinessTaxAccount.name)
+        ("scenario", "tokenPresent", "expectedLocation"),
+        ("Should throttle to BTA when token present", true, BusinessTaxAccount.name),
+        ("Should throttle to BTA when token not present", false, BusinessTaxAccount.name)
       )
     }
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String, cacheExpectedLocation: String) =>
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedLocation: String) =>
       s"return the right location after throttling PTA or not when sticky routing is enabled but routingInfo is not present - scenario: $scenario" in {
         running(FakeApplication(additionalConfiguration = configuration)) {
           //given
@@ -324,7 +288,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           //and
           val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
           val expectedExpirationTime: DateTime = DateTime.now(DateTimeZone.UTC).plusSeconds(shortLiveDocumentExpirationSeconds)
-          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
+          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, expectedLocation, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
           val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
@@ -339,7 +303,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, cacheExpectedLocation, expectedExpirationTime)))
+          verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, expectedLocation, expectedExpirationTime)))
         }
       }
     }
@@ -400,17 +364,14 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("routedLocation", "throttledLocation", "expectedRoutedLocation", "expectedThrottledLocation", "expectedExpirationTime"),
-        (PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, PersonalTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
-        (PersonalTaxAccount, BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
-        (BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
-        (WelcomePTA, WelcomePTA, PersonalTaxAccount, PersonalTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
-        (WelcomePTA, WelcomeBTA, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
-        (WelcomeBTA, WelcomeBTA, BusinessTaxAccount, BusinessTaxAccount, expectedShortExpirationTime)
+        ("routedLocation", "throttledLocation", "expectedExpirationTime"),
+        (PersonalTaxAccount, PersonalTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
+        (PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
+        (BusinessTaxAccount, BusinessTaxAccount, expectedShortExpirationTime)
       )
     }
 
-    forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedRoutedLocation: LocationType, expectedThrottledLocation: LocationType, expectedExpirationTime: DateTime) =>
+    forAll(scenarios) { (routedLocation: LocationType, throttledLocation: LocationType, expectedExpirationTime: DateTime) =>
       s"return the right location after throttling when sticky routing is enabled and routingInfo is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
           //given
@@ -425,7 +386,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
-          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
+          when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
           val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
@@ -440,7 +401,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
-          verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(expectedRoutedLocation.name, expectedThrottledLocation.name, expectedExpirationTime)))
+          verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))
         }
       }
     }
@@ -455,10 +416,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         ("routedLocation", "cacheRoutedLocation", "cacheThrottledLocation", "expectedExpirationTime"),
         (BusinessTaxAccount, PersonalTaxAccount, PersonalTaxAccount, expectedShortExpirationTime),
         (BusinessTaxAccount, PersonalTaxAccount, BusinessTaxAccount, expectedShortExpirationTime),
-        (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, DateTime.parse(longLiveDocumentExpirationTime)),
-        (BusinessTaxAccount, WelcomePTA, WelcomePTA, expectedShortExpirationTime),
-        (PersonalTaxAccount, WelcomePTA, WelcomeBTA, DateTime.parse(longLiveDocumentExpirationTime)),
-        (BusinessTaxAccount, WelcomeBTA, WelcomeBTA, expectedShortExpirationTime)
+        (PersonalTaxAccount, BusinessTaxAccount, BusinessTaxAccount, DateTime.parse(longLiveDocumentExpirationTime))
       )
     }
 

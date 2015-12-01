@@ -16,17 +16,12 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    stubSave4LaterWelcomePageSeen() // all the following scenarios are assuming the welcome page to be already seen
-  }
-
   feature("Router feature") {
 
     scenario("a user logged in through Verify should be redirected to PTA") {
 
       Given("a user logged in through Verify")
-      createStubs(TaxAccountUser(firstTimeLoggedIn = true, tokenPresent = false))
+      createStubs(TaxAccountUser(tokenPresent = false))
 
       createStubs(PtaHomeStubPage)
 

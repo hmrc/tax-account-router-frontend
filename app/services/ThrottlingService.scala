@@ -50,13 +50,6 @@ trait ThrottlingService extends BSONBuilderHelpers {
     (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCacheDuration.map(t => Duration(t))
   )
 
-  val cacheDestinations = Map(
-    PersonalTaxAccount -> PersonalTaxAccount,
-    BusinessTaxAccount -> BusinessTaxAccount,
-    WelcomeBTA -> BusinessTaxAccount,
-    WelcomePTA -> PersonalTaxAccount
-  )
-
   def routingCacheRepository: RoutingCacheRepository
 
   def hourlyLimitService: HourlyLimitService
@@ -81,12 +74,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
   }
 
   private def findFallbackFor(configurationForLocation: Configuration, location: LocationType): String = {
-    val fallbackName: String = configurationForLocation.getString("fallback").getOrElse(location.name)
-    if (location == Location.WelcomePTA && fallbackName == Location.BusinessTaxAccount.name) {
-      Location.WelcomeBTA.name
-    } else {
-      fallbackName
-    }
+    configurationForLocation.getString("fallback").getOrElse(location.name)
   }
 
   private def findPercentageToThrottleFor(configurationForLocation: Configuration): Option[Int] = {
@@ -168,15 +156,11 @@ trait ThrottlingService extends BSONBuilderHelpers {
     stickyRoutingEnabled match {
       case true =>
         futureThrottledLocation.map { throttledLocation =>
-          val throttlingResult: Option[LocationType] = for {
-            routedDestination <- cacheDestinations.get(location)
-            throttledDestination <- cacheDestinations.get(throttledLocation)
-            documentExpirationTime <- documentExpirationTime.get((routedDestination, throttledDestination)).flatMap(identity)
-          } yield {
-              val expirationTime: DateTime = documentExpirationTime.getExpirationTime
-              routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(routedDestination.name, throttledDestination.name, expirationTime)))
-              throttledLocation
-            }
+          val throttlingResult: Option[LocationType] = documentExpirationTime.get((location, throttledLocation)).flatMap(identity).map { documentExpirationTime =>
+            val expirationTime: DateTime = documentExpirationTime.getExpirationTime
+            routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(location.name, throttledLocation.name, expirationTime)))
+            throttledLocation
+          }
           throttlingResult.getOrElse(throttledLocation)
         }
       case false =>

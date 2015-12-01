@@ -16,7 +16,7 @@
 
 package model
 
-import controllers.{ExternalUrls, routes}
+import controllers.ExternalUrls
 import model.LocationGroup.LocationCategoryType
 
 object Location extends Enumeration {
@@ -29,8 +29,6 @@ object Location extends Enumeration {
 
   val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account", LocationGroup.PTA)
   val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account", LocationGroup.BTA)
-  val WelcomeBTA = Type(routes.WelcomeController.welcomeBTA().url, "welcome-bta", LocationGroup.BTA)
-  val WelcomePTA = Type(routes.WelcomeController.welcomePTA().url, "welcome-pta", LocationGroup.PTA)
 
   val locations: Map[String, LocationType] = Location.values.toList.map(_.asInstanceOf[LocationType]).map(value => value.name -> value).toMap
 

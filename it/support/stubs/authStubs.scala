@@ -49,7 +49,7 @@ trait SessionCookieBaker {
   }
 }
 
-class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
+class LoggedInSessionUser(tokenPresent: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
 
   override def create() = {
     val token =
@@ -98,7 +98,6 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, acc
               |{
               |    "uri": "/auth/oid/1234567890",
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
-              |    ${if(firstTimeLoggedIn) "" else "\"previouslyLoggedInAt\": \"2014-05-09T14:48:24.841Z\","}
                |    "accounts":${Json.toJson(accounts)},
                |    "levelOfAssurance": "2",
                |    "confidenceLevel": 500
@@ -110,5 +109,5 @@ class LoggedInSessionUser(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, acc
 }
 
 object LoggedInSessionUser {
-  def apply(firstTimeLoggedIn: Boolean, tokenPresent: Boolean, accounts: Accounts) = new LoggedInSessionUser(firstTimeLoggedIn, tokenPresent, accounts)
+  def apply(tokenPresent: Boolean, accounts: Accounts) = new LoggedInSessionUser(tokenPresent, accounts)
 }

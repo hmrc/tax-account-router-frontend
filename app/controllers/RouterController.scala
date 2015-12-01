@@ -97,23 +97,17 @@ object TarRules extends RuleEngine {
 
   import Condition._
 
-  private val shouldShowWelcomePage: Condition = LoggedInForTheFirstTime and HasNeverSeenWelcomeBefore
-
   override val rules: List[Rule] = List(
     when(LoggedInViaVerify) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",
-    when(shouldShowWelcomePage and (LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment)) thenGoTo WelcomeBTA withName "bta-welcome-page-for-user-with-business-enrolments",
+
     when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
 
-    when(shouldShowWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns))) thenGoTo WelcomeBTA withName "bta-welcome-page-for-user-with-no-previous-return",
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
 
-    when(shouldShowWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed))) thenGoTo WelcomeBTA withName "bta-welcome-page-for-user-with-partnership-or-self-employment",
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
 
-    when(shouldShowWelcomePage and (LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed))) thenGoTo WelcomePTA withName "pta-welcome-page-for-user-with-no-partnership-and-no-self-employment",
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
 
-    when(shouldShowWelcomePage) thenGoTo WelcomeBTA withName "bta-welcome-page-passed-through",
     when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount withName "bta-home-page-passed-through"
   )
 }

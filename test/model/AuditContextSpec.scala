@@ -57,8 +57,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       AuditContext.defaultRoutingReasons shouldBe Map(
         "is-a-verify-user" -> "-",
         "is-a-government-gateway-user" -> "-",
-        "logged-in-for-the-first-time" -> "-",
-        "has-never-seen-welcome-page-before" -> "-",
         "has-print-preferences-already-set" -> "-",
         "has-business-enrolments" -> "-",
         "has-previous-returns" -> "-",
@@ -76,8 +74,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
       auditContext.setRoutingReason(IS_A_VERIFY_USER, result = true)
       auditContext.setRoutingReason(IS_A_GOVERNMENT_GATEWAY_USER, result = true)
-      auditContext.setRoutingReason(LOGGED_IN_FOR_THE_FIRST_TIME, result = true)
-      auditContext.setRoutingReason(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE, result = true)
       auditContext.setRoutingReason(HAS_PRINT_PREFERENCES_ALREADY_SET, result = true)
       auditContext.setRoutingReason(HAS_BUSINESS_ENROLMENTS, result = true)
       auditContext.setRoutingReason(HAS_PREVIOUS_RETURNS, result = true)
@@ -97,8 +93,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       val reasonsMap = Map(
         "is-a-verify-user" -> "true",
         "is-a-government-gateway-user" -> "true",
-        "logged-in-for-the-first-time" -> "true",
-        "has-never-seen-welcome-page-before" -> "true",
         "has-print-preferences-already-set" -> "true",
         "has-business-enrolments" -> "true",
         "has-previous-returns" -> "true",

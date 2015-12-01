@@ -40,8 +40,6 @@ object RoutingReason {
 
   val IS_A_VERIFY_USER = Reason("is-a-verify-user")
   val IS_A_GOVERNMENT_GATEWAY_USER = Reason("is-a-government-gateway-user")
-  val LOGGED_IN_FOR_THE_FIRST_TIME = Reason("logged-in-for-the-first-time")
-  val HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE = Reason("has-never-seen-welcome-page-before")
   val HAS_PRINT_PREFERENCES_ALREADY_SET = Reason("has-print-preferences-already-set")
   val HAS_BUSINESS_ENROLMENTS = Reason("has-business-enrolments")
   val HAS_PREVIOUS_RETURNS = Reason("has-previous-returns")
@@ -57,8 +55,6 @@ object AuditContext {
   def defaultRoutingReasons = mutableMap[String, String](
     IS_A_VERIFY_USER.key -> "-" ,
     IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
-    LOGGED_IN_FOR_THE_FIRST_TIME.key -> "-" ,
-    HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "-" ,
     HAS_PRINT_PREFERENCES_ALREADY_SET.key -> "-" ,
     HAS_BUSINESS_ENROLMENTS.key -> "-" ,
     HAS_PREVIOUS_RETURNS.key -> "-" ,
@@ -74,8 +70,6 @@ trait TAuditContext {
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
 
   private val transactionNames: Map[LocationType, String] = Map(
-    Location.WelcomeBTA -> "sent to business welcome page",
-    Location.WelcomePTA -> "sent to personal welcome page",
     Location.PersonalTaxAccount -> "sent to personal tax account",
     Location.BusinessTaxAccount -> "sent to business tax account"
   )

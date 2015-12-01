@@ -23,89 +23,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    stubSave4LaterWelcomePageSeen() // all the following scenarios are assuming the welcome page to be already seen
-  }
-
   feature("Router audit feature") {
-
-    scenario("a BTA user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
-
-      Given("a user logged in for the first time")
-      createStubs(TaxAccountUser(firstTimeLoggedIn = true))
-
-      And("user has never seen the Welcome page before")
-      stubSave4LaterToBeEmpty()
-
-      And("stub add welcomePageSeen entry in save4Later")
-      stubSaveForLaterPUT()
-
-      And("the user has business related enrolments")
-      stubProfileWithBusinessEnrolments()
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultRoutingReasons +=(
-        HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true",
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "true"
-        )
-      val expectedTransactionName = "sent to business welcome page"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-welcome-page-for-user-with-business-enrolments")
-    }
-
-    scenario("a PTA user logged in for the first time and that never visited Welcome page should be redirected and an audit event should be raised") {
-
-      Given("a user logged in for the first time")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(firstTimeLoggedIn = true, accounts = accounts))
-
-      And("user has never seen the Welcome page before")
-      stubSave4LaterToBeEmpty()
-
-      And("stub add welcomePageSeen entry in save4Later")
-      stubSaveForLaterPUT()
-
-      And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
-
-      And("the user has business related enrolments")
-      stubSaReturn(saUtr = saUtr, previousReturns = true)
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = AuditContext.defaultRoutingReasons +=(
-        HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key -> "true",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "true",
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        IS_IN_A_PARTNERSHIP.key -> "false",
-        IS_SELF_EMPLOYED.key -> "false",
-        HAS_PREVIOUS_RETURNS.key -> "true"
-        )
-      val expectedTransactionName = "sent to personal welcome page"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-welcome-page-for-user-with-no-partnership-and-no-self-employment")
-    }
 
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
 
@@ -147,7 +65,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the audit event raised should be the expected one")
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
@@ -179,7 +96,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the audit event raised should be the expected one")
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
@@ -214,7 +130,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "true",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
@@ -249,7 +164,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         IS_SELF_EMPLOYED.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
@@ -285,7 +199,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
-        LOGGED_IN_FOR_THE_FIRST_TIME.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         IS_SELF_EMPLOYED.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
@@ -306,9 +219,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     (event \ "detail" \ "reasons" \ "has-print-preferences-already-set").as[String] shouldBe expectedReasons(HAS_PRINT_PREFERENCES_ALREADY_SET.key)
     (event \ "detail" \ "reasons" \ "has-self-assessment-enrolments").as[String] shouldBe expectedReasons(HAS_SA_ENROLMENTS.key)
     (event \ "detail" \ "reasons" \ "is-in-a-partnership").as[String] shouldBe expectedReasons(IS_IN_A_PARTNERSHIP.key)
-    (event \ "detail" \ "reasons" \ "logged-in-for-the-first-time").as[String] shouldBe expectedReasons(LOGGED_IN_FOR_THE_FIRST_TIME.key)
     (event \ "detail" \ "reasons" \ "is-a-government-gateway-user").as[String] shouldBe expectedReasons(IS_A_GOVERNMENT_GATEWAY_USER.key)
-    (event \ "detail" \ "reasons" \ "has-never-seen-welcome-page-before").as[String] shouldBe expectedReasons(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE.key)
     (event \ "detail" \ "reasons" \ "is-self-employed").as[String] shouldBe expectedReasons(IS_SELF_EMPLOYED.key)
     (event \ "detail" \ "reasons" \ "has-previous-returns").as[String] shouldBe expectedReasons(HAS_PREVIOUS_RETURNS.key)
     (event \ "detail" \ "reasons" \ "has-business-enrolments").as[String] shouldBe expectedReasons(HAS_BUSINESS_ENROLMENTS.key)

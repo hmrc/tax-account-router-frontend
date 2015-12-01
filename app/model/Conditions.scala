@@ -21,7 +21,6 @@ import model.RoutingReason._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import services.WelcomePageService
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -66,26 +65,6 @@ object IsSelfEmployed extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.lastSaReturn.map(_.selfEmployment)
-}
-
-trait HasNeverSeenWelcomeBefore extends Condition {
-  val welcomePageService: WelcomePageService
-
-  override val auditType: Option[RoutingReason] = Some(HAS_NEVER_SEEN_WELCOME_PAGE_BEFORE)
-
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    welcomePageService.hasNeverSeenWelcomePageBefore(authContext)
-}
-
-object HasNeverSeenWelcomeBefore extends HasNeverSeenWelcomeBefore {
-  override val welcomePageService: WelcomePageService = WelcomePageService
-}
-
-object LoggedInForTheFirstTime extends Condition {
-  override val auditType: Option[RoutingReason] = Some(LOGGED_IN_FOR_THE_FIRST_TIME)
-
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-    Future(authContext.user.previouslyLoggedInAt.isEmpty)
 }
 
 object LoggedInViaVerify extends Condition {
