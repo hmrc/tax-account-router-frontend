@@ -234,7 +234,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe expectedLocation
 
           //and
-          val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled, followingPreviouslyRoutedDestination = false)
+          val throttlingAuditContext = ThrottlingAuditContext(throttlingPercentage = Some(percentageBeToThrottled), throttled = throttled, initialDestination = initialLocation, throttlingEnabled = throttlingServiceTest.throttlingEnabled, stickyRoutingApplied = false)
           verify(auditContextMock).setThrottlingDetails(throttlingAuditContext)
 
           //and
@@ -397,7 +397,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           await(returnedLocation) shouldBe throttledLocation
 
           //and
-          verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(None, routedLocation != throttledLocation, routedLocation, throttlingEnabled = true, followingPreviouslyRoutedDestination = true))
+          verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(None, routedLocation != throttledLocation, routedLocation, throttlingEnabled = true, stickyRoutingApplied = true))
 
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])

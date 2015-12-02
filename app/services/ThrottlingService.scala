@@ -99,11 +99,11 @@ trait ThrottlingService extends BSONBuilderHelpers {
               val jsResult = Json.fromJson[RoutingInfo](data)
               jsResult match {
                 case JsSuccess(routingInfo, _) =>
-                  val followingPreviouslyRoutedDestination = Location.locations.get(routingInfo.routedDestination).contains(location) && routingInfo.expirationTime.isAfterNow
-                  val throttledLocation = followingPreviouslyRoutedDestination match {
+                  val stickyRoutingApplied = Location.locations.get(routingInfo.routedDestination).contains(location) && routingInfo.expirationTime.isAfterNow
+                  val throttledLocation = stickyRoutingApplied match {
                     case true =>
                       val finalLocation = Location.locations.get(routingInfo.throttledDestination).get
-                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, location != finalLocation, location, throttlingEnabled, followingPreviouslyRoutedDestination))
+                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, location != finalLocation, location, throttlingEnabled, stickyRoutingApplied))
                       Future(finalLocation)
                     case false =>
                       doThrottling(location, auditContext, userId)
@@ -132,7 +132,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
   def doThrottling(location: LocationType, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[LocationType] = {
     throttlingEnabled match {
       case false =>
-        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, throttled = false, location, throttlingEnabled, followingPreviouslyRoutedDestination = false))
+        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, throttled = false, location, throttlingEnabled, stickyRoutingApplied = false))
         Future(location)
       case true =>
         val configurationForLocation = findConfigurationFor(location)
@@ -147,7 +147,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
         }
 
         finalLocation.andThen {
-          case Success(result) => auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = throttlingChanceOption, location != result, location, throttlingEnabled, followingPreviouslyRoutedDestination = false))
+          case Success(result) => auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = throttlingChanceOption, location != result, location, throttlingEnabled, stickyRoutingApplied = false))
         }
     }
   }

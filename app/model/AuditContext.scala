@@ -83,7 +83,7 @@ trait TAuditContext {
   def setThrottlingDetails(throttlingAuditContext: ThrottlingAuditContext): Unit =
     throttlingDetails +=(
       "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
-      "following-previously-routed-destination" -> throttlingAuditContext.followingPreviouslyRoutedDestination.toString,
+      "sticky-routing-applied" -> throttlingAuditContext.stickyRoutingApplied.toString,
       "percentage" -> throttlingAuditContext.throttlingPercentage.getOrElse("-").toString,
       "throttled" -> throttlingAuditContext.throttled.toString,
       "destination-url-before-throttling" -> throttlingAuditContext.initialDestination.url,
@@ -119,4 +119,4 @@ trait TAuditContext {
 
 case class AuditContext() extends TAuditContext
 
-case class ThrottlingAuditContext(throttlingPercentage: Option[Int], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean, followingPreviouslyRoutedDestination: Boolean)
+case class ThrottlingAuditContext(throttlingPercentage: Option[Int], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean, stickyRoutingApplied: Boolean)
