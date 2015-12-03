@@ -330,13 +330,13 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count, 0))),'BTA users')",
+              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count))),'BTA users')",
               "textEditor": true
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(nonNegativeDerivative(sumSeries(transformNull(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count, 0))),'PTA users')",
+              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count))),'PTA users')",
               "textEditor": true
             }
           ],
@@ -564,7 +564,7 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.throttled-from-*.select metric), 6, 'sum'))), 1), 'throttled')",
+              "target": "alias(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.throttled-from-*.count), 6, 'sum'))), 1), 'throttled')",
               "textEditor": true
             }
           ],
