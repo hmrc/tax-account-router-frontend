@@ -18,7 +18,8 @@ package engine
 
 import controllers.TarRules
 import helpers.SpecHelpers
-import model.Location._
+import model.Location
+import model.Locations._
 import model.RoutingReason.RoutingReason
 import model._
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -42,9 +43,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       Future(b)
   }
 
-  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true", LocationGroup.Type("TRUE")))
+  private val trueLocation: Location = evaluateUsingPlay(Location("/true", "true", LocationGroup.Type("TRUE")))
   val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
-  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false", LocationGroup.Type("FALSE")))
+  private val falseLocation: Location = evaluateUsingPlay(Location("/false", "false", LocationGroup.Type("FALSE")))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
 
 
@@ -57,12 +58,12 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val auditContext: AuditContext = AuditContext()
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
+      val maybeLocation: Future[Option[Location]] = new RuleEngine {
         override val rules: List[Rule] = List(falseRule, trueRule)
       }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
 
       //then
-      val location: Option[LocationType] = await(maybeLocation)
+      val location: Option[Location] = await(maybeLocation)
       location shouldBe Some(trueLocation)
 
       auditContext.ruleApplied shouldBe trueRule.name
@@ -72,7 +73,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       //given
       val firstRule = mock[Rule]
-      val expectedLocation: LocationType = BusinessTaxAccount
+      val expectedLocation: Location = BusinessTaxAccount
       when(firstRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
       when(firstRule.name) thenReturn "first-rule"
       val secondRule = mock[Rule]
@@ -85,12 +86,12 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val auditContext = AuditContext()
 
       //when
-      val maybeLocation: Future[Option[LocationType]] = new RuleEngine {
+      val maybeLocation: Future[Option[Location]] = new RuleEngine {
         override val rules: List[Rule] = List(firstRule, secondRule)
       }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
 
       //then
-      val location: Option[LocationType] = await(maybeLocation)
+      val location: Option[Location] = await(maybeLocation)
       location shouldBe Some(expectedLocation)
 
       //then
@@ -113,7 +114,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val mockRuleContext = mock[RuleContext]
       val mockAuditContext = mock[TAuditContext]
 
-      val location: Option[LocationType] = await(lastRule.apply(mockAuthContext, mockRuleContext, mockAuditContext))
+      val location: Option[Location] = await(lastRule.apply(mockAuthContext, mockRuleContext, mockAuditContext))
 
       location shouldBe Some(BusinessTaxAccount)
     }

@@ -18,7 +18,8 @@ package controllers
 
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
-import model.Location._
+import model.Location
+import model.Locations._
 import model.RoutingReason._
 import model._
 import org.mockito.ArgumentCaptor
@@ -50,8 +51,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
   }
 
-  private val trueLocation: LocationType = evaluateUsingPlay(Location.Type("/true", "true", LocationGroup.Type("TRUE")))
-  private val falseLocation: LocationType = evaluateUsingPlay(Location.Type("/false", "false", LocationGroup.Type("FALSE")))
+  private val trueLocation: Location = evaluateUsingPlay(Location("true", "/true", LocationGroup.Type("TRUE")))
+  private val falseLocation: Location = evaluateUsingPlay(Location("false", "/false", LocationGroup.Type("FALSE")))
 
   val ruleEngineStubReturningSomeLocation = new RuleEngine {
     override val rules: List[Rule] = List(When(TestCondition(true)).thenGoTo(trueLocation))
@@ -90,7 +91,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     "return default location when location provided by rules is not defined" in {
 
       //given
-      val expectedLocation: LocationType = BusinessTaxAccount
+      val expectedLocation: Location = BusinessTaxAccount
 
       //and
       implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
@@ -115,7 +116,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     "send monitoring events" in {
 
       //given
-      val expectedLocation: LocationType = BusinessTaxAccount
+      val expectedLocation: Location = BusinessTaxAccount
 
       //and
       implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
@@ -152,12 +153,12 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       when(mockAuditEvent.detail).thenReturn(Json.parse("{}"))
 
       val auditContextToAuditEventResult = Future(mockAuditEvent)
-      when(mockAuditContext.toAuditEvent(any[LocationType])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
+      when(mockAuditContext.toAuditEvent(any[Location])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
       when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
       when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
 
       val mockThrottlingService = mock[ThrottlingService]
-      val expectedThrottledLocation: LocationType = PersonalTaxAccount
+      val expectedThrottledLocation: Location = PersonalTaxAccount
       when(mockThrottlingService.throttle(eqTo(trueLocation), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedThrottledLocation)
 
       val mockAuditConnector = mock[AuditConnector]
@@ -194,7 +195,7 @@ object Mocks extends MockitoSugar {
   def mockMetricsMonitoringService = mock[MetricsMonitoringService]
 }
 
-class TestRouterController(override val defaultLocation: LocationType = BusinessTaxAccount,
+class TestRouterController(override val defaultLocation: Location = BusinessTaxAccount,
                            override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
                            override val ruleEngine: RuleEngine,
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,

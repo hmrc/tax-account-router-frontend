@@ -17,7 +17,6 @@
 package model
 
 import model.AuditContext._
-import model.Location.LocationType
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContent, Request}
@@ -69,9 +68,9 @@ trait TAuditContext {
   private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
 
-  private val transactionNames: Map[LocationType, String] = Map(
-    Location.PersonalTaxAccount -> "sent to personal tax account",
-    Location.BusinessTaxAccount -> "sent to business tax account"
+  private val transactionNames: Map[Location, String] = Map(
+    Locations.PersonalTaxAccount -> "sent to personal tax account",
+    Locations.BusinessTaxAccount -> "sent to business tax account"
   )
 
   var ruleApplied: String = ""
@@ -93,7 +92,7 @@ trait TAuditContext {
   def setRoutingReason(auditEventType: RoutingReason, result: Boolean)(implicit ec: ExecutionContext): Unit =
     routingReasons += (auditEventType.key -> result.toString)
 
-  def toAuditEvent(location: LocationType)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
+  def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): Future[ExtendedDataEvent] = {
     Future {
       val accounts: Accounts = authContext.principal.accounts
       val accountMap = accounts.toMap
@@ -119,4 +118,4 @@ trait TAuditContext {
 
 case class AuditContext() extends TAuditContext
 
-case class ThrottlingAuditContext(throttlingPercentage: Option[Int], throttled: Boolean, initialDestination: LocationType, throttlingEnabled: Boolean, stickyRoutingApplied: Boolean)
+case class ThrottlingAuditContext(throttlingPercentage: Option[Int], throttled: Boolean, initialDestination: Location, throttlingEnabled: Boolean, stickyRoutingApplied: Boolean)

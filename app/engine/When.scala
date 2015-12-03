@@ -16,7 +16,7 @@
 
 package engine
 
-import model.Location.LocationType
+import model.Location
 import model.{RuleContext, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
@@ -27,8 +27,8 @@ import scala.concurrent.Future
 
 case class When(condition: Condition) {
 
-  def thenGoTo(location: LocationType): Rule = new Rule {
-    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] =
+  def thenGoTo(location: Location): Rule = new Rule {
+    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] =
       condition.evaluate(authContext, ruleContext, auditContext) map {
         case true => Some(location)
         case false => None
