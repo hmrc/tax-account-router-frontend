@@ -17,7 +17,6 @@
 package model
 
 import helpers.SpecHelpers
-import model.Location.LocationType
 import model.RoutingReason._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.mock.MockitoSugar
@@ -84,7 +83,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.ruleApplied = "rule-name"
 
       val path = "/some/path"
-      val destination = Location.Type("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
+      val destination = Location("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
       val authId: String = "authId"
       implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
@@ -146,7 +145,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         val auditContext: TAuditContext = AuditContext()
 
         val path = "/some/path"
-        val destination = Location.Type("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
+        val destination = Location("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
         val authId: String = "authId"
 
         val accounts: Accounts = Accounts(
@@ -173,7 +172,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
   it should {
 
-    val destination = evaluateUsingPlay(Location.PersonalTaxAccount)
+    val destination = evaluateUsingPlay(Locations.PersonalTaxAccount)
 
     val scenarios = Table(
       ("scenario", "throttlingPercentage", "throttled", "throttlingPercentageString", "initialDestination", "enabled", "stickyRoutingApplied"),
@@ -181,7 +180,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       ("with percentage configured", Option(100), "100", true, destination, true, true)
     )
 
-    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Int], throttlingPercentageString: String, throttled: Boolean, initialDestination: LocationType, enabled: Boolean, stickyRoutingApplied: Boolean) =>
+    forAll(scenarios) { (scenario: String, throttlingPercentage: Option[Int], throttlingPercentageString: String, throttled: Boolean, initialDestination: Location, enabled: Boolean, stickyRoutingApplied: Boolean) =>
 
       s"add to the extended event throttling-related fields - scenario: $scenario" in {
         //given

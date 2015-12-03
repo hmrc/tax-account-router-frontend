@@ -20,7 +20,6 @@ import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.{Condition, Rule, RuleEngine}
-import model.Location._
 import model._
 import play.api.Logger
 import play.api.mvc._
@@ -36,7 +35,7 @@ import scala.concurrent.Future
 object RouterController extends RouterController {
   override protected def authConnector: AuthConnector = FrontendAuthConnector
 
-  override val defaultLocation: LocationType = BusinessTaxAccount
+  override val defaultLocation: Location = Locations.BusinessTaxAccount
 
   override val metricsMonitoringService: MetricsMonitoringService = MetricsMonitoringService
 
@@ -53,7 +52,7 @@ trait RouterController extends FrontendController with Actions {
 
   val metricsMonitoringService: MetricsMonitoringService
 
-  def defaultLocation: LocationType
+  def defaultLocation: Location
 
   def ruleEngine: RuleEngine
 
@@ -71,11 +70,11 @@ trait RouterController extends FrontendController with Actions {
 
     val auditContext: TAuditContext = createAuditContext()
 
-    val nextLocation: Future[Option[LocationType]] = ruleEngine.getLocation(authContext, ruleContext, auditContext)
+    val nextLocation: Future[Option[Location]] = ruleEngine.getLocation(authContext, ruleContext, auditContext)
 
     nextLocation.flatMap(locationCandidate => {
-      val location: LocationType = locationCandidate.getOrElse(defaultLocation)
-      val eventualLocationType: Future[LocationType] = throttlingService.throttle(location, auditContext)
+      val location: Location = locationCandidate.getOrElse(defaultLocation)
+      val eventualLocationType: Future[Location] = throttlingService.throttle(location, auditContext)
       eventualLocationType.map { throttledLocation =>
         Logger.debug(s"routing to: ${throttledLocation.name}")
         sendAuditEvent(auditContext, throttledLocation)
@@ -85,7 +84,7 @@ trait RouterController extends FrontendController with Actions {
     })
   }
 
-  def sendAuditEvent(auditContext: TAuditContext, throttledLocation: LocationType)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
+  def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Unit = {
     auditContext.toAuditEvent(throttledLocation).foreach { auditEvent =>
       auditConnector.sendEvent(auditEvent)
       Logger.debug(s"Routing decision summary: ${auditEvent.detail \ "reasons"}")
@@ -96,6 +95,7 @@ trait RouterController extends FrontendController with Actions {
 object TarRules extends RuleEngine {
 
   import Condition._
+  import Locations._
 
   override val rules: List[Rule] = List(
     when(LoggedInViaVerify) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",

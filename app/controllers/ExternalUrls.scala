@@ -23,11 +23,12 @@ object ExternalUrls extends RunMode {
 
   import play.api.Play.current
 
-  lazy val businessTaxAccountHost = Play.configuration.getString("business-tax-account.host").getOrElse("")
-  lazy val businessTaxAccountUrl = s"$businessTaxAccountHost/business-account"
+  def location(name: String, defaultPath: String): String = {
+    val host = Play.configuration.getString(s"$name.host").getOrElse("")
+    val path = Play.configuration.getString(s"$name.path").getOrElse(defaultPath)
 
-  lazy val personalTaxAccountHost = Play.configuration.getString("personal-tax-account.host").getOrElse("")
-  lazy val personalTaxAccountUrl = s"$personalTaxAccountHost/personal-account"
+    host + path
+  }
 
   lazy val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
   lazy val taxAccountRouterHost = Play.configuration.getString("tax-account-router.host").getOrElse("")

@@ -17,7 +17,7 @@
 package engine
 
 import helpers.SpecHelpers
-import model.Location.LocationType
+import model.Location
 import model.RoutingReason._
 import model.{RoutingReason, _}
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -197,7 +197,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
   "the 'when' operator" should {
 
     val location = evaluateUsingPlay {
-      Location.Type("url", "name", LocationGroup.Type("CATEGORY"))
+      Location("url", "name", LocationGroup.Type("CATEGORY"))
     }
 
     val mockAuthContext = mock[AuthContext]
@@ -210,7 +210,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
       ("condition is false", false, None)
     )
 
-    forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedLocation: Option[Location.LocationType]) =>
+    forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedLocation: Option[Location]) =>
 
       s"return a rule given a condition - scenario: $scenario" in {
         val condition = new Condition {
@@ -221,7 +221,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
         val rule = Condition.when(condition).thenGoTo(location)
 
-        val ruleResult: Option[LocationType] = await(rule.apply(mockAuthContext, mockRuleContext, auditContext))
+        val ruleResult: Option[Location] = await(rule.apply(mockAuthContext, mockRuleContext, auditContext))
 
         ruleResult shouldBe expectedLocation
       }

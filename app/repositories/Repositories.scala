@@ -16,7 +16,7 @@
 
 package repositories
 
-import model.Location._
+import model.Location
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.modules.reactivemongo.MongoDbConnection
 import reactivemongo.api.DB
@@ -37,7 +37,7 @@ object RoutingCacheRepository extends MongoDbConnection {
 
 }
 
-case class HourlyLimitId(location: LocationType, hour: Int) {
+case class HourlyLimitId(location: Location, hour: Int) {
   def value: String = s"${location.name}-$hour"
 }
 

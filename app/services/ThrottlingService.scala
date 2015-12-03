@@ -17,7 +17,8 @@
 package services
 
 import cryptography.Encryption
-import model.Location._
+import model.Location
+import model.Locations._
 import model._
 import org.joda.time.DateTime
 import play.api.Play.current
@@ -54,7 +55,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
   def hourlyLimitService: HourlyLimitService
 
-  private def findConfigurationFor(location: LocationType)(implicit request: Request[AnyContent]): Configuration = {
+  private def findConfigurationFor(location: Location)(implicit request: Request[AnyContent]): Configuration = {
 
     val suffix: String = getLocationSuffix(location, request)
 
@@ -65,7 +66,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
       )
   }
 
-  def getLocationSuffix(location: LocationType, request: Request[AnyContent]): String = {
+  def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
     request.session.data.contains("token") match {
       case true if location.group == LocationGroup.PTA => "-gg"
       case false if location.group == LocationGroup.PTA => "-verify"
@@ -73,7 +74,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
     }
   }
 
-  private def findFallbackFor(configurationForLocation: Configuration, location: LocationType): String = {
+  private def findFallbackFor(configurationForLocation: Configuration, location: Location): String = {
     configurationForLocation.getString("fallback").getOrElse(location.name)
   }
 
@@ -81,11 +82,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
     configurationForLocation.getString("percentageBeToThrottled").map(_.toInt)
   }
 
-  def findLocationByName(fallbackLocationName: String): Option[LocationType] = {
-    Location.locations.get(fallbackLocationName)
-  }
-
-  def throttle(initialLocation: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[LocationType] = {
+  def throttle(initialLocation: Location, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[Location] = {
 
     val userId = encryption.getSha256(authContext.user.userId)
 
@@ -99,10 +96,10 @@ trait ThrottlingService extends BSONBuilderHelpers {
               val jsResult = Json.fromJson[RoutingInfo](data)
               jsResult match {
                 case JsSuccess(routingInfo, _) =>
-                  val stickyRoutingApplied = Location.locations.get(routingInfo.routedDestination).contains(initialLocation) && routingInfo.expirationTime.isAfterNow
+                  val stickyRoutingApplied = Locations.find(routingInfo.routedDestination).contains(initialLocation) && routingInfo.expirationTime.isAfterNow
                   val throttledLocation = stickyRoutingApplied match {
                     case true =>
-                      val finalLocation = Location.locations.get(routingInfo.throttledDestination).get
+                      val finalLocation = Locations.find(routingInfo.throttledDestination).get
                       auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, initialLocation != finalLocation, initialLocation, throttlingEnabled, stickyRoutingApplied))
                       Future(finalLocation)
                     case false =>
@@ -133,7 +130,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
     }
   }
 
-  def doThrottling(location: LocationType, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[LocationType] = {
+  def doThrottling(location: Location, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {
     throttlingEnabled match {
       case false =>
         auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, throttled = false, location, throttlingEnabled, stickyRoutingApplied = false))
@@ -144,9 +141,9 @@ trait ThrottlingService extends BSONBuilderHelpers {
         val throttlingChance = throttlingChanceOption.getOrElse(0)
         val randomNumber = random.nextInt(100) + 1
         val finalLocation = randomNumber match {
-          case x if x <= throttlingChance => Future(findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location))
+          case x if x <= throttlingChance => Future(Locations.find(findFallbackFor(configurationForLocation, location)).getOrElse(location))
           case _ =>
-            val fallbackLocation = findLocationByName(findFallbackFor(configurationForLocation, location)).getOrElse(location)
+            val fallbackLocation = Locations.find(findFallbackFor(configurationForLocation, location)).getOrElse(location)
             hourlyLimitService.applyHourlyLimit(location, fallbackLocation, userId, findConfigurationFor(location))
         }
 
@@ -156,7 +153,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
     }
   }
 
-  def createOrUpdateRoutingCache(location: LocationType, throttledLocation: LocationType, utr: String) = {
+  def createOrUpdateRoutingCache(location: Location, throttledLocation: Location, utr: String) = {
     if (stickyRoutingEnabled) {
       documentExpirationTime.get((location, throttledLocation)).flatMap(identity).map { documentExpirationTime =>
         val expirationTime: DateTime = documentExpirationTime.getExpirationTime

@@ -16,7 +16,7 @@
 
 package services
 
-import model.Location._
+import model.Location
 import org.joda.time.DateTime
 import play.api.Configuration
 import repositories.{HourlyLimitId, HourlyLimitsCacheRepository}
@@ -27,7 +27,7 @@ trait HourlyLimitService {
 
   def hourlyLimitsCacheRepository: HourlyLimitsCacheRepository
 
-  def applyHourlyLimit(location: LocationType, fallbackLocation: LocationType, userId: String, configurationForLocation: Configuration)(implicit ec: ExecutionContext): Future[LocationType] = {
+  def applyHourlyLimit(location: Location, fallbackLocation: Location, userId: String, configurationForLocation: Configuration)(implicit ec: ExecutionContext): Future[Location] = {
     val hourOfDay = DateTime.now().getHourOfDay
     val hourlyLimit = configurationForLocation.getInt(s"hourlyLimit.$hourOfDay").fold(configurationForLocation.getInt("hourlyLimit.other")) {
       Some(_)

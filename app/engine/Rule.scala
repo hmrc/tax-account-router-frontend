@@ -16,7 +16,7 @@
 
 package engine
 
-import model.Location.LocationType
+import model.Location
 import model.{RuleContext, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
@@ -34,9 +34,9 @@ trait Rule {
 
     override val name: String = ruleName
 
-    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]] = self.apply(authContext, ruleContext, auditContext)
+    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = self.apply(authContext, ruleContext, auditContext)
   }
 
-  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[LocationType]]
+  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]]
 
 }

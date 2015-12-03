@@ -1,6 +1,6 @@
 package repositories
 
-import model.Location
+import model.Locations
 import org.joda.time.{DateTime, DateTimeUtils}
 import org.scalatest.{BeforeAndAfter, GivenWhenThen}
 import play.api.libs.json.Reads._
@@ -36,7 +36,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
 
       Given("a user and a hour")
       val hour = 12
-      val location = Location.BusinessTaxAccount
+      val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
       val userId = "user-id"
@@ -80,7 +80,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
 
       Given("a user and a hour")
       val hour = 12
-      val location = Location.BusinessTaxAccount
+      val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
       val user1Id = "user-1-id"
@@ -121,7 +121,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
 
       Given("a user and a hour")
       val hour = 12
-      val location = Location.BusinessTaxAccount
+      val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
       val user1Id = "user-1-id"
@@ -150,7 +150,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
 
       Given("a user and a hour")
       val hour = 12
-      val location = Location.BusinessTaxAccount
+      val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
       val userId = "user-id"

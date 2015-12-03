@@ -17,7 +17,7 @@
 package services
 
 import com.codahale.metrics.{Meter, MetricRegistry}
-import model.Location.LocationType
+import model.Location
 import model.TAuditContext
 import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
@@ -59,7 +59,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
         val mockAuditContext = mock[TAuditContext]
 
-        val mockThrottledLocation = mock[LocationType]
+        val mockThrottledLocation = mock[Location]
         when(mockThrottledLocation.name).thenReturn(destinationNameAfterThrottling)
 
         val routingReasons = mutableMap(

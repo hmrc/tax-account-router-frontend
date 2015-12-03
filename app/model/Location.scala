@@ -19,19 +19,17 @@ package model
 import controllers.ExternalUrls
 import model.LocationGroup.LocationCategoryType
 
-object Location extends Enumeration {
+case class Location(name: String, defaultUrl: String, group: LocationCategoryType) {
 
-  type LocationType = Type
+  lazy val url = ExternalUrls.location(name, defaultUrl)
 
-  case class Type(url: String, name: String, group: LocationCategoryType) extends Val
+}
 
-  // TODO: this enum should be designed so that each location name is unique
-
-  val PersonalTaxAccount = Type(ExternalUrls.personalTaxAccountUrl, "personal-tax-account", LocationGroup.PTA)
-  val BusinessTaxAccount = Type(ExternalUrls.businessTaxAccountUrl, "business-tax-account", LocationGroup.BTA)
-
-  val locations: Map[String, LocationType] = Location.values.toList.map(_.asInstanceOf[LocationType]).map(value => value.name -> value).toMap
-
+object Locations {
+  lazy val PersonalTaxAccount = Location("personal-tax-account", "/personal-account", LocationGroup.PTA)
+  lazy val BusinessTaxAccount = Location("business-tax-account", "/business-account", LocationGroup.BTA)
+  lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
+  def find(name: String) = all.find(_.name == name)
 }
 
 object LocationGroup extends Enumeration {
