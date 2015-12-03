@@ -85,7 +85,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
     Location.locations.get(fallbackLocationName)
   }
 
-  def throttle(location: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[LocationType] = {
+  def throttle(initialLocation: LocationType, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[LocationType] = {
 
     val userId = encryption.getSha256(authContext.user.userId)
 
@@ -99,35 +99,39 @@ trait ThrottlingService extends BSONBuilderHelpers {
               val jsResult = Json.fromJson[RoutingInfo](data)
               jsResult match {
                 case JsSuccess(routingInfo, _) =>
-                  val stickyRoutingApplied = Location.locations.get(routingInfo.routedDestination).contains(location) && routingInfo.expirationTime.isAfterNow
+                  val stickyRoutingApplied = Location.locations.get(routingInfo.routedDestination).contains(initialLocation) && routingInfo.expirationTime.isAfterNow
                   val throttledLocation = stickyRoutingApplied match {
                     case true =>
                       val finalLocation = Location.locations.get(routingInfo.throttledDestination).get
-                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, location != finalLocation, location, throttlingEnabled, stickyRoutingApplied))
+                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, initialLocation != finalLocation, initialLocation, throttlingEnabled, stickyRoutingApplied))
                       Future(finalLocation)
                     case false =>
-                      doThrottling(location, auditContext, userId)
+                      doThrottling(initialLocation, auditContext, userId)
                   }
 
-                  getThrottlingResult(location, throttledLocation, userId)
+                  throttledLocation.andThen {
+                    case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+                  }
                 case JsError(e) =>
                   Logger.error(s"Error reading document $e")
-                  Future(location)
+                  Future(initialLocation)
               }
             }
 
           }.getOrElse {
-            val throttledLocation = doThrottling(location, auditContext, userId)
-            getThrottlingResult(location, throttledLocation, userId)
+            val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+            throttledLocation.andThen {
+              case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+            }
           }
         }
       case false =>
-        val throttledLocation = doThrottling(location, auditContext, userId)
-        getThrottlingResult(location, throttledLocation, userId)
+        val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+        throttledLocation.andThen {
+          case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+        }
     }
   }
-
-  case class DoThrottlingResult(location: LocationType, throttlingPercentage: Int)
 
   def doThrottling(location: LocationType, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[LocationType] = {
     throttlingEnabled match {
@@ -152,19 +156,13 @@ trait ThrottlingService extends BSONBuilderHelpers {
     }
   }
 
-  def getThrottlingResult(location: LocationType, futureThrottledLocation: Future[LocationType], utr: String)(implicit executionContext: ExecutionContext): Future[LocationType] = {
-    stickyRoutingEnabled match {
-      case true =>
-        futureThrottledLocation.map { throttledLocation =>
-          val throttlingResult: Option[LocationType] = documentExpirationTime.get((location, throttledLocation)).flatMap(identity).map { documentExpirationTime =>
-            val expirationTime: DateTime = documentExpirationTime.getExpirationTime
-            routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(location.name, throttledLocation.name, expirationTime)))
-            throttledLocation
-          }
-          throttlingResult.getOrElse(throttledLocation)
-        }
-      case false =>
-        futureThrottledLocation
+  def createOrUpdateRoutingCache(location: LocationType, throttledLocation: LocationType, utr: String) = {
+    if (stickyRoutingEnabled) {
+      documentExpirationTime.get((location, throttledLocation)).flatMap(identity).map { documentExpirationTime =>
+        val expirationTime: DateTime = documentExpirationTime.getExpirationTime
+        routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(location.name, throttledLocation.name, expirationTime)))
+        throttledLocation
+      }
     }
   }
 }

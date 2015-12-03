@@ -22,7 +22,7 @@ import com.typesafe.config.ConfigFactory
 import cryptography.Encryption
 import helpers.SpecHelpers
 import model.Location._
-import model.{AuditContext, RoutingInfo, ThrottlingAuditContext}
+import model.{AuditContext, Location, RoutingInfo, ThrottlingAuditContext}
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -85,7 +85,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     "not throttle if throttling disabled and sticky routing disabled" in {
       running(FakeApplication(additionalConfiguration = createConfiguration(enabled = false))) {
         //given
-        val initialLocation = mock[LocationType]
+        val initialLocation = Location.BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
         implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
@@ -104,6 +104,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(None, false, initialLocation, false, false))
 
         //and
+        Thread.sleep(100)
         verifyNoMoreInteractions(mockRoutingCacheRepository)
       }
     }
@@ -113,8 +114,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       running(FakeApplication(additionalConfiguration = configuration)) {
         //given
         val locationName = "location-name"
-        val initialLocation = mock[LocationType]
-        when(initialLocation.name) thenReturn locationName
+        val initialLocation = Location.BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
         implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
@@ -144,18 +144,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         verify(mockHourlyLimitService).applyHourlyLimit(eqTo(initialLocation), eqTo(initialLocation), eqTo(encryptedUserId), eqTo(configurationForLocation))(any[ExecutionContext])
 
         //and
+        Thread.sleep(100)
         verifyNoMoreInteractions(mockRoutingCacheRepository)
       }
     }
 
     "return location passed as argument when configuration found but fallback not configured when sticky routing is disabled" in {
 
-      val locationName = "location-name"
-
-      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = 100, fallbackLocation = ""))) {
+      running(FakeApplication(additionalConfiguration = createConfiguration(locationName = BusinessTaxAccount.name, percentageBeToThrottled = 100, fallbackLocation = ""))) {
         //given
-        val initialLocation = mock[LocationType]
-        when(initialLocation.name) thenReturn locationName
+        val initialLocation = Location.BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
         implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
@@ -174,6 +172,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(Some(100), false, initialLocation, true, false))
 
         //and
+        Thread.sleep(100)
         verifyNoMoreInteractions(mockRoutingCacheRepository)
 
       }
@@ -181,24 +180,20 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
   }
 
   it should {
-    val initialLocation = mock[LocationType]
-    val locationName = "location-name"
-    val locationUrl = "location-url"
-    when(initialLocation.name) thenReturn locationName
-    when(initialLocation.url) thenReturn locationUrl
+    val initialLocation = evaluateUsingPlay(Location.BusinessTaxAccount)
 
     val scenarios = evaluateUsingPlay {
       Table(
         ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
-        ("Should throttle to fallback when random number is less than percentage", 50, 10, BusinessTaxAccount, true),
-        ("Should throttle to fallback when random number is equal than percentage", 50, 49, BusinessTaxAccount, true),
+        ("Should throttle to fallback when random number is less than percentage", 50, 10, PersonalTaxAccount, true),
+        ("Should throttle to fallback when random number is equal than percentage", 50, 49, PersonalTaxAccount, true),
         ("Should not throttle to fallback when random number is equal than percentage", 50, 70, initialLocation, false)
       )
     }
 
     forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, randomNumber: Int, expectedLocation: LocationType, throttled: Boolean) =>
       s"return the right location after throttling or not and update audit context when sticky routing is disabled - scenario: $scenario" in {
-        running(FakeApplication(additionalConfiguration = createConfiguration(locationName = locationName, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
+        running(FakeApplication(additionalConfiguration = createConfiguration(locationName = initialLocation.name, percentageBeToThrottled = percentageBeToThrottled, fallbackLocation = expectedLocation.name))) {
           //given
           val randomMock = mock[Random]
           when(randomMock.nextInt(100)) thenReturn randomNumber
@@ -212,7 +207,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val mockHourlyLimitService = Mocks.mockHourlyLimitService()
 
           import play.api.Play.current
-          val configurationForLocation = Play.configuration.getConfig(s"throttling.locations.$locationName").getOrElse(Configuration.empty)
+          val configurationForLocation = Play.configuration.getConfig(s"throttling.locations.${initialLocation.name}").getOrElse(Configuration.empty)
 
           when(
             mockHourlyLimitService.applyHourlyLimit(
@@ -241,6 +236,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           verify(randomMock).nextInt(100)
 
           //and
+          Thread.sleep(100)
           verifyNoMoreInteractions(mockRoutingCacheRepository)
         }
       }
