@@ -17,28 +17,16 @@
 package model
 
 import controllers.ExternalUrls
-import model.LocationGroup.LocationCategoryType
 
-case class Location(name: String, defaultUrl: String, group: LocationCategoryType) {
+case class Location(name: String, defaultUrl: String) {
 
   lazy val url = ExternalUrls.location(name, defaultUrl)
 
 }
 
 object Locations {
-  lazy val PersonalTaxAccount = Location("personal-tax-account", "/personal-account", LocationGroup.PTA)
-  lazy val BusinessTaxAccount = Location("business-tax-account", "/business-account", LocationGroup.BTA)
+  lazy val PersonalTaxAccount = Location("personal-tax-account", "/personal-account")
+  lazy val BusinessTaxAccount = Location("business-tax-account", "/business-account")
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
   def find(name: String) = all.find(_.name == name)
-}
-
-object LocationGroup extends Enumeration {
-
-  type LocationCategoryType = Type
-
-  case class Type(name: String) extends Val
-
-  val PTA = Type("PTA")
-  val BTA = Type("BTA")
-
 }

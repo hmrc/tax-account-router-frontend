@@ -18,7 +18,6 @@ package services
 
 import helpers.SpecHelpers
 import model.Location
-import model.{Location, LocationGroup}
 import org.joda.time.{DateTime, DateTimeUtils}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -39,8 +38,8 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
 
   val fixedDateTime = DateTime.now()
 
-  val location = evaluateUsingPlay { Location("location-url", "location-name", group = LocationGroup.Type("group")) }
-  val fallback = evaluateUsingPlay { Location("location-fallback", "location-fallback", group = LocationGroup.Type("group")) }
+  val location = evaluateUsingPlay { Location("location-url", "location-name") }
+  val fallback = evaluateUsingPlay { Location("location-fallback", "location-fallback") }
 
   override def beforeAll(): Unit = {
     DateTimeUtils.setCurrentMillisFixed(fixedDateTime.getMillis)

@@ -18,10 +18,9 @@ package controllers
 
 import engine.{Condition, Rule, RuleEngine, When}
 import helpers.SpecHelpers
-import model.Location
 import model.Locations._
 import model.RoutingReason._
-import model._
+import model.{Location, _}
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -51,8 +50,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(truth)
   }
 
-  private val trueLocation: Location = evaluateUsingPlay(Location("true", "/true", LocationGroup.Type("TRUE")))
-  private val falseLocation: Location = evaluateUsingPlay(Location("false", "/false", LocationGroup.Type("FALSE")))
+  private val trueLocation: Location = evaluateUsingPlay(Location("true", "/true"))
+  private val falseLocation: Location = evaluateUsingPlay(Location("false", "/false"))
 
   val ruleEngineStubReturningSomeLocation = new RuleEngine {
     override val rules: List[Rule] = List(When(TestCondition(true)).thenGoTo(trueLocation))

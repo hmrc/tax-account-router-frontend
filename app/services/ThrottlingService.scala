@@ -17,9 +17,8 @@
 package services
 
 import cryptography.Encryption
-import model.Location
 import model.Locations._
-import model._
+import model.{Location, _}
 import org.joda.time.DateTime
 import play.api.Play.current
 import play.api.libs.json._
@@ -59,17 +58,13 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
     val suffix: String = getLocationSuffix(location, request)
 
-    Play.configuration.getConfig(s"throttling.locations.${location.name}$suffix")
-      .getOrElse(
-        Play.configuration.getConfig(s"throttling.locations.${location.group}$suffix")
-          .getOrElse(Configuration.empty)
-      )
+    Play.configuration.getConfig(s"throttling.locations.${location.name}$suffix").getOrElse(Configuration.empty)
   }
 
   def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
     request.session.data.contains("token") match {
-      case true if location.group == LocationGroup.PTA => "-gg"
-      case false if location.group == LocationGroup.PTA => "-verify"
+      case true if location.name == Locations.PersonalTaxAccount.name => "-gg"
+      case false if location.name == Locations.PersonalTaxAccount.name => "-verify"
       case _ => ""
     }
   }

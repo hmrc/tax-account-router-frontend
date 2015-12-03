@@ -83,7 +83,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.ruleApplied = "rule-name"
 
       val path = "/some/path"
-      val destination = Location("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
+      val destination = Location("/some/destination", "location-name")
       val authId: String = "authId"
       implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
@@ -145,7 +145,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         val auditContext: TAuditContext = AuditContext()
 
         val path = "/some/path"
-        val destination = Location("/some/destination", "location-name", LocationGroup.Type("CATEGORY"))
+        val destination = Location("/some/destination", "location-name")
         val authId: String = "authId"
 
         val accounts: Accounts = Accounts(

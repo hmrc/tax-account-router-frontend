@@ -18,10 +18,9 @@ package engine
 
 import controllers.TarRules
 import helpers.SpecHelpers
-import model.Location
 import model.Locations._
 import model.RoutingReason.RoutingReason
-import model._
+import model.{Location, _}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.{when, _}
 import org.scalatest.mock.MockitoSugar
@@ -43,9 +42,9 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       Future(b)
   }
 
-  private val trueLocation: Location = evaluateUsingPlay(Location("/true", "true", LocationGroup.Type("TRUE")))
+  private val trueLocation: Location = evaluateUsingPlay(Location("/true", "true"))
   val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
-  private val falseLocation: Location = evaluateUsingPlay(Location("/false", "false", LocationGroup.Type("FALSE")))
+  private val falseLocation: Location = evaluateUsingPlay(Location("/false", "false"))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
 
 

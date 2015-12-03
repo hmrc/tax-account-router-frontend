@@ -17,9 +17,8 @@
 package engine
 
 import helpers.SpecHelpers
-import model.Location
 import model.RoutingReason._
-import model.{RoutingReason, _}
+import model.{Location, RoutingReason, _}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.mockito.verification.VerificationMode
@@ -197,7 +196,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
   "the 'when' operator" should {
 
     val location = evaluateUsingPlay {
-      Location("url", "name", LocationGroup.Type("CATEGORY"))
+      Location("url", "name")
     }
 
     val mockAuthContext = mock[AuthContext]
