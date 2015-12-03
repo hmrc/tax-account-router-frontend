@@ -37,13 +37,14 @@ trait RuleEngine {
       else {
         val ruleApplyResult: Future[Option[LocationType]] = rule.apply(authContext, ruleContext, auditContext)
         val ruleName = rule.name
-        ruleApplyResult.foreach {
-          case Some(_) =>
+        ruleApplyResult.map { case result =>
+          if (result.isDefined) {
             auditContext.ruleApplied = ruleName
             Logger.debug(s"rule applied: $ruleName")
-          case None => Logger.debug(s"rule evaluated but not applied: $ruleName")
+          }
+          else Logger.debug(s"rule evaluated but not applied: $ruleName")
+          result
         }
-        ruleApplyResult
       })
     }
   }

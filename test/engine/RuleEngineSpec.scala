@@ -23,7 +23,6 @@ import model.RoutingReason.RoutingReason
 import model._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito.{when, _}
-import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
@@ -34,7 +33,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with Eventually {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[RoutingReason] = None
@@ -66,9 +65,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val location: Option[LocationType] = await(maybeLocation)
       location shouldBe Some(trueLocation)
 
-      eventually {
-        auditContext.ruleApplied shouldBe trueRule.name
-      }
+      auditContext.ruleApplied shouldBe trueRule.name
     }
 
     "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
@@ -100,9 +97,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       verify(firstRule).apply(any[AuthContext], any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
       verify(secondRule, never()).apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
 
-      eventually {
-        auditContext.ruleApplied shouldBe "first-rule"
-      }
+      auditContext.ruleApplied shouldBe "first-rule"
     }
   }
 
