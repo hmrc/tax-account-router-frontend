@@ -113,7 +113,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       val configuration = createConfiguration()
       running(FakeApplication(additionalConfiguration = configuration)) {
         //given
-        val locationName = "location-name"
         val initialLocation = BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
         implicit val authContext = authContextStub(userId)
@@ -384,10 +383,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
           when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
+          //and
+          val mockHourlyLimitService = Mocks.mockHourlyLimitService()
+
           val mockEncryption = Mocks.encryption(userId, encryptedUserId)
 
           //when
-          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(routedLocation, mockAuditContext)
+          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext)
 
           //then
           await(returnedLocation) shouldBe throttledLocation
@@ -398,6 +400,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           //and
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
           verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, throttledLocation.name, expectedExpirationTime)))
+
+          verifyNoMoreInteractions(mockHourlyLimitService)
         }
       }
     }
@@ -460,6 +464,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
           verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))
 
+          verify(mockHourlyLimitService).applyHourlyLimit(eqTo(routedLocation), eqTo(routedLocation), eqTo(encryptedUserId), eqTo(configurationForLocation))(any[ExecutionContext])
         }
       }
     }
