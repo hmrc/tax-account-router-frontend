@@ -18,11 +18,9 @@ package connector
 
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.http.hooks.HttpHook
-import uk.gov.hmrc.play.http.{HttpGet, HttpResponse}
-import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpResponse}
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
@@ -37,7 +35,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
 
       override protected def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
         url match {
-          case "/sa/individual/5328981911/last-return" => Future.successful(HttpResponse(200, Some(Json.parse(response))))
+          case "/sa/individual/5328981911/return/last" => Future.successful(HttpResponse(200, Some(Json.parse(response))))
           case _ => Future.successful(HttpResponse(404))
         }
       }
