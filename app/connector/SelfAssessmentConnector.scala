@@ -34,7 +34,7 @@ trait SelfAssessmentConnector {
 
     implicit val reads: Reads[SaReturn] = (__ \ "supplementarySchedules").read[List[String]].map(SaReturn(_))
 
-    http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/last-return").recover {
+    http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
       case e: NotFoundException => SaReturn.empty
     }
   }

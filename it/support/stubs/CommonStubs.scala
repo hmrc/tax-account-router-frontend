@@ -42,7 +42,7 @@ trait CommonStubs {
   }
 
   def stubSaReturn(saUtr: String, previousReturns: Boolean = false, supplementarySchedules: List[String] = List.empty) = {
-    stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
+    stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
       .willReturn(aResponse()
         .withStatus(200)
         .withBody(

@@ -77,7 +77,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/profile")))
 
       And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
@@ -105,7 +105,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/profile")))
 
       And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
@@ -133,7 +133,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/profile")))
 
       And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected to PTA") {
@@ -161,7 +161,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/profile")))
 
       And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/last-return")))
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
   }
 }
