@@ -408,8 +408,8 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.*.*.*.count), 4, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1')",
-              "textEditor": true
+              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.*.*.*.count), 4, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^to-welcome-.*$')",
+              "textEditor": false
             }
           ],
           "timeFrom": null,
@@ -480,8 +480,8 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.not-throttled.count), 5, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1')",
-              "textEditor": true
+              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.not-throttled.count), 5, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^because-$')",
+              "textEditor": false
             },
             {
               "hide": false,
@@ -633,6 +633,6 @@
   },
   "refresh": "1m",
   "schemaVersion": 7,
-  "version": 8,
+  "version": 9,
   "links": []
 }
