@@ -24,57 +24,6 @@
             "rgba(50, 172, 45, 0.97)"
           ],
           "datasource": null,
-          "editable": true,
-          "error": false,
-          "format": "none",
-          "id": 5,
-          "interval": null,
-          "links": [],
-          "maxDataPoints": "100",
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "span": 4,
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "targets": [
-            {
-              "hide": false,
-              "refId": "B",
-              "target": "integral(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.*.*.count))))",
-              "textEditor": true
-            }
-          ],
-          "thresholds": "",
-          "title": "Routed Request",
-          "type": "singlestat",
-          "valueFontSize": "100%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": false,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "datasource": null,
           "decimals": 1,
           "editable": true,
           "error": false,
@@ -89,7 +38,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 4,
+          "span": 3,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -126,6 +75,57 @@
             "rgba(50, 172, 45, 0.97)"
           ],
           "datasource": null,
+          "editable": true,
+          "error": false,
+          "format": "none",
+          "id": 17,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": "100",
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "span": 3,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "hide": false,
+              "refId": "B",
+              "target": "integral(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.*.count))))",
+              "textEditor": true
+            }
+          ],
+          "thresholds": "",
+          "title": "Request to BTA",
+          "type": "singlestat",
+          "valueFontSize": "100%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
           "decimals": 1,
           "editable": true,
           "error": false,
@@ -140,7 +140,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 4,
+          "span": 3,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -156,6 +156,57 @@
           ],
           "thresholds": "",
           "title": "Routed to PTA",
+          "type": "singlestat",
+          "valueFontSize": "100%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "editable": true,
+          "error": false,
+          "format": "none",
+          "id": 16,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": "100",
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "span": 3,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "hide": false,
+              "refId": "B",
+              "target": "integral(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.*.count))))",
+              "textEditor": true
+            }
+          ],
+          "thresholds": "",
+          "title": "Request to PTA",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -633,6 +684,6 @@
   },
   "refresh": "1m",
   "schemaVersion": 7,
-  "version": 9,
+  "version": 10,
   "links": []
 }
