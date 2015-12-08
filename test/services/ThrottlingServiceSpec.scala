@@ -39,7 +39,7 @@ import reactivemongo.api.ReadPreference
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.{Cache, Id}
 import uk.gov.hmrc.mongo.DatabaseUpdate
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.ConfidenceLevel
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{ConfidenceLevel, CredentialStrength}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -78,7 +78,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     )
   }
 
-  def authContextStub(userId: String): AuthContext = AuthContext(LoggedInUser(userId, None, None, None, ConfidenceLevel.L0), mock[Principal], None)
+  def authContextStub(userId: String): AuthContext = AuthContext(LoggedInUser(userId, None, None, None, CredentialStrength.None, ConfidenceLevel.L0), mock[Principal], None)
 
   "ThrottlingService" should {
 

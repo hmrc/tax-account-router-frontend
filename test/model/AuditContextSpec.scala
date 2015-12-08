@@ -85,7 +85,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       val path = "/some/path"
       val destination = Location("/some/destination", "location-name")
       val authId: String = "authId"
-      implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
+      implicit val authContext: AuthContext = AuthContext(LoggedInUser(authId, None, None, None, CredentialStrength.None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
       implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
@@ -155,7 +155,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
           vat = vat
         )
 
-        implicit val authContext = AuthContext(LoggedInUser(authId, None, None, None, ConfidenceLevel.L0), Principal(None, accounts), None)
+        implicit val authContext = AuthContext(LoggedInUser(authId, None, None, None, CredentialStrength.None, ConfidenceLevel.L0), Principal(None, accounts), None)
         implicit val fakeRequest = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
@@ -187,7 +187,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         val auditContext: TAuditContext = AuditContext()
 
         //and
-        implicit val authContext = AuthContext(LoggedInUser("", None, None, None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
+        implicit val authContext = AuthContext(LoggedInUser("", None, None, None, CredentialStrength.None, ConfidenceLevel.L0), Principal(None, Accounts()), None)
         implicit val fakeRequest = FakeRequest(method = "GET", uri = "", headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 

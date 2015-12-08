@@ -100,6 +100,7 @@ class LoggedInSessionUser(tokenPresent: Boolean, accounts: Accounts) extends Stu
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
                |    "accounts":${Json.toJson(accounts)},
                |    "levelOfAssurance": "2",
+               |    "credentialStrength": "none",
                |    "confidenceLevel": 500
               |}
               |

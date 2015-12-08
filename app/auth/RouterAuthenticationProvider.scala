@@ -18,26 +18,26 @@ package auth
 
 import controllers.ExternalUrls
 import play.api.Logger
+import play.api.mvc.Request
 import play.api.mvc.Results._
-import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, AuthenticationProvider, UserCredentials}
 
 import scala.concurrent.Future
 
 trait RouterAuthenticationProvider extends AuthenticationProvider {
 
-  import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
-
   override val id = "RAP"
 
   def login: String = ExternalUrls.signIn
 
-  override def redirectToLogin(redirectToOrigin: Boolean)(implicit request: Request[AnyContent]) = Future.successful(Redirect(login))
+  import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-  override def handleNotAuthenticated(redirectToOrigin: Boolean)(implicit request: Request[AnyContent]): PartialFunction[UserCredentials, Future[Either[AuthContext, FailureResult]]] = {
+  override def redirectToLogin(implicit request: Request[_]): Future[FailureResult] = Future.successful(Redirect(login))
+
+  override def handleNotAuthenticated(implicit request: Request[_]): PartialFunction[UserCredentials, Future[Either[AuthContext, RouterAuthenticationProvider.FailureResult]]] = {
     case UserCredentials(None, token@_) =>
       Logger.info(s"No userId found - redirecting to login. user: None token : $token")
-      redirectToLogin(redirectToOrigin).map(Right(_))
+      redirectToLogin.map(Right(_))
   }
 }
 
