@@ -21,7 +21,6 @@ import helpers.SpecHelpers
 import model.Locations._
 import model.RoutingReason._
 import model.{Location, _}
-import org.jsoup.Jsoup
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -29,8 +28,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.test.Helpers._
-import play.api.test.{FakeApplication, FakeRequest}
+import play.api.test.FakeRequest
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
@@ -65,9 +63,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-  private val gaToken = "GA-TOKEN"
-  override lazy val fakeApplication: FakeApplication = new FakeApplication(additionalConfiguration = Map("google-analytics.token" -> gaToken))
-
   "router controller" should {
 
     "return location provided by rules" in {
@@ -83,21 +78,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService)
 
-      //when
-      val route: Future[Result] = controller.route
+      val result = await(controller.route)
 
       //then
-      status(route) shouldBe 200
-      val body: String = contentAsString(route)
-
-      //and
-      val page = Jsoup.parse(body)
-
-      page.select("p#non-js-only a").attr("href") shouldBe trueLocation.url
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');")  shouldBe true
-      body.contains(s"ga('send', 'event', 'routing', '${trueLocation.name}', 'none', {")  shouldBe true
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe "/true"
 
       verify(mockThrottlingService).throttle(eqTo(trueLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
     }
@@ -118,21 +103,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
 
-      //when
-      val route: Future[Result] = controller.route
+      val result = await(controller.route)
 
       //then
-      status(route) shouldBe 200
-      val body: String = contentAsString(route)
-
-      //and
-      val page = Jsoup.parse(body)
-
-      page.select("p#non-js-only a").attr("href") shouldBe BusinessTaxAccount.url
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');")  shouldBe true
-      body.contains(s"ga('send', 'event', 'routing', '${BusinessTaxAccount.name}', '', {")  shouldBe true
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe expectedLocation.url
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
     }
@@ -155,21 +130,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService, metricsMonitoringService = mockMetricsMonitoringService)
 
-      //when
-      val route: Future[Result] = controller.route
+      val result = await(controller.route)
 
       //then
-      status(route) shouldBe 200
-      val body: String = contentAsString(route)
-
-      //and
-      val page = Jsoup.parse(body)
-
-      page.select("p#non-js-only a").attr("href") shouldBe BusinessTaxAccount.url
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');")  shouldBe true
-      body.contains(s"ga('send', 'event', 'routing', '${BusinessTaxAccount.name}', '', {")  shouldBe true
+      result.header.status shouldBe 303
+      result.header.headers("Location") shouldBe expectedLocation.url
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
 
@@ -180,13 +145,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //given
       implicit val authContext = mock[AuthContext]
       implicit lazy val ruleContext = new RuleContext(authContext)
-      val ruleApplied = "rule-applied"
 
       val mockAuditContext = mock[TAuditContext]
 
       val mockAuditEvent = mock[ExtendedDataEvent]
       when(mockAuditEvent.detail).thenReturn(Json.parse("{}"))
-      when(mockAuditContext.ruleApplied).thenReturn(ruleApplied)
 
       val auditContextToAuditEventResult = Future(mockAuditEvent)
       when(mockAuditContext.toAuditEvent(any[Location])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
@@ -207,12 +170,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       )
 
       //then
-      val result = await(controller.route)
-      val body = contentAsString(result)
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');")  shouldBe true
-      body.contains(s"ga('send', 'event', 'routing', '${PersonalTaxAccount.name}', '$ruleApplied', {")  shouldBe true
+      await(controller.route)
 
       //and
       verify(mockAuditContext).toAuditEvent(eqTo(expectedThrottledLocation))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
