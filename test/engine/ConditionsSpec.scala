@@ -37,8 +37,8 @@ import scala.concurrent.Future
 class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   val configuration = Map[String, Any](
-        "business-enrolments" -> List("enr1", "enr2"),
-        "self-assessment-enrolments" -> List("enr3")
+        "business-enrolments" -> "enr1,enr2",
+        "self-assessment-enrolments" -> "enr3"
       )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)

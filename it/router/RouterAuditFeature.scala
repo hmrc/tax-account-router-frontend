@@ -17,8 +17,8 @@ import scala.collection.mutable.{Map => mutableMap}
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   val enrolmentConfiguration = Map[String, Any](
-        "business-enrolments" -> List("enr1", "enr2"),
-        "self-assessment-enrolments" -> List("enr3", "enr4")
+        "business-enrolments" -> "enr1,enr2",
+        "self-assessment-enrolments" -> "enr3,enr4"
       )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)

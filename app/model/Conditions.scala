@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 object HasAnyBusinessEnrolment extends Condition {
-  lazy val businessEnrolments: Set[String] = Play.configuration.getStringSeq("business-enrolments").getOrElse(Seq()).toSet[String]
+  lazy val businessEnrolments: Set[String] = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
@@ -37,7 +37,7 @@ object HasAnyBusinessEnrolment extends Condition {
 }
 
 object HasSelfAssessmentEnrolments extends Condition {
-  lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getStringSeq("self-assessment-enrolments").getOrElse(Seq()).toSet[String]
+  lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
     ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
