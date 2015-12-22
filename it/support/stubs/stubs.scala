@@ -16,8 +16,8 @@
 
 package support.stubs
 
-import com.github.tomakehurst.wiremock.client.UrlMatchingStrategy
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.{MappingBuilder, UrlMatchingStrategy, ValueMatchingStrategy}
 
 trait Stubs {
   def createStubs(stub: Stub) {
@@ -30,8 +30,10 @@ trait Stub {
 }
 
 trait StubbedPage {
-  def stubOut(urlMatchingStrategy: UrlMatchingStrategy, heading: String, extraBodyHtml: Option[String] = None, prodUrl: Option[String] = None) = {
-    stubFor(get(urlMatchingStrategy)
+  def stubOut(urlMatchingStrategy: UrlMatchingStrategy, heading: String, extraBodyHtml: Option[String] = None, prodUrl: Option[String] = None, queryParams: Seq[(String, ValueMatchingStrategy)] = Seq.empty) = {
+    val builder: MappingBuilder = get(urlMatchingStrategy)
+    queryParams.foreach(p => builder.withQueryParam(p._1, p._2))
+    stubFor(builder
       .willReturn(
         aResponse()
           .withStatus(200)

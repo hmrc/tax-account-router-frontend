@@ -86,3 +86,12 @@ object AnyOtherRuleApplied extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(true)
 }
+
+object HasPortalEnrolments extends Condition {
+  lazy val portalEnrolments: Set[String] = Play.configuration.getString("portal-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+
+  override val auditType: Option[RoutingReason] = Some(HAS_PORTAL_ENROLMENTS)
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.activeEnrolments.map(_.intersect(portalEnrolments).nonEmpty)
+}

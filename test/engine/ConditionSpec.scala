@@ -201,7 +201,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
     val mockAuthContext = mock[AuthContext]
     val mockRuleContext = mock[RuleContext]
-    val auditContext = AuditContext()
+    val auditContext = evaluateUsingPlay(AuditContext())
 
     val scenarios = Table(
       ("scenario", "conditionTruth", "expectedLocation"),

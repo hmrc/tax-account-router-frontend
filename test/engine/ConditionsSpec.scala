@@ -25,7 +25,6 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -38,7 +37,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   val configuration = Map[String, Any](
         "business-enrolments" -> "enr1,enr2",
-        "self-assessment-enrolments" -> "enr3"
+        "self-assessment-enrolments" -> "enr3",
+        "portal-enrolments" -> "enr5"
       )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)
@@ -95,15 +95,12 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val authContext = mock[AuthContext]
 
       s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
-        running(FakeApplication(additionalConfiguration = configuration)) {
-
           lazy val ruleContext = mock[RuleContext]
           when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
 
           val futureResult: Future[Boolean] = HasSelfAssessmentEnrolments.isTrue(authContext, ruleContext)
           val result = await(futureResult)
           result shouldBe expectedResult
-        }
       }
     }
   }
@@ -220,7 +217,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        running(FakeApplication(additionalConfiguration = configuration)) {
           implicit val fakeRequest = tokenPresent match {
             case false => FakeRequest()
             case true => FakeRequest().withSession(("token", "token"))
@@ -232,7 +228,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
           val result = await(LoggedInViaVerify.isTrue(authContext, ruleContext))
           result shouldBe expectedResult
-        }
       }
     }
   }
@@ -256,7 +251,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        running(FakeApplication(additionalConfiguration = configuration)) {
           implicit val fakeRequest = tokenPresent match {
             case false => FakeRequest()
             case true => FakeRequest().withSession(("token", "token"))
@@ -268,7 +262,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
           val result = await(LoggedInViaGovernmentGateway.isTrue(authContext, ruleContext))
           result shouldBe expectedResult
-        }
       }
     }
   }
@@ -290,6 +283,37 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       val result = await(AnyOtherRuleApplied.isTrue(authContext, ruleContext))
       result shouldBe true
+    }
+  }
+
+  "HasPortalEnrolments" should {
+
+    "have an audit type specified" in {
+      HasPortalEnrolments.auditType shouldBe Some(HAS_PORTAL_ENROLMENTS)
+    }
+
+    val scenarios: TableFor3[String, Set[String], Boolean] =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("has portal enrolments", Set("enr5"), true),
+        ("has no portal enrolments", Set(), false)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      s"be true whether the user has any portal enrolments - scenario: $scenario" in {
+
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+
+        val ruleContext = mock[RuleContext]
+        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+
+        val result = await(HasPortalEnrolments.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
     }
   }
 }

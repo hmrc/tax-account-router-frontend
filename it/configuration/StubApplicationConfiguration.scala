@@ -34,6 +34,7 @@ trait StubApplicationConfiguration {
     "microservice.services.government-gateway.port" -> stubPort,
     "microservice.services.sa.host" -> stubHost,
     "microservice.services.sa.port" -> stubPort,
+    "redirect-to-portal.host" -> s"http://$stubHost:$stubPort",
     "business-tax-account.host" -> s"http://$stubHost:$stubPort",
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",

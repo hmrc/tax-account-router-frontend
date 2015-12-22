@@ -20,6 +20,21 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
+  def stubProfileWithPortalEnrolments() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Organisation",
+            |"enrolments":[
+            |                {"key": "enr5", "identifier": "5597800686", "state": "Activated"}
+            |             ]
+            |}
+            | """.stripMargin)))
+  }
+
   def stubProfileWithSelfAssessmentEnrolments() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()

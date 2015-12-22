@@ -18,7 +18,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   val enrolmentConfiguration = Map[String, Any](
         "business-enrolments" -> "enr1,enr2",
-        "self-assessment-enrolments" -> "enr3,enr4"
+        "self-assessment-enrolments" -> "enr3,enr4",
+        "portal-enrolments" -> "enr5,enr6"
       )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
@@ -46,7 +47,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user")
     }
 
-    scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
+    scenario("a user logged in through GG with any business enrolment will be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser())
@@ -66,6 +67,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_PORTAL_ENROLMENTS.key -> "false",
         HAS_BUSINESS_ENROLMENTS.key -> "true"
         )
       val expectedTransactionName = "sent to business tax account"
@@ -97,6 +99,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedReasons = AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_PORTAL_ENROLMENTS.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
@@ -131,6 +134,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "true",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_PORTAL_ENROLMENTS.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true"
@@ -165,6 +169,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_PORTAL_ENROLMENTS.key -> "false",
         IS_SELF_EMPLOYED.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
@@ -200,6 +205,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_IN_A_PARTNERSHIP.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        HAS_PORTAL_ENROLMENTS.key -> "false",
         IS_SELF_EMPLOYED.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
@@ -208,6 +214,32 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-user-with-no-partnership-and-no-self-employment")
     }
+  }
+
+  scenario("a user logged in through GG with any portal will be redirected and an audit event should be raised") {
+
+    Given("a user logged in through Government Gateway")
+    createStubs(TaxAccountUser())
+
+    And("the user has portal related enrolments")
+    stubProfileWithPortalEnrolments()
+
+    val auditEventStub = stubAuditEvent()
+
+    When("the user hits the router")
+    go(RouterRootPath)
+
+    Then("an audit event should be sent")
+    verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+    And("the audit event raised should be the expected one")
+    val expectedReasons = AuditContext.defaultRoutingReasons +=(
+      IS_A_VERIFY_USER.key -> "false",
+      IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+      HAS_PORTAL_ENROLMENTS.key -> "true"
+      )
+    val expectedTransactionName = "sent to portal"
+    verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "portal-home-page-for-user-with-portal-enrolments")
   }
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String, ruleApplied: String): Unit = {
@@ -223,5 +255,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     (event \ "detail" \ "reasons" \ "is-self-employed").as[String] shouldBe expectedReasons(IS_SELF_EMPLOYED.key)
     (event \ "detail" \ "reasons" \ "has-previous-returns").as[String] shouldBe expectedReasons(HAS_PREVIOUS_RETURNS.key)
     (event \ "detail" \ "reasons" \ "has-business-enrolments").as[String] shouldBe expectedReasons(HAS_BUSINESS_ENROLMENTS.key)
+    (event \ "detail" \ "reasons" \ "has-portal-enrolments").as[String] shouldBe expectedReasons(HAS_PORTAL_ENROLMENTS.key)
   }
 }

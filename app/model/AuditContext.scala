@@ -45,6 +45,7 @@ object RoutingReason {
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
   val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
+  val HAS_PORTAL_ENROLMENTS = Reason("has-portal-enrolments")
 }
 
 import model.RoutingReason._
@@ -59,7 +60,8 @@ object AuditContext {
     HAS_PREVIOUS_RETURNS.key -> "-" ,
     IS_IN_A_PARTNERSHIP.key -> "-" ,
     IS_SELF_EMPLOYED.key -> "-",
-    HAS_SA_ENROLMENTS.key -> "-"
+    HAS_SA_ENROLMENTS.key -> "-",
+    HAS_PORTAL_ENROLMENTS.key -> "-"
   )
 }
 
@@ -70,7 +72,8 @@ trait TAuditContext {
 
   private val transactionNames: Map[Location, String] = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",
-    Locations.BusinessTaxAccount -> "sent to business tax account"
+    Locations.BusinessTaxAccount -> "sent to business tax account",
+    Locations.Portal -> "sent to portal"
   )
 
   var ruleApplied: String = ""
