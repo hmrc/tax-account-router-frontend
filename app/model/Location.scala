@@ -18,19 +18,15 @@ package model
 
 import controllers.ExternalUrls
 
-case class Location(name: String, defaultUrl: String, parameters: Option[Map[String, String]] = None) {
+case class Location(name: String, defaultUrl: String) {
 
-  lazy val urlWithoutQueryString = ExternalUrls.location(name, defaultUrl)
-  lazy val url = parameters
-    .map(_.map { case (k, v) => s"$k=$v" })
-    .map(queryString => s"$urlWithoutQueryString?${queryString.mkString("&")}")
-    .getOrElse(urlWithoutQueryString)
+  lazy val url = ExternalUrls.location(name, defaultUrl)
+
 }
 
 object Locations {
   lazy val PersonalTaxAccount = Location("personal-tax-account", "/personal-account")
   lazy val BusinessTaxAccount = Location("business-tax-account", "/business-account")
-  lazy val Portal = Location("redirect-to-portal", "/ssoout-non-digital-session", ExternalUrls.portalUrl.map(url => Map("continue" -> url)))
-  lazy val all = List(PersonalTaxAccount, BusinessTaxAccount, Portal)
+  lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
   def find(name: String) = all.find(_.name == name)
 }

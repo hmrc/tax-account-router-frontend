@@ -61,8 +61,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-previous-returns" -> "-",
         "is-in-a-partnership" -> "-",
         "is-self-employed" -> "-",
-        "has-self-assessment-enrolments" -> "-",
-        "has-portal-enrolments" -> "-"
+        "has-self-assessment-enrolments" -> "-"
       )
     }
   }
@@ -80,7 +79,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(IS_IN_A_PARTNERSHIP, result = true)
       auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
       auditContext.setRoutingReason(HAS_SA_ENROLMENTS, result = true)
-      auditContext.setRoutingReason(HAS_PORTAL_ENROLMENTS, result = true)
 
       auditContext.ruleApplied = "rule-name"
 
@@ -99,8 +97,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-previous-returns" -> "true",
         "is-in-a-partnership" -> "true",
         "is-self-employed" -> "true",
-        "has-self-assessment-enrolments" -> "true",
-        "has-portal-enrolments" -> "true"
+        "has-self-assessment-enrolments" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()

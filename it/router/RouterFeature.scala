@@ -11,10 +11,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   val enrolmentConfiguration = Map[String, Any](
         "business-enrolments" -> "enr1,enr2",
-        "self-assessment-enrolments" -> "enr3,enr4",
-        "portal-enrolments" -> "enr5,enr6",
-        "portal.url" -> "/portal",
-        "redirect-to-portal.path" -> "/ssoout-non-digital-session"
+        "self-assessment-enrolments" -> "enr3,enr4"
       )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
@@ -35,7 +32,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
     }
 
-    scenario("a user logged in through GG with any business enrolment should be redirected to BTA") {
+    scenario("a user logged in through GG with any business account be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser())
@@ -165,26 +162,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
-    }
-
-    scenario("a user logged in through GG with any portal enrolment should be redirected to Portal") {
-
-      Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser())
-
-      And("the user has business related enrolments")
-      stubProfileWithPortalEnrolments()
-
-      createStubs(PortalHomeStubPage)
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("the user should be routed to Portal Home Page")
-      on(PortalHomePage)
-
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
     }
   }
 }

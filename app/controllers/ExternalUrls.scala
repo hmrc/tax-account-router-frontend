@@ -34,5 +34,4 @@ object ExternalUrls extends RunMode {
   lazy val taxAccountRouterHost = Play.configuration.getString("tax-account-router.host").getOrElse("")
 
   lazy val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/account"
-  lazy val portalUrl = Play.configuration.getString("portal.url")
 }
