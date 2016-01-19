@@ -323,10 +323,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: mutableMap[String, String], expectedTransactionName: String, ruleApplied: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
-    val event = Json.parse(loggedRequests.filter(s => {
-      println(s.getBodyAsString);
-      s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")
-    }).head.getBodyAsString)
+    val event = Json.parse(loggedRequests
+      .filter(s =>  s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
     (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
     (event \ "detail" \ "reasons" \ "is-a-verify-user").as[String] shouldBe expectedReasons(IS_A_VERIFY_USER.key)
