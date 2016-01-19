@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 HM Revenue & Customs
+ * Copyright 2016 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,13 @@ object LoggedInViaGovernmentGateway extends Condition {
     Future(request.session.data.contains("token"))
 
   override val auditType: Option[RoutingReason] = Some(IS_A_GOVERNMENT_GATEWAY_USER)
+}
+
+object HasNino extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    Future(authContext.principal.accounts.paye.isDefined)
+
+  override val auditType: Option[RoutingReason] = Some(HAS_NINO)
 }
 
 object AnyOtherRuleApplied extends Condition {

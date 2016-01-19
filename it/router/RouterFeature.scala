@@ -4,8 +4,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -136,17 +136,45 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected to PTA") {
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
       stubProfileWithSelfAssessmentEnrolments()
 
-      And("the user has previous returns and is not in a partnership and is not self employed")
+      And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
+      stubSaReturn(saUtr, previousReturns = true)
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected to PTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
       stubSaReturn(saUtr, previousReturns = true)
 
       createStubs(PtaHomeStubPage)
