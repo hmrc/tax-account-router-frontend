@@ -17,6 +17,7 @@
 package connector
 
 import config.WSHttp
+import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -36,6 +37,10 @@ trait SelfAssessmentConnector {
 
     http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
       case e: NotFoundException => SaReturn.empty
+      case e: Throwable=> {
+        Logger.error(s"Unable to retrieve last sa return details for user with utr '$utr", e)
+        throw e
+      }
     }
   }
 

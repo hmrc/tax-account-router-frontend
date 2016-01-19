@@ -17,9 +17,11 @@
 package connector
 
 import config.WSHttp
+import play.api.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
@@ -39,12 +41,20 @@ trait GovernmentGatewayConnector {
       implicit val reads = Json.reads[Enrolment]
       Json.reads[ProfileResponse]
     }
-    http.GET[ProfileResponse](s"$serviceUrl/profile")
+    http.GET[ProfileResponse](s"$serviceUrl/profile").recover {
+      case e: Throwable => {
+        Logger.error(s"Unable to retrieve the list of enrolments for the current user", e)
+        throw e
+      }
+    }
   }
 }
 
 case class ProfileResponse(affinityGroup: String, enrolments: List[Enrolment])
 
+object ProfileResponse {
+  def empty: ProfileResponse = ProfileResponse("Individual", List.empty)
+}
 case class Enrolment(key: String, identifier: String, state: String)
 
 object AffinityGroupValue {
