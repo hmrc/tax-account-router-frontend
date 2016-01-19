@@ -10,9 +10,11 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   val enrolmentConfiguration = Map[String, Any](
-        "business-enrolments" -> "enr1,enr2",
-        "self-assessment-enrolments" -> "enr3,enr4"
-      )
+    "business-enrolments" -> "enr1,enr2",
+    "self-assessment-enrolments" -> "enr3,enr4",
+    "ws.timeout.request" -> 1000,
+    "ws.timeout.connection" -> 500
+  )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
 
@@ -78,6 +80,107 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+    scenario("a user logged in through GG and sa is unresponsive should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the sa is unresponsive")
+      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+    scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the sa is returning 500")
+      stubSaReturnToReturn500(saUtr)
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+
+    scenario("a user logged in through GG and gg returning 500 should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("gg is returning 500")
+      stubProfileToReturn500()
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+    }
+
+    scenario("a user logged in through GG and gg is unresponsive should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("gg is unresponsive")
+      stubProfileToReturnAfter2Seconds()
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {

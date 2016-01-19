@@ -39,12 +39,13 @@ object RoutingReason {
 
   val IS_A_VERIFY_USER = Reason("is-a-verify-user")
   val IS_A_GOVERNMENT_GATEWAY_USER = Reason("is-a-government-gateway-user")
-  val HAS_PRINT_PREFERENCES_ALREADY_SET = Reason("has-print-preferences-already-set")
+  val GG_ENROLMENTS_AVAILABLE = Reason("gg-enrolments-available")
   val HAS_BUSINESS_ENROLMENTS = Reason("has-business-enrolments")
+  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
+  val SA_RETURN_AVAILABLE = Reason("sa-return-available")
   val HAS_PREVIOUS_RETURNS = Reason("has-previous-returns")
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
-  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
   val HAS_NINO = Reason("has-nino")
 }
 
@@ -55,8 +56,9 @@ object AuditContext {
   def defaultRoutingReasons = mutableMap[String, String](
     IS_A_VERIFY_USER.key -> "-" ,
     IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
-    HAS_PRINT_PREFERENCES_ALREADY_SET.key -> "-" ,
+    GG_ENROLMENTS_AVAILABLE.key -> "-",
     HAS_BUSINESS_ENROLMENTS.key -> "-" ,
+    SA_RETURN_AVAILABLE.key -> "-",
     HAS_PREVIOUS_RETURNS.key -> "-" ,
     IS_IN_A_PARTNERSHIP.key -> "-" ,
     IS_SELF_EMPLOYED.key -> "-",

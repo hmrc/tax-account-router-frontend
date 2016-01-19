@@ -56,8 +56,9 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       AuditContext.defaultRoutingReasons shouldBe Map(
         "is-a-verify-user" -> "-",
         "is-a-government-gateway-user" -> "-",
-        "has-print-preferences-already-set" -> "-",
+        "gg-enrolments-available" -> "-",
         "has-business-enrolments" -> "-",
+        "sa-return-available" -> "-",
         "has-previous-returns" -> "-",
         "is-in-a-partnership" -> "-",
         "is-self-employed" -> "-",
@@ -74,8 +75,9 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
       auditContext.setRoutingReason(IS_A_VERIFY_USER, result = true)
       auditContext.setRoutingReason(IS_A_GOVERNMENT_GATEWAY_USER, result = true)
-      auditContext.setRoutingReason(HAS_PRINT_PREFERENCES_ALREADY_SET, result = true)
+      auditContext.setRoutingReason(GG_ENROLMENTS_AVAILABLE, result = true)
       auditContext.setRoutingReason(HAS_BUSINESS_ENROLMENTS, result = true)
+      auditContext.setRoutingReason(SA_RETURN_AVAILABLE, result = true)
       auditContext.setRoutingReason(HAS_PREVIOUS_RETURNS, result = true)
       auditContext.setRoutingReason(IS_IN_A_PARTNERSHIP, result = true)
       auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
@@ -94,8 +96,10 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       val reasonsMap = Map(
         "is-a-verify-user" -> "true",
         "is-a-government-gateway-user" -> "true",
-        "has-print-preferences-already-set" -> "true",
+        "gg-enrolments-available" -> "true",
         "has-business-enrolments" -> "true",
+        "has-self-assessment-enrolments" -> "true",
+        "sa-return-available" -> "true",
         "has-previous-returns" -> "true",
         "is-in-a-partnership" -> "true",
         "is-self-employed" -> "true",

@@ -27,6 +27,13 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 
 import scala.concurrent.Future
 
+object GGEnrolmentsAvailable extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.activeEnrolments.map(_ => true).recover { case _ => false}
+
+  override val auditType: Option[RoutingReason] = Some(GG_ENROLMENTS_AVAILABLE)
+}
+
 object HasAnyBusinessEnrolment extends Condition {
   lazy val businessEnrolments: Set[String] = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 
@@ -34,6 +41,13 @@ object HasAnyBusinessEnrolment extends Condition {
     ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
 
   override val auditType: Option[RoutingReason] = Some(HAS_BUSINESS_ENROLMENTS)
+}
+
+object SAReturnAvailable extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    ruleContext.lastSaReturn.map(_ => true).recover { case _ => false}
+
+  override val auditType: Option[RoutingReason] = Some(SA_RETURN_AVAILABLE)
 }
 
 object HasSelfAssessmentEnrolments extends Condition {

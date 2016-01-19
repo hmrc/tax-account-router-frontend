@@ -31,7 +31,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
   implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
 
   val connectorUnderTest = new SelfAssessmentConnector {
-    override def http =  new HttpGet {
+    override def http = new HttpGet {
 
       override protected def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
         url match {
@@ -39,7 +39,6 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
           case _ => Future.successful(HttpResponse(404))
         }
       }
-        Future.successful(HttpResponse(200, Some(Json.parse(response))))
 
       override val hooks: Seq[HttpHook] = Seq.empty
     }
@@ -47,18 +46,16 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
     override val serviceUrl: String = ""
   }
 
-
   "Calls to the self assessment microservice" should {
     "be mapped to a saReturn object when the return is found" in {
       val saReturn: SaReturn = await(connectorUnderTest.lastReturn("5328981911"))
-      saReturn shouldBe SaReturn(List("individual_tax_form","self_employment"), previousReturns = true)
+      saReturn shouldBe SaReturn(List("individual_tax_form", "self_employment"), previousReturns = true)
     }
     "be mapped to an empty saReturn (previousReturn is false) when the return is not found" in {
       val saReturn: SaReturn = await(connectorUnderTest.lastReturn("other-utr"))
       saReturn shouldBe SaReturn(List.empty, previousReturns = false)
     }
   }
-
 
 
 }
