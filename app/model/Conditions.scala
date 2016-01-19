@@ -81,6 +81,13 @@ object LoggedInViaGovernmentGateway extends Condition {
   override val auditType: Option[RoutingReason] = Some(IS_A_GOVERNMENT_GATEWAY_USER)
 }
 
+object HasNino extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    Future(authContext.principal.accounts.paye.isDefined)
+
+  override val auditType: Option[RoutingReason] = Some(HAS_NINO)
+}
+
 object AnyOtherRuleApplied extends Condition {
   override val auditType: Option[RoutingReason] = None
 

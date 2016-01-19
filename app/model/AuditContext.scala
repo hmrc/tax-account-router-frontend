@@ -45,6 +45,7 @@ object RoutingReason {
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
   val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
+  val HAS_NINO = Reason("has-nino")
 }
 
 import model.RoutingReason._
@@ -59,7 +60,8 @@ object AuditContext {
     HAS_PREVIOUS_RETURNS.key -> "-" ,
     IS_IN_A_PARTNERSHIP.key -> "-" ,
     IS_SELF_EMPLOYED.key -> "-",
-    HAS_SA_ENROLMENTS.key -> "-"
+    HAS_SA_ENROLMENTS.key -> "-",
+    HAS_NINO.key -> "-"
   )
 }
 

@@ -8,8 +8,8 @@ import play.api.libs.json.Json
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map => mutableMap}
@@ -174,17 +174,17 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-partnership-or-self-employment")
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed should be redirected and an audit event should be raised") {
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
       stubProfileWithSelfAssessmentEnrolments()
 
-      And("the user has previous returns and is not in a partnership and is not self employed")
+      And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
 
       val auditEventStub = stubAuditEvent()
@@ -203,7 +203,44 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true"
+        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_NINO.key -> "false"
+        )
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino")
+    }
+
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected and an audit event should be raised") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
+      createStubs(TaxAccountUser(accounts = accounts))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
+      stubSaReturn(saUtr, previousReturns = true)
+
+      val auditEventStub = stubAuditEvent()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      Then("the audit event raised should be the expected one")
+      val expectedReasons = AuditContext.defaultRoutingReasons +=(
+        IS_A_VERIFY_USER.key -> "false",
+        IS_IN_A_PARTNERSHIP.key -> "false",
+        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        IS_SELF_EMPLOYED.key -> "false",
+        HAS_PREVIOUS_RETURNS.key -> "true",
+        HAS_BUSINESS_ENROLMENTS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_NINO.key -> "true"
         )
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-user-with-no-partnership-and-no-self-employment")
@@ -223,5 +260,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     (event \ "detail" \ "reasons" \ "is-self-employed").as[String] shouldBe expectedReasons(IS_SELF_EMPLOYED.key)
     (event \ "detail" \ "reasons" \ "has-previous-returns").as[String] shouldBe expectedReasons(HAS_PREVIOUS_RETURNS.key)
     (event \ "detail" \ "reasons" \ "has-business-enrolments").as[String] shouldBe expectedReasons(HAS_BUSINESS_ENROLMENTS.key)
+    (event \ "detail" \ "reasons" \ "has-nino").as[String] shouldBe expectedReasons(HAS_NINO.key)
   }
 }

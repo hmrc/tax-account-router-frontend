@@ -27,7 +27,9 @@ import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount}
+import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -269,6 +271,36 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
           val result = await(LoggedInViaGovernmentGateway.isTrue(authContext, ruleContext))
           result shouldBe expectedResult
         }
+      }
+    }
+  }
+
+  "HasNino" should {
+
+    "have an audit type specified" in {
+      HasNino.auditType shouldBe Some(HAS_NINO)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "ninoPresent", "expectedResult"),
+        ("user has a NINO", true, true),
+        ("user has no NINO", false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, ninoPresent: Boolean, expectedResult: Boolean) =>
+
+      val paye = if (ninoPresent) Some(PayeAccount("link", mock[Nino])) else None
+      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(paye = paye)), None)
+
+      s"be true whether the user has a NINO - scenario: $scenario" in {
+
+        implicit val fakeRequest = FakeRequest()
+
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val result = await(HasNino.isTrue(authContext, mock[RuleContext]))
+        result shouldBe expectedResult
       }
     }
   }
