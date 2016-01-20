@@ -35,6 +35,19 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
+  def stubProfileWithNoEnrolments() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Individual",
+            |"enrolments":[]
+            |}
+            | """.stripMargin)))
+  }
+
   def stubProfileToReturnAfter2Seconds() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()
