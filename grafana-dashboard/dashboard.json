@@ -1,5 +1,5 @@
 {
-  "id": 1,
+  "id": 4,
   "title": "tax-account-router-frontend",
   "originalTitle": "tax-account-router-frontend",
   "tags": [],
@@ -396,8 +396,8 @@
           "title": "Routed users",
           "tooltip": {
             "query_as_alias": true,
-            "shared": true,
-            "value_type": "cumulative"
+            "shared": false,
+            "value_type": "individual"
           },
           "type": "graph",
           "x-axis": true,
@@ -489,7 +489,7 @@
           "datasource": null,
           "editable": true,
           "error": false,
-          "fill": 0,
+          "fill": 6,
           "grid": {
             "leftLogBase": 1,
             "leftMax": null,
@@ -517,7 +517,7 @@
           "linewidth": 1,
           "links": [],
           "nullPointMode": "connected",
-          "percentage": false,
+          "percentage": true,
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -525,7 +525,7 @@
           "scale": 1,
           "seriesOverrides": [],
           "span": 12,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
@@ -546,14 +546,14 @@
           "title": "BTA Routed traffic breakdown [users per second]",
           "tooltip": {
             "query_as_alias": true,
-            "shared": true,
-            "value_type": "cumulative"
+            "shared": false,
+            "value_type": "individual"
           },
           "type": "graph",
           "x-axis": true,
           "y-axis": true,
           "y_formats": [
-            "short",
+            "percent",
             "short"
           ],
           "zerofill": true
@@ -641,7 +641,7 @@
     }
   ],
   "time": {
-    "from": "now-1h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {
