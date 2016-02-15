@@ -16,22 +16,17 @@
 
 package controllers
 
-import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
+import config.AppConfigHelpers
+import config.FrontendAppConfig._
 
-object ExternalUrls extends RunMode {
+object ExternalUrls extends AppConfigHelpers {
 
-  import play.api.Play.current
-
-  def location(name: String, defaultPath: String): String = {
-    val host = Play.configuration.getString(s"$name.host").getOrElse("")
-    val path = Play.configuration.getString(s"$name.path").getOrElse(defaultPath)
+  def getUrl(locationName: String) = {
+    val host = getConfigurationStringOption(s"$locationName.host").getOrElse("")
+    val path = getConfigurationString(s"$locationName.path")
 
     host + path
   }
-
-  lazy val companyAuthHost = Play.configuration.getString("company-auth.host").getOrElse("")
-  lazy val taxAccountRouterHost = Play.configuration.getString("tax-account-router.host").getOrElse("")
 
   lazy val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/account"
 }

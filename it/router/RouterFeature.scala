@@ -9,14 +9,15 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, 
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
-  val enrolmentConfiguration = Map[String, Any](
+  val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     "self-assessment-enrolments" -> "enr3,enr4",
-    "ws.timeout.request" -> 1000,
-    "ws.timeout.connection" -> 500
+    "ws.timeout.request" -> 5000,
+    "ws.timeout.connection" -> 1000,
+    "two-step-verification.enabled" -> true
   )
 
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ enrolmentConfiguration)
+  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
 
   feature("Router feature") {
 
@@ -32,6 +33,15 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to PTA Home Page")
       on(PtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("Government Gateway service should not be invoked")
+      verify(0, getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
     scenario("a user logged in through GG with any business account be redirected to BTA") {
@@ -52,6 +62,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected to BTA") {
@@ -93,7 +106,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubProfileWithSelfAssessmentEnrolments()
 
       And("the sa is unresponsive")
-      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
+      stubSaReturnToProperlyRespondAfter20Seconds(saUtr)
 
       createStubs(BtaHomeStubPage)
 
@@ -159,6 +172,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
     scenario("a user logged in through GG and gg is unresponsive should be redirected to BTA") {
@@ -169,7 +185,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("gg is unresponsive")
-      stubProfileToReturnAfter2Seconds()
+      stubProfileToReturnAfter20Seconds()
 
       createStubs(BtaHomeStubPage)
 
@@ -181,6 +197,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
@@ -293,6 +312,64 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to 2SV with continue url BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      And("the user has previous returns")
+      stubSaReturnWithNoPreviousReturns(saUtr)
+
+      createStubs(TwoSVPromptStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to 2SV Prompt Page with continue to BTA")
+      on(TwoSVPromptPage)
+
+      And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
+      verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+
+    scenario("a BTA eligible user with NINO and not registered for 2SV should be redirected to 2SV with continue url BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
+      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      createStubs(TwoSVPromptStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to 2SV Prompt Page with continue to BTA")
+      on(TwoSVPromptPage)
+
+      And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
+      verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
   }
 }

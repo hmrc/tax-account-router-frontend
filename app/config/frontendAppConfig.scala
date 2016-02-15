@@ -19,24 +19,38 @@ package config
 import play.api.Play.{configuration, current}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-trait AppConfig {
+trait AppConfigHelpers {
+  def getConfigurationStringOption(key: String) = configuration.getString(key)
+
+  def getConfigurationString(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
+
+  def getConfigurationBoolean(key: String) = configuration.getBoolean(key).getOrElse(false)
+}
+
+trait AppConfig extends AppConfigHelpers {
   val assetsPrefix: String
   val analyticsToken: String
   val analyticsHost: String
   val reportAProblemPartialUrl: String
   val reportAProblemNonJSUrl: String
+  val twoStepVerificationHost: String
+  val twoStepVerificationPath: String
+  val companyAuthHost: String
+  val taxAccountRouterHost: String
 }
 
 object FrontendAppConfig extends AppConfig with ServicesConfig {
 
-  private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
-
   private val contactHost = configuration.getString("contact-frontend.host").getOrElse("")
   private val contactFormServiceIdentifier = "MyService"
 
-  override lazy val assetsPrefix = loadConfig("assets.url") + loadConfig("assets.version")
-  override lazy val analyticsToken = loadConfig("google-analytics.token")
-  override lazy val analyticsHost = loadConfig("google-analytics.host")
+  override lazy val assetsPrefix = getConfigurationString("assets.url") + getConfigurationString("assets.version")
+  override lazy val analyticsToken = getConfigurationString("google-analytics.token")
+  override lazy val analyticsHost = getConfigurationString("google-analytics.host")
   override lazy val reportAProblemPartialUrl = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
   override lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
+  override lazy val twoStepVerificationHost = getConfigurationString("two-step-verification.host")
+  override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
+  override lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
+  override lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
 }

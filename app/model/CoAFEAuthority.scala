@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package connector
+package model
 
-import config.WSHttp
-import model.CoAFEAuthority
-import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import uk.gov.hmrc.play.http.HeaderCarrier
+import play.api.libs.json._
 
-object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
-  val serviceUrl = baseUrl("auth")
-  lazy val http = WSHttp
-}
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String])
 
-trait FrontendAuthConnector extends AuthConnector  {
-
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = http.GET[CoAFEAuthority](s"$serviceUrl/auth/authority")
+object CoAFEAuthority {
+  implicit val reads = Json.reads[CoAFEAuthority]
 }

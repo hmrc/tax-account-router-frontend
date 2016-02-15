@@ -103,4 +103,24 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       verifyZeroInteractions(mockSelfAssessmentConnector)
     }
   }
+
+  "currentCoAFEAuthority" should {
+    "return the current authority" in {
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+
+      val mockFrontendAuthConnector = mock[FrontendAuthConnector]
+      val currentAuthority = CoAFEAuthority(Some("1234"))
+      when(mockFrontendAuthConnector.currentCoAFEAuthority()(hc)).thenReturn(Future(currentAuthority))
+
+      val authContext = mock[AuthContext]
+
+      val ruleContext = new RuleContext(authContext) {
+        override val frontendAuthConnector = mockFrontendAuthConnector
+      }
+
+      val result = ruleContext.currentCoAFEAuthority
+
+      await(result) shouldBe currentAuthority
+    }
+  }
 }

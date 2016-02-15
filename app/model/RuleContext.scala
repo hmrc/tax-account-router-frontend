@@ -17,7 +17,6 @@
 package model
 
 import connector._
-import play.api.Logger
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -27,14 +26,17 @@ import scala.concurrent.Future
 case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
+  val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
 
   lazy val activeEnrolments: Future[Set[String]] = {
-    val futureProfile: Future[ProfileResponse] = governmentGatewayConnector.profile
+    val futureProfile = governmentGatewayConnector.profile
     futureProfile.map { profile =>
       profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
     }
   }
 
-  lazy val lastSaReturn: Future[SaReturn] = authContext.principal.accounts.sa
+  lazy val lastSaReturn = authContext.principal.accounts.sa
     .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
+
+  lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 }

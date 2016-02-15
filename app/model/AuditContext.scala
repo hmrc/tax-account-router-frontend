@@ -47,37 +47,44 @@ object RoutingReason {
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
   val HAS_NINO = Reason("has-nino")
+  val HAS_SA_UTR = Reason("has-sa-utr")
+  val HAS_REGISTERED_FOR_2SV = Reason("has-registered-for-2sv")
+
+  val allReasons = List(
+    IS_A_VERIFY_USER,
+    IS_A_GOVERNMENT_GATEWAY_USER,
+    GG_ENROLMENTS_AVAILABLE,
+    HAS_BUSINESS_ENROLMENTS,
+    HAS_SA_ENROLMENTS,
+    SA_RETURN_AVAILABLE,
+    HAS_PREVIOUS_RETURNS,
+    IS_IN_A_PARTNERSHIP,
+    IS_SELF_EMPLOYED,
+    HAS_NINO,
+    HAS_SA_UTR,
+    HAS_REGISTERED_FOR_2SV
+  )
 }
 
 import model.RoutingReason._
 
 object AuditContext {
 
-  def defaultRoutingReasons = mutableMap[String, String](
-    IS_A_VERIFY_USER.key -> "-" ,
-    IS_A_GOVERNMENT_GATEWAY_USER.key -> "-" ,
-    GG_ENROLMENTS_AVAILABLE.key -> "-",
-    HAS_BUSINESS_ENROLMENTS.key -> "-" ,
-    SA_RETURN_AVAILABLE.key -> "-",
-    HAS_PREVIOUS_RETURNS.key -> "-" ,
-    IS_IN_A_PARTNERSHIP.key -> "-" ,
-    IS_SELF_EMPLOYED.key -> "-",
-    HAS_SA_ENROLMENTS.key -> "-",
-    HAS_NINO.key -> "-"
-  )
+  def defaultRoutingReasons = mutableMap(allReasons.map(reason => reason.key -> "-"): _*)
 }
 
 trait TAuditContext {
 
   private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
+  var sentTo2SVRegister = false
 
-  private val transactionNames: Map[Location, String] = Map(
+  private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",
     Locations.BusinessTaxAccount -> "sent to business tax account"
   )
 
-  var ruleApplied: String = ""
+  var ruleApplied = ""
 
   def getReasons: mutableMap[String, String] = routingReasons
 

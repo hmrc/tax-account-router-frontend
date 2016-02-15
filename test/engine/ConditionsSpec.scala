@@ -27,8 +27,8 @@ import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -290,10 +290,10 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, ninoPresent: Boolean, expectedResult: Boolean) =>
 
-      val paye = if (ninoPresent) Some(PayeAccount("link", mock[Nino])) else None
-      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(paye = paye)), None)
-
       s"be true whether the user has a NINO - scenario: $scenario" in {
+
+        val paye = if (ninoPresent) Some(PayeAccount("link", mock[Nino])) else None
+        val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(paye = paye)), None)
 
         implicit val fakeRequest = FakeRequest()
 
@@ -301,6 +301,71 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val result = await(HasNino.isTrue(authContext, mock[RuleContext]))
         result shouldBe expectedResult
+      }
+    }
+  }
+
+  "HasSaUtr" should {
+
+    "have an audit type specified" in {
+      HasSaUtr.auditType shouldBe Some(HAS_SA_UTR)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "saUtrPresent", "expectedResult"),
+        ("user has a SAUTR", true, true),
+        ("user has no SAUTR", false, false)
+      )
+
+    forAll(scenarios) { (scenario: String, saUtrPresent: Boolean, expectedResult: Boolean) =>
+
+      s"be true whether the user has SAUTR - scenario: $scenario" in {
+
+        val sa = if (saUtrPresent) Some(SaAccount("", mock[SaUtr])) else None
+        val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = sa)), None)
+
+        implicit val fakeRequest = FakeRequest()
+
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val result = await(HasSaUtr.isTrue(authContext, mock[RuleContext]))
+        result shouldBe expectedResult
+      }
+    }
+  }
+
+  "HasRegisteredFor2SV" should {
+
+    "have an audit type specified" in {
+      HasRegisteredFor2SV.auditType shouldBe Some(HAS_REGISTERED_FOR_2SV)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "isRegistered"),
+        ("return true when user has registered", true),
+        ("return false when user has not registered", false)
+      )
+
+    forAll(scenarios) { (scenario: String, isRegistered: Boolean) =>
+
+      scenario in {
+
+        val twoFactorAuthOtpId = if (isRegistered) Some("1234") else None
+        val authContext = mock[AuthContext]
+
+        implicit val fakeRequest = FakeRequest()
+
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+        val ruleContext = mock[RuleContext]
+        when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId)))
+
+        val result = await(HasRegisteredFor2SV.isTrue(authContext, ruleContext))
+
+        result shouldBe isRegistered
+        verify(ruleContext).currentCoAFEAuthority
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
