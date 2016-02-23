@@ -37,7 +37,6 @@ trait MetricsMonitoringService {
   def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
     Future {
-
       val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")
       val destinationNameAfterThrottling = throttledLocation.name
       val throttleKey = if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
@@ -51,6 +50,11 @@ trait MetricsMonitoringService {
 
       val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
       falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
+
+      if (auditContext.sentTo2SVRegister) {
+        val name = s"passed-through-2SV.to-${throttledLocation.name}"
+        metricsRegistry.meter(name).mark()
+      }
     }
   }
 

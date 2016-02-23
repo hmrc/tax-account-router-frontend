@@ -63,8 +63,8 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
   def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
     request.session.data.contains("token") match {
-      case true if location.name == Locations.PersonalTaxAccount.name => "-gg"
-      case false if location.name == Locations.PersonalTaxAccount.name => "-verify"
+      case true if location.name == PersonalTaxAccount.name => "-gg"
+      case false if location.name == PersonalTaxAccount.name => "-verify"
       case _ => ""
     }
   }

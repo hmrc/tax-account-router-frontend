@@ -16,17 +16,40 @@
 
 package model
 
+import java.net.{URI, URLEncoder}
+
 import controllers.ExternalUrls
 
-case class Location(name: String, defaultUrl: String) {
+case class Location(name: String, url: String, queryParams: (String, String)*) {
 
-  lazy val url = ExternalUrls.location(name, defaultUrl)
+  lazy val fullUrl = {
+    def encode(value: String) = URLEncoder.encode(value, "utf-8")
 
+    def urlWithQueryParams =
+      if (queryParams.isEmpty) url
+      else {
+        val encoded = for {
+          (key, value) <- queryParams
+        } yield s"${encode(key)}=${encode(value)}"
+
+        s"$url?${encoded.mkString("&")}"
+      }
+
+    URI.create(urlWithQueryParams).toString
+  }
 }
 
 object Locations {
-  lazy val PersonalTaxAccount = Location("personal-tax-account", "/personal-account")
-  lazy val BusinessTaxAccount = Location("business-tax-account", "/business-account")
+  val personalTaxAccountLocationName = "personal-tax-account"
+  val businessTaxAccountLocationName = "business-tax-account"
+  lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
+  lazy val BusinessTaxAccount = Location(businessTaxAccountLocationName, ExternalUrls.getUrl(businessTaxAccountLocationName))
+
+  val twoStepVerificationLocationName = "two-step-verification"
+
+  def TwoStepVerification(queryString: (String, String)*) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationLocationName), queryString: _*)
+
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
+
   def find(name: String) = all.find(_.name == name)
 }

@@ -48,11 +48,11 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
-  def stubProfileToReturnAfter2Seconds() = {
+  def stubProfileToReturnAfter20Seconds() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()
         .withStatus(200)
-        .withFixedDelay(2000)
+        .withFixedDelay(20000) // For the tests to correctly fail this value must be greater than the ws.timeout.request used by the test.
         .withBody(
           """
             |{
@@ -89,11 +89,11 @@ trait CommonStubs {
              | """.stripMargin)))
   }
 
-  def stubSaReturnToProperlyRespondAfter2Seconds(saUtr: String) = {
+  def stubSaReturnToProperlyRespondAfter20Seconds(saUtr: String) = {
     stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
       .willReturn(aResponse()
         .withStatus(200)
-        .withFixedDelay(2000)
+        .withFixedDelay(20000) // For the tests to correctly fail this value must be greater than the ws.timeout.request used by the test.
         .withBody(
           s"""
              |{

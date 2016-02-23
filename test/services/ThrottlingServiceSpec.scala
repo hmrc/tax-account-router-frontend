@@ -49,7 +49,7 @@ import scala.util.Random
 
 class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with SpecHelpers {
 
-  private val longLiveDocumentExpirationTime: String = "2016-02-15T00:00"
+  private val longLiveDocumentExpirationTime: String = "3016-02-15T00:00"
   private val shortLiveDocumentExpirationSeconds: Int = 1
 
   val expirationDate: DateTime = DateTime.parse(longLiveDocumentExpirationTime)

@@ -16,19 +16,19 @@
         ga('create', '@{gaToken}', 'auto');
         ga('send', 'event', 'routing', '@{location.name}', '@{eventName}', {
           'hitCallback': function() {
-            window.location='@{location.url}';
+            window.location='@{location.fullUrl}';
           }
         });
 
         setTimeout(function() {
-            window.location='@{location.url}';
+            window.location='@{location.fullUrl}';
         }, 3000);
 
     </script>
   </head>
 
   <body>
-    <p id="non-js-only"><a href="@Html(location.url)">Click here if you are not redirected within a few seconds</a></p>
+      <p id="non-js-only"><a href="@Html(location.fullUrl)">Click here if you are not redirected within a few seconds</a></p>
     <script type="text/javascript">document.getElementById("non-js-only").setAttribute("style", "display:none;");</script>
   </body>
 </html>

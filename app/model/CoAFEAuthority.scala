@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-package controllers
+package model
 
-import config.AppConfigHelpers
+import play.api.libs.json._
 
-object ExternalUrls extends AppConfigHelpers {
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String])
 
-  def getUrl(locationName: String) = {
-    val host = getConfigurationStringOption(s"$locationName.host").getOrElse("")
-    val path = getConfigurationString(s"$locationName.path")
-
-    host + path
-  }
-
-  lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
-  lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
-
-  lazy val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/account"
-
+object CoAFEAuthority {
+  implicit val reads = Json.reads[CoAFEAuthority]
 }

@@ -49,7 +49,9 @@ trait SessionCookieBaker {
   }
 }
 
-class LoggedInSessionUser(tokenPresent: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
+class LoggedInSessionUser(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
+
+  private val twoFactorAuthOtpId = if (isRegisteredFor2SV) """"twoFactorAuthOtpId": "1234",""" else ""
 
   override def create() = {
     val token =
@@ -96,6 +98,7 @@ class LoggedInSessionUser(tokenPresent: Boolean, accounts: Accounts) extends Stu
           .withBody(
             s"""
               |{
+              |    $twoFactorAuthOtpId
               |    "uri": "/auth/oid/1234567890",
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
                |    "accounts":${Json.toJson(accounts)},
@@ -103,12 +106,12 @@ class LoggedInSessionUser(tokenPresent: Boolean, accounts: Accounts) extends Stu
                |    "credentialStrength": "none",
                |    "confidenceLevel": 500
               |}
-              |
-            """.stripMargin
+               |"""
+              .stripMargin
           )))
   }
 }
 
 object LoggedInSessionUser {
-  def apply(tokenPresent: Boolean, accounts: Accounts) = new LoggedInSessionUser(tokenPresent, accounts)
+  def apply(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, accounts: Accounts) = new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts)
 }

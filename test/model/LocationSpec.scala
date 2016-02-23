@@ -16,25 +16,20 @@
 
 package model
 
-import play.api.test.FakeApplication
-import play.api.test.Helpers._
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 
-class LocationSpec extends UnitSpec with WithFakeApplication {
+class LocationSpec extends UnitSpec {
 
-  "A location" should {
-    "have a default value" in {
-      Location("test-tax-account", "/test-account").url shouldBe "/test-account"
+  "location" should {
+
+    "return a url without query string when no query params are provided" in {
+
+      Location("test-tax-account", "/some-url").fullUrl shouldBe "/some-url"
     }
 
-    "can be overridden with a different host" in running(FakeApplication(additionalConfiguration = Map("test-tax-account.host" -> "localhost:9000"))) {
+    "return a url with an encoded query string when query params are provided" in {
 
-      Location("test-tax-account", "/test-account").url shouldBe "localhost:9000/test-account"
-    }
-
-    "can be overridden with a different path" in running(FakeApplication(additionalConfiguration = Map("test-tax-account.path" -> "/test-account/full"))) {
-
-      Location("test-tax-account", "/test-account").url shouldBe "/test-account/full"
+      Location("test-tax-account", "/some-url", "a" -> "/b", "c" -> "/d").fullUrl shouldBe "/some-url?a=%2Fb&c=%2Fd"
     }
   }
 

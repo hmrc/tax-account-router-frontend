@@ -20,12 +20,13 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 
 class TaxAccountUser(loggedIn: Boolean,
                      tokenPresent: Boolean,
+                     isRegisteredFor2SV: Boolean,
                      accounts: Accounts)
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(tokenPresent, accounts).create
+      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts).create
 
     } else {
       LoggedOutSessionUser.create
@@ -37,7 +38,8 @@ object TaxAccountUser {
 
   def apply(loggedIn: Boolean = true,
             tokenPresent: Boolean = true,
+            isRegisteredFor2SV: Boolean = true,
             accounts: Accounts = Accounts()) = {
-    new TaxAccountUser(loggedIn, tokenPresent, accounts)
+    new TaxAccountUser(loggedIn, tokenPresent, isRegisteredFor2SV, accounts)
   }
 }
