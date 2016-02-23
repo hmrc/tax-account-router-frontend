@@ -17,7 +17,6 @@
 package controllers
 
 import config.AppConfigHelpers
-import config.FrontendAppConfig._
 
 object ExternalUrls extends AppConfigHelpers {
 
@@ -28,5 +27,9 @@ object ExternalUrls extends AppConfigHelpers {
     host + path
   }
 
+  lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
+  lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
+
   lazy val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/account"
+
 }

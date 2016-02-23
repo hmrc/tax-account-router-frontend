@@ -16,7 +16,7 @@
 
 package controllers
 
-import config.{AppConfigHelpers, FrontendAppConfig}
+import config.AppConfigHelpers
 import engine.Condition._
 import model.Locations._
 import model._
@@ -63,9 +63,9 @@ trait TwoStepVerification {
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
 
-  override lazy val twoStepVerificationHost = FrontendAppConfig.twoStepVerificationHost
+  override lazy val twoStepVerificationHost = getConfigurationString("two-step-verification.host")
 
-  override lazy val twoStepVerificationPath = FrontendAppConfig.twoStepVerificationPath
+  override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
 
   override lazy val twoStepVerificationEnabled = getConfigurationBoolean("two-step-verification.enabled")
 }

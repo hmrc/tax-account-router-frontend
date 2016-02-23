@@ -33,10 +33,6 @@ trait AppConfig extends AppConfigHelpers {
   val analyticsHost: String
   val reportAProblemPartialUrl: String
   val reportAProblemNonJSUrl: String
-  val twoStepVerificationHost: String
-  val twoStepVerificationPath: String
-  val companyAuthHost: String
-  val taxAccountRouterHost: String
 }
 
 object FrontendAppConfig extends AppConfig with ServicesConfig {
@@ -49,8 +45,4 @@ object FrontendAppConfig extends AppConfig with ServicesConfig {
   override lazy val analyticsHost = getConfigurationString("google-analytics.host")
   override lazy val reportAProblemPartialUrl = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
   override lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
-  override lazy val twoStepVerificationHost = getConfigurationString("two-step-verification.host")
-  override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
-  override lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
-  override lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
 }
