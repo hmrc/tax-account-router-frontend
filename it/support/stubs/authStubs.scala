@@ -25,7 +25,7 @@ import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
@@ -49,9 +49,13 @@ trait SessionCookieBaker {
   }
 }
 
-class LoggedInSessionUser(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, accounts: Accounts) extends Stub with SessionCookieBaker {
+class LoggedInSessionUser(tokenPresent: Boolean,
+                          isRegisteredFor2SV: Boolean,
+                          accounts: Accounts,
+                          credentialStrength: CredentialStrength) extends Stub with SessionCookieBaker {
 
   private val twoFactorAuthOtpId = if (isRegisteredFor2SV) """"twoFactorAuthOtpId": "1234",""" else ""
+  private val credentialStrengthField = s""""credentialStrength": "${credentialStrength.name.toLowerCase}","""
 
   override def create() = {
     val token =
@@ -103,7 +107,7 @@ class LoggedInSessionUser(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, ac
               |    "loggedInAt": "2014-06-09T14:57:09.522Z",
                |    "accounts":${Json.toJson(accounts)},
                |    "levelOfAssurance": "2",
-               |    "credentialStrength": "none",
+               |    $credentialStrengthField
                |    "confidenceLevel": 500
               |}
                |"""
@@ -113,5 +117,8 @@ class LoggedInSessionUser(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, ac
 }
 
 object LoggedInSessionUser {
-  def apply(tokenPresent: Boolean, isRegisteredFor2SV: Boolean, accounts: Accounts) = new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts)
+  def apply(tokenPresent: Boolean,
+            isRegisteredFor2SV: Boolean,
+            accounts: Accounts,
+            credentialStrength: CredentialStrength) = new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength)
 }

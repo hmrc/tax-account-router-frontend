@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
 import support.Env
@@ -42,7 +43,9 @@ trait StubbedFeatureSpec
   with StubSugar
   with OptionValues
   with AssertionSugar
-  with StubApplicationConfiguration {
+  with StubApplicationConfiguration
+  with Eventually
+  with IntegrationPatience {
 
   override lazy val port = 9000
   override lazy val app = FakeApplication(additionalConfiguration = config)

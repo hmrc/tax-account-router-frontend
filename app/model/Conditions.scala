@@ -22,6 +22,7 @@ import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -83,21 +84,21 @@ object IsSelfEmployed extends Condition {
 
 object LoggedInViaVerify extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future(!request.session.data.contains("token"))
+    Future.successful(!request.session.data.contains("token"))
 
   override val auditType = Some(IS_A_VERIFY_USER)
 }
 
 object LoggedInViaGovernmentGateway extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future(request.session.data.contains("token"))
+    Future.successful(request.session.data.contains("token"))
 
   override val auditType = Some(IS_A_GOVERNMENT_GATEWAY_USER)
 }
 
 object HasNino extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future(authContext.principal.accounts.paye.isDefined)
+    Future.successful(authContext.principal.accounts.paye.isDefined)
 
   override val auditType = Some(HAS_NINO)
 }
@@ -105,14 +106,14 @@ object HasNino extends Condition {
 object AnyOtherRuleApplied extends Condition {
   override val auditType = None
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(true)
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future.successful(true)
 }
 
 object HasSaUtr extends Condition {
   override val auditType = Some(HAS_SA_UTR)
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future(authContext.principal.accounts.sa.isDefined)
+    Future.successful(authContext.principal.accounts.sa.isDefined)
 }
 
 object HasRegisteredFor2SV extends Condition {
@@ -120,4 +121,11 @@ object HasRegisteredFor2SV extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.currentCoAFEAuthority.map(_.twoFactorAuthOtpId.isDefined)
+}
+
+object HasStrongCredentials extends Condition {
+  override val auditType = Some(HAS_STRONG_CREDENTIALS)
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    Future.successful(authContext.user.credentialStrength == CredentialStrength.Strong)
 }
