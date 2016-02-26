@@ -449,7 +449,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_NINO.key -> "true",
-        HAS_SA_UTR.key -> "-",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
@@ -483,9 +482,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_NINO.key -> "-",
-        HAS_SA_UTR.key -> "-",
-        HAS_REGISTERED_FOR_2SV.key -> "-",
         HAS_STRONG_CREDENTIALS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -496,13 +492,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
   def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
-    eventually {
-      val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
-      val event = Json.parse(loggedRequests
-        .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
-      (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
-      (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
-      (event \ "detail" \ "reasons") shouldBe expectedReasons
-    }
+    val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
+    val event = Json.parse(loggedRequests
+      .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
+    (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
+    (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
+    (event \ "detail" \ "reasons") shouldBe expectedReasons
   }
 }
