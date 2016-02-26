@@ -28,7 +28,7 @@ import org.scalatest.prop.Tables.Table
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -366,6 +366,42 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         result shouldBe isRegistered
         verify(ruleContext).currentCoAFEAuthority
         verifyNoMoreInteractions(ruleContext)
+      }
+    }
+  }
+
+  "HasStrongCredentials" should {
+
+    "have an audit type specified" in {
+      HasStrongCredentials.auditType shouldBe Some(HAS_STRONG_CREDENTIALS)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "credentialStrength", "expected"),
+        ("return false when credential strength None", CredentialStrength.None, false),
+        ("return false when credential strength Weak", CredentialStrength.Weak, false),
+        ("return true when credential strength Strong", CredentialStrength.Strong, true)
+      )
+
+    forAll(scenarios) { (scenario: String, credentialStrength: CredentialStrength, expected: Boolean) =>
+
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val loggedInUser = mock[LoggedInUser]
+        when(loggedInUser.credentialStrength).thenReturn(credentialStrength)
+        val authContext = mock[AuthContext]
+        when(authContext.user).thenReturn(loggedInUser)
+        val ruleContext = mock[RuleContext]
+
+        val result = await(HasStrongCredentials.isTrue(authContext, ruleContext))
+
+        result shouldBe expected
+        verify(authContext).user
+        verify(loggedInUser).credentialStrength
+        verifyNoMoreInteractions(ruleContext, authContext, loggedInUser)
       }
     }
   }

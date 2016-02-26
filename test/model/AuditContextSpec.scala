@@ -65,7 +65,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-self-assessment-enrolments" -> "-",
         "has-nino" -> "-",
         "has-sa-utr" -> "-",
-        "has-registered-for-2sv" -> "-"
+        "has-registered-for-2sv" -> "-",
+        "has-strong-credentials" -> "-"
       )
     }
   }
@@ -87,6 +88,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_NINO, result = true)
       auditContext.setRoutingReason(HAS_SA_UTR, result = true)
       auditContext.setRoutingReason(HAS_REGISTERED_FOR_2SV, result = true)
+      auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
 
       auditContext.ruleApplied = "rule-name"
 
@@ -110,7 +112,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-self-assessment-enrolments" -> "true",
         "has-nino" -> "true",
         "has-sa-utr" -> "true",
-        "has-registered-for-2sv" -> "true"
+        "has-registered-for-2sv" -> "true",
+        "has-strong-credentials" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()
@@ -122,11 +125,11 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditEvent.auditType shouldBe "Routing"
       auditEvent.eventId should fullyMatch regex """^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$""".r
 
-      auditEvent.tags.contains("clientIP")
+      auditEvent.tags should contain key "clientIP"
       auditEvent.tags("path") shouldBe path
-      auditEvent.tags.contains("X-Session-ID")
-      auditEvent.tags.contains("X-Request-ID")
-      auditEvent.tags.contains("clientPort")
+      auditEvent.tags should contain key "X-Session-ID"
+      auditEvent.tags should contain key "X-Request-ID"
+      auditEvent.tags should contain key "clientPort"
       auditEvent.tags("transactionName") shouldBe "unknown transaction"
 
       auditEvent.detail shouldBe Json.obj(

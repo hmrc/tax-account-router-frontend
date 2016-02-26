@@ -5,7 +5,7 @@ import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{CredentialStrength, Accounts, PayeAccount, SaAccount}
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -60,6 +60,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -87,6 +90,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
@@ -116,6 +122,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -144,6 +153,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -170,6 +182,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -194,6 +209,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
@@ -223,6 +241,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -251,6 +272,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
 
@@ -278,6 +302,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))
@@ -364,6 +391,33 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
+    }
+
+    scenario("a BTA eligible user with NINO, not registered for 2SV but already has strong credentials should be not redirected to 2SV with continue url BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
+      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
+
+      And("the user has self assessment enrolments")
+      stubProfileWithSelfAssessmentEnrolments()
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
       And("the user profile should be fetched from the Government Gateway")
       verify(getRequestedFor(urlEqualTo("/profile")))

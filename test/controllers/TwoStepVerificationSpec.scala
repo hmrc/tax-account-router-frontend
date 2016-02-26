@@ -49,15 +49,14 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       val auditContext = mock[TAuditContext]
 
       val twoStepVerification = new TwoStepVerification {
-        override def twoStepVerificationPath = "/register"
+        override def twoStepVerificationPath = ???
 
-        override def twoStepVerificationHost = "http://some-host"
+        override def twoStepVerificationHost = ???
 
         override def twoStepVerificationEnabled = false
       }
 
       val ruleContext = mock[RuleContext]
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
@@ -88,15 +87,45 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
         val auditContext = mock[TAuditContext]
 
         val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = "/register"
+          override def twoStepVerificationPath = ???
 
-          override def twoStepVerificationHost = "http://some-host"
+          override def twoStepVerificationHost = ???
 
           override def twoStepVerificationEnabled = true
         }
 
         val ruleContext = mock[RuleContext]
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
+        val result = await(twoStepVerification.getDestinationVia2SV(continueUrl, ruleContext, auditContext))
+
+        result shouldBe None
+
+        verifyZeroInteractions(ruleContext)
+      }
+    }
+
+    forAll(scenarios) { (scenario: String, continueUrl: Location) =>
+
+      s"not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) - scenario: $scenario" in {
+
+        val credentialStrength = CredentialStrength.Strong
+        val loggedInUser = LoggedInUser("userId", None, None, None, credentialStrength, ConfidenceLevel.L0)
+        val principal = Principal(None, Accounts())
+        implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+        implicit val request = FakeRequest()
+        implicit val hc = HeaderCarrier()
+
+        val auditContext = mock[TAuditContext]
+
+        val twoStepVerification = new TwoStepVerification {
+          override def twoStepVerificationPath = ???
+
+          override def twoStepVerificationHost = ???
+
+          override def twoStepVerificationEnabled = true
+        }
+
+        val ruleContext = mock[RuleContext]
         val result = await(twoStepVerification.getDestinationVia2SV(continueUrl, ruleContext, auditContext))
 
         result shouldBe None
@@ -132,9 +161,9 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
         val auditContext = mock[TAuditContext]
 
         val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = "/register"
+          override def twoStepVerificationPath = ???
 
-          override def twoStepVerificationHost = "http://some-host"
+          override def twoStepVerificationHost = ???
 
           override def twoStepVerificationEnabled = true
         }
@@ -160,7 +189,8 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
       s"rewrite the location using 2SV url when the continue url is BTA and the user is not registered for 2SV - scenario: $scenario" in {
 
-        val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+        val credentialStrength = CredentialStrength.Weak
+        val loggedInUser = LoggedInUser("userId", None, None, None, credentialStrength, ConfidenceLevel.L0)
         val accounts = Accounts(
           paye = hasNino.collect { case true => PayeAccount("", Nino("CS100700A")) },
           sa = hasSaUtr.collect { case true => SaAccount("", SaUtr("some-saUtr")) }
