@@ -21,8 +21,6 @@ import model.Locations._
 import model._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
@@ -57,7 +55,6 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
         override def twoStepVerificationEnabled = false
       }
-
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -106,33 +103,42 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       verifyNoMoreInteractions(ruleContext)
     }
 
-    val scenarios = Table(
-      ("scenario", "continueUrl"),
-      ("continue is PTA", evaluateUsingPlay(PersonalTaxAccount)),
-      ("continue is BTA", evaluateUsingPlay(BusinessTaxAccount))
-    )
+    "not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) and continue is PTA" in new Setup {
 
-    forAll(scenarios) { (scenario: String, continueUrl: Location) =>
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      s"not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) - scenario: $scenario" in new Setup {
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
 
-        val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
+        override def twoStepVerificationHost = ???
 
-        val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = ???
-
-          override def twoStepVerificationHost = ???
-
-          override def twoStepVerificationEnabled = true
-        }
-
-
-        val result = await(twoStepVerification.getDestinationVia2SV(continueUrl, ruleContext, auditContext))
-
-        result shouldBe None
-        verifyZeroInteractions(ruleContext)
+        override def twoStepVerificationEnabled = true
       }
+
+      val result = await(twoStepVerification.getDestinationVia2SV(PersonalTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verifyZeroInteractions(ruleContext)
+    }
+
+    "not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) and continue is BTA" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
+
+        override def twoStepVerificationHost = ???
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verifyZeroInteractions(ruleContext)
     }
 
     "not rewrite the location when continue is BTA and user is registered for 2SV with SA enrolment" in new Setup {
