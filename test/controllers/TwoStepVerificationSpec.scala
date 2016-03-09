@@ -99,7 +99,7 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext).activeEnrolments
+      verify(ruleContext, times(2)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -160,7 +160,7 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext).activeEnrolments
+      verify(ruleContext, times(2)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -186,7 +186,7 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
       result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
       verify(ruleContext).currentCoAFEAuthority
-      verify(ruleContext).activeEnrolments
+      verify(ruleContext, times(2)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
   }

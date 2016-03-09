@@ -210,13 +210,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
-      eventually {
-        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
-      }
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {

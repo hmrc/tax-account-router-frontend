@@ -31,7 +31,7 @@ import scala.util.Success
 trait TwoStepVerification {
 
   private val conditionsByDestination = Map(
-    BusinessTaxAccount -> List(not(HasStrongCredentials), HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
+    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
   )
 
   def twoStepVerificationHost: String
