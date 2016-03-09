@@ -403,6 +403,80 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
+  "GGEnrolmentsAvailable" should {
+
+    "have an audit type specified" in {
+      GGEnrolmentsAvailable.auditType shouldBe Some(GG_ENROLMENTS_AVAILABLE)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "ggEnrolmentsAvailable"),
+        ("be true when GG is available", true),
+        ("be false GG is not available", false)
+      )
+
+    forAll(scenarios) { (scenario: String, ggEnrolmentsAvailable: Boolean) =>
+
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        val ruleContext = mock[RuleContext]
+
+        val expectedResult = ggEnrolmentsAvailable match {
+          case true => Future.successful(Set.empty[String])
+          case false => Future.failed(new RuntimeException())
+        }
+        when(ruleContext.activeEnrolments).thenReturn(expectedResult)
+
+        val result = await(GGEnrolmentsAvailable.isTrue(authContext, ruleContext))
+
+        result shouldBe ggEnrolmentsAvailable
+        verify(ruleContext).activeEnrolments
+        verifyNoMoreInteractions(ruleContext, authContext)
+      }
+    }
+  }
+
+  "SAReturnAvailable" should {
+
+    "have an audit type specified" in {
+      SAReturnAvailable.auditType shouldBe Some(SA_RETURN_AVAILABLE)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "saReturnAvailable"),
+        ("be true when SA is available", true),
+        ("be false SA is not available", false)
+      )
+
+    forAll(scenarios) { (scenario: String, saReturnAvailable: Boolean) =>
+
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        val ruleContext = mock[RuleContext]
+
+        val expectedResult = saReturnAvailable match {
+          case true => Future.successful(mock[SaReturn])
+          case false => Future.failed(new RuntimeException())
+        }
+        when(ruleContext.lastSaReturn).thenReturn(expectedResult)
+
+        val result = await(SAReturnAvailable.isTrue(authContext, ruleContext))
+
+        result shouldBe saReturnAvailable
+        verify(ruleContext).lastSaReturn
+        verifyNoMoreInteractions(ruleContext, authContext)
+      }
+    }
+  }
+
   "AnyOtherRuleApplied" should {
 
     "not have any audit type specified" in {
