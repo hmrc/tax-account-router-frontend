@@ -5,7 +5,7 @@ import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{CredentialStrength, Accounts, PayeAccount, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -162,7 +162,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
-
 
     scenario("a user logged in through GG and gg returning 500 should be redirected to BTA") {
 

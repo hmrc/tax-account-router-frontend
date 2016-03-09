@@ -35,13 +35,17 @@ object GGEnrolmentsAvailable extends Condition {
   override val auditType = Some(GG_ENROLMENTS_AVAILABLE)
 }
 
-object HasAnyBusinessEnrolment extends Condition {
-  lazy val businessEnrolments: Set[String] = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+trait HasAnyBusinessEnrolment extends Condition {
+  def businessEnrolments: Set[String]
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
 
   override val auditType = Some(HAS_BUSINESS_ENROLMENTS)
+}
+
+object HasAnyBusinessEnrolment extends HasAnyBusinessEnrolment {
+  override lazy val businessEnrolments = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }
 
 object SAReturnAvailable extends Condition {
@@ -51,13 +55,17 @@ object SAReturnAvailable extends Condition {
   override val auditType = Some(SA_RETURN_AVAILABLE)
 }
 
-object HasSelfAssessmentEnrolments extends Condition {
-  lazy val selfAssessmentEnrolments: Set[String] = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+trait HasSelfAssessmentEnrolments extends Condition {
+  def selfAssessmentEnrolments: Set[String]
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
 
   override val auditType = Some(HAS_SA_ENROLMENTS)
+}
+
+object HasSelfAssessmentEnrolments extends HasSelfAssessmentEnrolments {
+  override lazy val selfAssessmentEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }
 
 object HasPreviousReturns extends Condition {

@@ -72,9 +72,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_STRONG_CREDENTIALS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -110,10 +109,9 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_STRONG_CREDENTIALS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -148,13 +146,14 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "false",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_STRONG_CREDENTIALS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
+      eventually {
+        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
+      }
     }
 
     scenario("a user logged in through GG and has no sa and no business enrolment should have no calls to sa in the audit record") {
@@ -182,9 +181,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "false",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -214,13 +210,13 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")
+      eventually {
+        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
+      }
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {
@@ -254,11 +250,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
+
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-partnership-or-self-employment")
     }
@@ -295,11 +290,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
+
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-partnership-or-self-employment")
     }
@@ -337,7 +331,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
         HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
+        HAS_SA_UTR.key -> "-",
         HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
@@ -413,8 +407,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
@@ -448,7 +440,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_NINO.key -> "true",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false"
         ))
