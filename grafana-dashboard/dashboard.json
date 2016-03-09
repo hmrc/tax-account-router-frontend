@@ -1,5 +1,5 @@
 {
-  "id": 4,
+  "id": 1,
   "title": "tax-account-router-frontend",
   "originalTitle": "tax-account-router-frontend",
   "tags": [],
@@ -335,7 +335,7 @@
           "annotate": {
             "enable": false
           },
-          "bars": false,
+          "bars": true,
           "datasource": null,
           "editable": true,
           "error": false,
@@ -363,7 +363,7 @@
             "total": false,
             "values": false
           },
-          "lines": true,
+          "lines": false,
           "linewidth": 1,
           "links": [],
           "nullPointMode": "connected",
@@ -381,14 +381,14 @@
             {
               "hide": false,
               "refId": "A",
-              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count))),'BTA users')",
-              "textEditor": true
+              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-bta-*.*.count))), 'BTA users')",
+              "textEditor": false
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count))),'PTA users')",
-              "textEditor": true
+              "target": "alias(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.routed.*.because-pta-*.*.count))), 'PTA users')",
+              "textEditor": false
             }
           ],
           "timeFrom": null,
@@ -406,14 +406,16 @@
             "percent",
             "short"
           ],
-          "zerofill": true
+          "zerofill": true,
+          "hideTimeOverride": false,
+          "maxDataPoints": "24"
         },
         {
           "aliasColors": {},
           "annotate": {
             "enable": false
           },
-          "bars": false,
+          "bars": true,
           "datasource": null,
           "editable": true,
           "error": false,
@@ -441,7 +443,7 @@
             "total": false,
             "values": false
           },
-          "lines": true,
+          "lines": false,
           "linewidth": 1,
           "links": [],
           "nullPointMode": "connected",
@@ -453,23 +455,23 @@
           "scale": 1,
           "seriesOverrides": [],
           "span": 12,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
               "hide": false,
               "refId": "A",
-              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.*.*.*.count), 4, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^to-welcome-.*$')",
+              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.*.*.*.count), 4, 'sum')), 60), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^to-welcome-.*$')",
               "textEditor": false
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Routed requests per second",
+          "title": "Routed requests per minute",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
-            "value_type": "cumulative"
+            "value_type": "individual"
           },
           "type": "graph",
           "x-axis": true,
@@ -478,14 +480,15 @@
             "short",
             "short"
           ],
-          "zerofill": true
+          "zerofill": true,
+          "maxDataPoints": "24"
         },
         {
           "aliasColors": {},
           "annotate": {
             "enable": false
           },
-          "bars": false,
+          "bars": true,
           "datasource": null,
           "editable": true,
           "error": false,
@@ -513,11 +516,11 @@
             "total": false,
             "values": false
           },
-          "lines": true,
+          "lines": false,
           "linewidth": 1,
           "links": [],
           "nullPointMode": "connected",
-          "percentage": true,
+          "percentage": false,
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -531,7 +534,7 @@
             {
               "hide": false,
               "refId": "B",
-              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.not-throttled.count), 5, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^because-$')",
+              "target": "exclude(aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-business-tax-account.*.not-throttled.count), 5, 'sum')), 60), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1'), '^because-$')",
               "textEditor": false
             },
             {
@@ -543,7 +546,7 @@
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "BTA Routed traffic breakdown [users per second]",
+          "title": "BTA Routed traffic breakdown [users per minute]",
           "tooltip": {
             "query_as_alias": true,
             "shared": false,
@@ -553,17 +556,18 @@
           "x-axis": true,
           "y-axis": true,
           "y_formats": [
-            "percent",
+            "none",
             "short"
           ],
-          "zerofill": true
+          "zerofill": true,
+          "maxDataPoints": "24"
         },
         {
           "aliasColors": {},
           "annotate": {
             "enable": false
           },
-          "bars": false,
+          "bars": true,
           "datasource": null,
           "editable": true,
           "error": false,
@@ -591,7 +595,7 @@
             "total": false,
             "values": false
           },
-          "lines": true,
+          "lines": false,
           "linewidth": 1,
           "links": [],
           "nullPointMode": "connected",
@@ -603,29 +607,29 @@
           "scale": 1,
           "seriesOverrides": [],
           "span": 12,
-          "stack": false,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
               "hide": false,
               "refId": "A",
-              "target": "aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.not-throttled.count), 5, 'sum')), 1), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1')",
+              "target": "aliasSub(scaleToSeconds(nonNegativeDerivative(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.not-throttled.count), 5, 'sum')), 60), '^scaleToSeconds\\(nonNegativeDerivative\\((.*)\\).*\\)$', '\\1')",
               "textEditor": true
             },
             {
               "hide": false,
               "refId": "B",
-              "target": "alias(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.throttled-from-*.count), 6, 'sum'))), 1), 'throttled')",
+              "target": "alias(scaleToSeconds(nonNegativeDerivative(sumSeries(groupByNode(keepLastValue(play.tax-account-router-frontend.*.routed.to-personal-tax-account.*.throttled-from-*.count), 6, 'sum'))), 60), 'throttled')",
               "textEditor": true
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "PTA Routed traffic breakdown [users per second]",
+          "title": "PTA Routed traffic breakdown [users per minute]",
           "tooltip": {
             "query_as_alias": true,
             "shared": true,
-            "value_type": "cumulative"
+            "value_type": "individual"
           },
           "type": "graph",
           "x-axis": true,
@@ -634,7 +638,8 @@
             "short",
             "short"
           ],
-          "zerofill": true
+          "zerofill": true,
+          "maxDataPoints": "24"
         }
       ],
       "title": "New row"
@@ -683,7 +688,7 @@
     "list": []
   },
   "refresh": "1m",
-  "schemaVersion": 7,
-  "version": 10,
+  "schemaVersion": 8,
+  "version": 3,
   "links": []
 }
