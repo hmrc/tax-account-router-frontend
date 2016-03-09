@@ -20,8 +20,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     "business-enrolments" -> "enr1,enr2",
     "self-assessment-enrolments" -> "enr3,enr4",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 5000,
-    "ws.timeout.connection" -> 1000,
+    "ws.timeout.request" -> 1000,
+    "ws.timeout.connection" -> 500,
     "two-step-verification.enabled" -> true
   )
 
@@ -128,7 +128,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubProfileWithSelfAssessmentEnrolments()
 
       And("the user has previous returns")
-      stubSaReturnToProperlyRespondAfter20Seconds(saUtr)
+      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
       val auditEventStub = stubAuditEvent()
 
@@ -195,7 +195,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileToReturnAfter20Seconds()
+      stubProfileToReturnAfter2Seconds()
 
       val auditEventStub = stubAuditEvent()
 
