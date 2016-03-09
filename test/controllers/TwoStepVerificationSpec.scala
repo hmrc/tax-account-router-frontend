@@ -24,7 +24,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
@@ -187,6 +187,29 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
+    }
+
+    "not rewrite the location when continue is BTA and GG returns 500" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
+
+        override def twoStepVerificationHost = ???
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.activeEnrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verify(ruleContext).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
   }
