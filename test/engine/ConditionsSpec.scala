@@ -19,13 +19,10 @@ package engine
 import connector.SaReturn
 import model.RoutingReason._
 import model._
-import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.TableFor3
 import org.scalatest.prop.Tables.Table
-import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
@@ -39,9 +36,9 @@ import scala.concurrent.Future
 class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   val configuration = Map[String, Any](
-        "business-enrolments" -> "enr1,enr2",
-        "self-assessment-enrolments" -> "enr3"
-      )
+    "business-enrolments" -> "enr1,enr2",
+    "self-assessment-enrolments" -> "enr3"
+  )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)
 
@@ -51,11 +48,11 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       HasAnyBusinessEnrolment.auditType shouldBe Some(HAS_BUSINESS_ENROLMENTS)
     }
 
-    val scenarios: TableFor3[String, Set[String], Boolean] =
+    val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
         ("has business enrolments", Set("enr1"), true),
-        ("has no business enrolments", Set(), false)
+        ("has no business enrolments", Set.empty[String], false)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
@@ -68,8 +65,11 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+        val hasAnyBusinessEnrolment = new HasAnyBusinessEnrolment {
+          override val businessEnrolments = Set("enr1","enr2")
+        }
 
-        val result = await(HasAnyBusinessEnrolment.isTrue(authContext, ruleContext))
+        val result = await(hasAnyBusinessEnrolment.isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }
@@ -82,11 +82,11 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       HasSelfAssessmentEnrolments.auditType shouldBe Some(HAS_SA_ENROLMENTS)
     }
 
-    val scenarios: TableFor3[String, Set[String], Boolean] =
+    val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
         ("has self assessment enrolments", Set("enr3"), true),
-        ("has no self assessment enrolments", Set(), false)
+        ("has no self assessment enrolments", Set.empty[String], false)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
@@ -97,15 +97,16 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val authContext = mock[AuthContext]
 
       s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
-        running(FakeApplication(additionalConfiguration = configuration)) {
 
-          lazy val ruleContext = mock[RuleContext]
-          when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
-
-          val futureResult: Future[Boolean] = HasSelfAssessmentEnrolments.isTrue(authContext, ruleContext)
-          val result = await(futureResult)
-          result shouldBe expectedResult
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+        val hasSelfAssessmentEnrolments = new HasSelfAssessmentEnrolments {
+          override val selfAssessmentEnrolments = Set("enr3")
         }
+
+        val result = await(hasSelfAssessmentEnrolments.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
       }
     }
   }
@@ -222,19 +223,17 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        running(FakeApplication(additionalConfiguration = configuration)) {
-          implicit val fakeRequest = tokenPresent match {
-            case false => FakeRequest()
-            case true => FakeRequest().withSession(("token", "token"))
-          }
-
-          implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-          val ruleContext = mock[RuleContext]
-
-          val result = await(LoggedInViaVerify.isTrue(authContext, ruleContext))
-          result shouldBe expectedResult
+        implicit val fakeRequest = tokenPresent match {
+          case false => FakeRequest()
+          case true => FakeRequest().withSession(("token", "token"))
         }
+
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val ruleContext = mock[RuleContext]
+
+        val result = await(LoggedInViaVerify.isTrue(authContext, ruleContext))
+        result shouldBe expectedResult
       }
     }
   }
@@ -258,19 +257,17 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        running(FakeApplication(additionalConfiguration = configuration)) {
-          implicit val fakeRequest = tokenPresent match {
-            case false => FakeRequest()
-            case true => FakeRequest().withSession(("token", "token"))
-          }
-
-          implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-          val ruleContext = mock[RuleContext]
-
-          val result = await(LoggedInViaGovernmentGateway.isTrue(authContext, ruleContext))
-          result shouldBe expectedResult
+        implicit val fakeRequest = tokenPresent match {
+          case false => FakeRequest()
+          case true => FakeRequest().withSession(("token", "token"))
         }
+
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val ruleContext = mock[RuleContext]
+
+        val result = await(LoggedInViaGovernmentGateway.isTrue(authContext, ruleContext))
+        result shouldBe expectedResult
       }
     }
   }

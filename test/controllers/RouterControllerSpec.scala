@@ -17,7 +17,6 @@
 package controllers
 
 import engine.{Condition, RuleEngine, When}
-import helpers.SpecHelpers
 import model.Locations._
 import model.{Location, _}
 import org.jsoup.Jsoup
@@ -44,7 +43,7 @@ import scala.collection.mutable.{Map => mutableMap}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually with SpecHelpers {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually {
 
   val location1 = Location("location1", "/location1")
   val location2 = Location("location2", "/location2")
@@ -136,7 +135,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedLocation)
-
 
 
       val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService, metricsMonitoringService = mockMetricsMonitoringService)

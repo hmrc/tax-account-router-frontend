@@ -5,15 +5,15 @@ import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{CredentialStrength, Accounts, PayeAccount, SaAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     "self-assessment-enrolments" -> "enr3,enr4",
-    "ws.timeout.request" -> 5000,
-    "ws.timeout.connection" -> 1000,
+    "ws.timeout.request" -> 1000,
+    "ws.timeout.connection" -> 500,
     "two-step-verification.enabled" -> true
   )
 
@@ -112,7 +112,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubProfileWithSelfAssessmentEnrolments()
 
       And("the sa is unresponsive")
-      stubSaReturnToProperlyRespondAfter20Seconds(saUtr)
+      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
       createStubs(BtaHomeStubPage)
 
@@ -163,7 +163,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-
     scenario("a user logged in through GG and gg returning 500 should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
@@ -200,7 +199,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("gg is unresponsive")
-      stubProfileToReturnAfter20Seconds()
+      stubProfileToReturnAfter2Seconds()
 
       createStubs(BtaHomeStubPage)
 

@@ -21,10 +21,7 @@ import model.Locations._
 import model._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.Tables.Table
-import play.api.test.FakeRequest
-import uk.gov.hmrc.domain.{Nino, SaUtr}
+import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -34,19 +31,22 @@ import scala.concurrent.Future
 
 class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
-  "TwoStepVerification" should {
+  override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 
-    "not rewrite the location when two step verification is disabled" in {
+  trait Setup {
+    implicit val request = FakeRequest()
+    implicit val hc = HeaderCarrier()
+    val auditContext = mock[TAuditContext]
+    val principal = Principal(None, Accounts())
+    val ruleContext = mock[RuleContext]
+  }
+
+  "getDestinationVia2SV" should {
+
+    "not rewrite the location when two step verification is disabled" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      val accounts = Accounts(paye = Some(PayeAccount("", Nino("CS100700A"))))
-      val principal = Principal(None, accounts)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      implicit val request = FakeRequest()
-      implicit val hc = HeaderCarrier()
-
-      val auditContext = mock[TAuditContext]
 
       val twoStepVerification = new TwoStepVerification {
         override def twoStepVerificationPath = ???
@@ -56,171 +56,138 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
         override def twoStepVerificationEnabled = false
       }
 
-      val ruleContext = mock[RuleContext]
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
 
       verifyZeroInteractions(ruleContext)
     }
-  }
 
-  it should {
+    "not rewrite the location when no enrolments and continue is PTA" in new Setup {
 
-    val scenarios = Table(
-      ("scenario", "continueUrl"),
-      ("continue is PTA", evaluateUsingPlay(PersonalTaxAccount)),
-      ("continue is BTA", evaluateUsingPlay(BusinessTaxAccount))
-    )
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-    forAll(scenarios) { (scenario: String, continueUrl: Location) =>
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
 
-      s"not rewrite the location when neither NINO nor SAUTR - scenario: $scenario" in {
+        override def twoStepVerificationHost = ???
 
-        val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-        val principal = Principal(None, Accounts())
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-        implicit val request = FakeRequest()
-        implicit val hc = HeaderCarrier()
-
-        val auditContext = mock[TAuditContext]
-
-        val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = ???
-
-          override def twoStepVerificationHost = ???
-
-          override def twoStepVerificationEnabled = true
-        }
-
-        val ruleContext = mock[RuleContext]
-        val result = await(twoStepVerification.getDestinationVia2SV(continueUrl, ruleContext, auditContext))
-
-        result shouldBe None
-
-        verifyZeroInteractions(ruleContext)
+        override def twoStepVerificationEnabled = true
       }
+
+      val result = await(twoStepVerification.getDestinationVia2SV(PersonalTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verifyZeroInteractions(ruleContext)
     }
 
-    forAll(scenarios) { (scenario: String, continueUrl: Location) =>
+    "not rewrite the location when no enrolments and continue is BTA" in new Setup {
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      s"not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) - scenario: $scenario" in {
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
 
-        val credentialStrength = CredentialStrength.Strong
-        val loggedInUser = LoggedInUser("userId", None, None, None, credentialStrength, ConfidenceLevel.L0)
-        val principal = Principal(None, Accounts())
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
+        override def twoStepVerificationHost = ???
 
-        implicit val request = FakeRequest()
-        implicit val hc = HeaderCarrier()
-
-        val auditContext = mock[TAuditContext]
-
-        val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = ???
-
-          override def twoStepVerificationHost = ???
-
-          override def twoStepVerificationEnabled = true
-        }
-
-        val ruleContext = mock[RuleContext]
-        val result = await(twoStepVerification.getDestinationVia2SV(continueUrl, ruleContext, auditContext))
-
-        result shouldBe None
-
-        verifyZeroInteractions(ruleContext)
+        override def twoStepVerificationEnabled = true
       }
+
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set.empty[String]))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verify(ruleContext, times(2)).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
     }
-  }
 
-  it should {
+    "not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) and continue is PTA" in new Setup {
 
-    val scenarios = Table(
-      ("scenario", "hasNino", "hasSaUtr"),
-      ("continue is BTA with NINO", Some(true), None),
-      ("continue is BTA with SAUTR", None, Some(true))
-    )
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-    forAll(scenarios) { (scenario: String, hasNino: Option[Boolean], hasSaUtr: Option[Boolean]) =>
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
 
-      s"not rewrite the location when user is registered for 2SV - scenario: $scenario" in {
+        override def twoStepVerificationHost = ???
 
-        val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-        val accounts = Accounts(
-          paye = hasNino.collect { case true => PayeAccount("", Nino("CS100700A")) },
-          sa = hasSaUtr.collect { case true => SaAccount("", SaUtr("some-saUtr")) }
-        )
-        val principal = Principal(None, accounts)
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-        implicit val request = FakeRequest()
-        implicit val hc = HeaderCarrier()
-
-        val auditContext = mock[TAuditContext]
-
-        val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = ???
-
-          override def twoStepVerificationHost = ???
-
-          override def twoStepVerificationEnabled = true
-        }
-
-        val ruleContext = mock[RuleContext]
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
-        val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
-
-        result shouldBe None
-        verify(ruleContext).currentCoAFEAuthority
+        override def twoStepVerificationEnabled = true
       }
+
+      val result = await(twoStepVerification.getDestinationVia2SV(PersonalTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verifyZeroInteractions(ruleContext)
     }
-  }
 
-  it should {
-    val scenarios = Table(
-      ("scenario", "hasNino", "hasSaUtr"),
-      ("continue is BTA with SAUTR", None, Some(true)),
-      ("continue is BTA with NINO", Some(true), None)
-    )
+    "not rewrite the location when credential strength is strong (this can happen when 2SV is disabled in Company Auth) and continue is BTA" in new Setup {
 
-    forAll(scenarios) { (scenario: String, hasNino: Option[Boolean], hasSaUtr: Option[Boolean]) =>
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      s"rewrite the location using 2SV url when the continue url is BTA and the user is not registered for 2SV - scenario: $scenario" in {
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
 
-        val credentialStrength = CredentialStrength.Weak
-        val loggedInUser = LoggedInUser("userId", None, None, None, credentialStrength, ConfidenceLevel.L0)
-        val accounts = Accounts(
-          paye = hasNino.collect { case true => PayeAccount("", Nino("CS100700A")) },
-          sa = hasSaUtr.collect { case true => SaAccount("", SaUtr("some-saUtr")) }
-        )
-        val principal = Principal(None, accounts)
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
+        override def twoStepVerificationHost = ???
 
-        implicit val request = FakeRequest()
-        implicit val hc = HeaderCarrier()
-
-        val auditContext = mock[TAuditContext]
-
-        val continueUrl = "http://localhost:9020/business-account"
-
-        val twoStepVerification = new TwoStepVerification {
-          override def twoStepVerificationPath = "/register"
-
-          override def twoStepVerificationHost = "http://some-host"
-
-          override def twoStepVerificationEnabled = true
-        }
-
-        val ruleContext = mock[RuleContext]
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
-        val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
-
-        result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
-
-        verify(ruleContext).currentCoAFEAuthority
+        override def twoStepVerificationEnabled = true
       }
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verifyZeroInteractions(ruleContext)
+    }
+
+    "not rewrite the location when continue is BTA and user is registered for 2SV with SA enrolment" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
+
+        override def twoStepVerificationHost = ???
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA")))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verify(ruleContext, times(2)).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
+    }
+
+    "rewrite the location using 2SV url when the continue url is BTA and the user is not registered for 2SV with SA enrolment" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val continueUrl = "http://localhost:9020/business-account"
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = "/register"
+
+        override def twoStepVerificationHost = "http://some-host"
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
+      verify(ruleContext).currentCoAFEAuthority
+      verify(ruleContext, times(2)).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
     }
   }
 }
