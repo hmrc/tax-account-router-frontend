@@ -50,6 +50,7 @@ object RoutingReason {
   val HAS_SA_UTR = Reason("has-sa-utr")
   val HAS_REGISTERED_FOR_2SV = Reason("has-registered-for-2sv")
   val HAS_STRONG_CREDENTIALS = Reason("has-strong-credentials")
+  val HAS_ONLY_ONE_ENROLMENT = Reason("has-only-one-enrolment")
 
   val allReasons = List(
     IS_A_VERIFY_USER,
@@ -64,7 +65,8 @@ object RoutingReason {
     HAS_NINO,
     HAS_SA_UTR,
     HAS_REGISTERED_FOR_2SV,
-    HAS_STRONG_CREDENTIALS
+    HAS_STRONG_CREDENTIALS,
+    HAS_ONLY_ONE_ENROLMENT
   )
 }
 

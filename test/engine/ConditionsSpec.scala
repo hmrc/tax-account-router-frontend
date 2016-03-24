@@ -66,7 +66,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
         val hasAnyBusinessEnrolment = new HasAnyBusinessEnrolment {
-          override val businessEnrolments = Set("enr1","enr2")
+          override val businessEnrolments = Set("enr1", "enr2")
         }
 
         val result = await(hasAnyBusinessEnrolment.isTrue(authContext, ruleContext))
@@ -494,6 +494,36 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       val result = await(AnyOtherRuleApplied.isTrue(authContext, ruleContext))
       result shouldBe true
+    }
+  }
+
+  "HasOnlyOneEnrolment" should {
+
+    "have an audit type specified" in {
+      HasOnlyOneEnrolment.auditType shouldBe Some(HAS_ONLY_ONE_ENROLMENT)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("return true when there is 1 enrolment", Set("enr1"), true),
+        ("return false when there are no enrolments", Set.empty[String], false),
+        ("return false when there are > 1 enrolments", Set("enr1", "enr2"), false)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+
+        val result = await(HasOnlyOneEnrolment.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
     }
   }
 }

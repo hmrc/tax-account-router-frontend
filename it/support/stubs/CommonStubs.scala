@@ -117,4 +117,20 @@ trait CommonStubs {
   }
 
   def stubAuditEvent() = postRequestedFor(urlMatching("/write/audit.*"))
+
+  def stubProfileWithMoreThanOneSAEnrolment() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Organisation",
+            |"enrolments":[
+            |                {"key": "enr1", "identifier": "5597800686", "state": "Activated"},
+            |                {"key": "enr4", "identifier": "5597800686", "state": "Activated"}
+            |             ]
+            |}
+            | """.stripMargin)))
+  }
 }

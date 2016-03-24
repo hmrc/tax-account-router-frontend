@@ -137,3 +137,11 @@ object HasStrongCredentials extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     Future.successful(authContext.user.credentialStrength == CredentialStrength.Strong)
 }
+
+object HasOnlyOneEnrolment extends Condition {
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    ruleContext.activeEnrolments.map(_.size == 1)
+
+  override val auditType = Some(HAS_ONLY_ONE_ENROLMENT)
+}

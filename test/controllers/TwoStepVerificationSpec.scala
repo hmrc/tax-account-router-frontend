@@ -160,7 +160,7 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).activeEnrolments
+      verify(ruleContext, times(3)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -186,7 +186,7 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
       result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
       verify(ruleContext).currentCoAFEAuthority
-      verify(ruleContext, times(2)).activeEnrolments
+      verify(ruleContext, times(3)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -210,6 +210,29 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
       result shouldBe None
       verify(ruleContext).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
+    }
+
+    "not rewrite the location when continue is BTA and user is registered for 2SV with more than one enrolment" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = ???
+
+        override def twoStepVerificationHost = ???
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe None
+      verify(ruleContext, times(2)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
   }
