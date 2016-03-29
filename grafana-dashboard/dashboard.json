@@ -12,6 +12,27 @@
     {
       "collapse": false,
       "editable": true,
+      "height": "100px",
+      "panels": [
+        {
+          "content": "<H1 style=\"text-align: center\">SKYSCAPE</H1>",
+          "editable": true,
+          "error": false,
+          "id": 19,
+          "isNew": true,
+          "links": [],
+          "mode": "html",
+          "span": 12,
+          "style": {},
+          "title": "Provider",
+          "type": "text"
+        }
+      ],
+      "title": "New row"
+    },
+    {
+      "collapse": false,
+      "editable": true,
       "height": "250px",
       "panels": [
         {
@@ -242,7 +263,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 6,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -294,7 +315,7 @@
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
-          "span": 6,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -311,6 +332,58 @@
           ],
           "thresholds": "",
           "title": "PTA users",
+          "type": "singlestat",
+          "valueFontSize": "100%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": 0,
+          "editable": true,
+          "error": false,
+          "format": "none",
+          "id": 18,
+          "interval": null,
+          "links": [],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "span": 4,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": true
+          },
+          "targets": [
+            {
+              "hide": false,
+              "refId": "A",
+              "target": "integral(nonNegativeDerivative(sumSeries(keepLastValue(play.tax-account-router-frontend.*.passed-through-2SV.*.count))))",
+              "textEditor": false
+            }
+          ],
+          "thresholds": "",
+          "title": "Requests sent to 2SV Reg",
           "type": "singlestat",
           "valueFontSize": "100%",
           "valueMaps": [
@@ -352,6 +425,7 @@
             "threshold2": null,
             "threshold2Color": "rgba(234, 112, 112, 0.22)"
           },
+          "hideTimeOverride": false,
           "id": 11,
           "legend": {
             "alignAsTable": false,
@@ -366,6 +440,7 @@
           "lines": false,
           "linewidth": 1,
           "links": [],
+          "maxDataPoints": "24",
           "nullPointMode": "connected",
           "percentage": true,
           "pointradius": 5,
@@ -406,9 +481,7 @@
             "percent",
             "short"
           ],
-          "zerofill": true,
-          "hideTimeOverride": false,
-          "maxDataPoints": "24"
+          "zerofill": true
         },
         {
           "aliasColors": {},
@@ -446,6 +519,7 @@
           "lines": false,
           "linewidth": 1,
           "links": [],
+          "maxDataPoints": "24",
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
@@ -480,8 +554,7 @@
             "short",
             "short"
           ],
-          "zerofill": true,
-          "maxDataPoints": "24"
+          "zerofill": true
         },
         {
           "aliasColors": {},
@@ -519,6 +592,7 @@
           "lines": false,
           "linewidth": 1,
           "links": [],
+          "maxDataPoints": "24",
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
@@ -559,8 +633,7 @@
             "none",
             "short"
           ],
-          "zerofill": true,
-          "maxDataPoints": "24"
+          "zerofill": true
         },
         {
           "aliasColors": {},
@@ -598,6 +671,7 @@
           "lines": false,
           "linewidth": 1,
           "links": [],
+          "maxDataPoints": "24",
           "nullPointMode": "connected",
           "percentage": false,
           "pointradius": 5,
@@ -638,8 +712,7 @@
             "short",
             "short"
           ],
-          "zerofill": true,
-          "maxDataPoints": "24"
+          "zerofill": true
         }
       ],
       "title": "New row"
@@ -689,6 +762,6 @@
   },
   "refresh": "1m",
   "schemaVersion": 8,
-  "version": 3,
+  "version": 5,
   "links": []
 }
