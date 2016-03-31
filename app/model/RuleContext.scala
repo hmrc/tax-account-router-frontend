@@ -39,4 +39,6 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
     .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
+
+  lazy val affinityGroup: Future[String] = ???
 }

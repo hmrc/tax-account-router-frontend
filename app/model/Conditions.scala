@@ -16,6 +16,7 @@
 
 package model
 
+import connector.AffinityGroupValue
 import engine.Condition
 import model.RoutingReason._
 import play.api.Play
@@ -144,4 +145,12 @@ object HasOnlyOneEnrolment extends Condition {
     ruleContext.activeEnrolments.map(_.size == 1)
 
   override val auditType = Some(HAS_ONLY_ONE_ENROLMENT)
+}
+
+object HasIndividualAffinityGroup extends Condition {
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    ruleContext.affinityGroup.map(_.equalsIgnoreCase(AffinityGroupValue.INDIVIDUAL))
+
+  override val auditType = Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
 }
