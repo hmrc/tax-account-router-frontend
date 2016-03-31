@@ -1,6 +1,7 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import connector.AffinityGroupValue
 import play.api.libs.json.Json
 
 trait CommonStubs {
@@ -35,14 +36,14 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
-  def stubProfileWithNoEnrolments() = {
+  def stubProfileWithNoEnrolments(affinityGroup: String = AffinityGroupValue.ORGANISATION) = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()
         .withStatus(200)
         .withBody(
-          """
+          s"""
             |{
-            |"affinityGroup":"Individual",
+            |"affinityGroup":"$affinityGroup",
             |"enrolments":[]
             |}
             | """.stripMargin)))
