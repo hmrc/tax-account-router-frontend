@@ -59,6 +59,7 @@ trait StubbedFeatureSpec
   override def afterAll() = {
     wireMockServer.stop()
     databaseConnection().drop()
+    Env.driver.quit()
   }
 
   override def beforeEach() = {
