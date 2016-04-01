@@ -16,7 +16,7 @@
 
 package engine
 
-import connector.SaReturn
+import connector.{AffinityGroupValue, SaReturn}
 import model.RoutingReason._
 import model._
 import org.mockito.Mockito._
@@ -521,6 +521,35 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
 
         val result = await(HasOnlyOneEnrolment.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
+    }
+  }
+
+  "HasIndividualAffinityGroup" should {
+
+    "have an audit type specified" in {
+      HasIndividualAffinityGroup.auditType shouldBe Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "affinityGroup", "expectedResult"),
+        ("return true when affinity group is 'Individual'", AffinityGroupValue.INDIVIDUAL, true),
+        ("return false when affinity group is 'Organisation'", AffinityGroupValue.ORGANISATION, false)
+      )
+
+    forAll(scenarios) { (scenario: String, affinityGroup: String, expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.affinityGroup).thenReturn(Future(affinityGroup))
+
+        val result = await(HasIndividualAffinityGroup.isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }

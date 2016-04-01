@@ -16,18 +16,20 @@
 
 package support.stubs
 
+import connector.AffinityGroupValue
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 
 class TaxAccountUser(loggedIn: Boolean,
                      tokenPresent: Boolean,
                      isRegisteredFor2SV: Boolean,
                      accounts: Accounts,
-                     credentialStrength: CredentialStrength)
+                     credentialStrength: CredentialStrength,
+                     affinityGroup: String)
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength).create()
+      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup).create()
 
     } else {
       LoggedOutSessionUser.create
@@ -41,7 +43,8 @@ object TaxAccountUser {
             tokenPresent: Boolean = true,
             isRegisteredFor2SV: Boolean = true,
             accounts: Accounts = Accounts(),
-            credentialStrength: CredentialStrength = CredentialStrength.None) = {
-    new TaxAccountUser(loggedIn, tokenPresent, isRegisteredFor2SV, accounts, credentialStrength)
+            credentialStrength: CredentialStrength = CredentialStrength.None,
+            affinityGroup: String = AffinityGroupValue.ORGANISATION) = {
+    new TaxAccountUser(loggedIn, tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup)
   }
 }

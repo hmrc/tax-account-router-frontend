@@ -17,26 +17,25 @@
 package model
 
 import connector._
-import org.mockito.Matchers.{eq => eqTo}
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   "activeEnrolments" should {
     "return active enrolments when available" in {
       //given
-      val profileResponse = new ProfileResponse(
+      val profileResponse = ProfileResponse(
         affinityGroup = "",
         enrolments = List(Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED), Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED))
       )
@@ -121,6 +120,34 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val result = ruleContext.currentCoAFEAuthority
 
       await(result) shouldBe currentAuthority
+    }
+  }
+
+  "affinityGroup" should {
+    "return the affinity group from gg profile" in {
+      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+
+      val expectedAffinityGroup = "some-affinity-group"
+
+      val profileResponse = ProfileResponse(
+        affinityGroup = expectedAffinityGroup,
+        enrolments = List.empty
+      )
+      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
+      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
+
+      val authContext = mock[AuthContext]
+
+      val ruleContext = new RuleContext(authContext) {
+        override val governmentGatewayConnector = mockGovernmentGatewayConnector
+      }
+
+      val result = ruleContext.affinityGroup
+
+      await(result) shouldBe expectedAffinityGroup
+
+      verify(mockGovernmentGatewayConnector).profile(any[HeaderCarrier])
+      verifyNoMoreInteractions(mockGovernmentGatewayConnector)
     }
   }
 }

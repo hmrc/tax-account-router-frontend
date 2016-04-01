@@ -28,15 +28,16 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
   val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
 
-  lazy val activeEnrolments: Future[Set[String]] = {
-    val futureProfile = governmentGatewayConnector.profile
-    futureProfile.map { profile =>
-      profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
-    }
+  lazy val futureProfile = governmentGatewayConnector.profile
+
+  lazy val activeEnrolments = futureProfile.map { profile =>
+    profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
   lazy val lastSaReturn = authContext.principal.accounts.sa
     .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
+
+  lazy val affinityGroup = futureProfile.map(_.affinityGroup)
 }

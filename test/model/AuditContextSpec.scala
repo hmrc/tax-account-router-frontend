@@ -67,7 +67,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-sa-utr" -> "-",
         "has-registered-for-2sv" -> "-",
         "has-strong-credentials" -> "-",
-        "has-only-one-enrolment" -> "-"
+        "has-only-one-enrolment" -> "-",
+        "has-individual-affinity-group" -> "-"
       )
     }
   }
@@ -91,6 +92,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_REGISTERED_FOR_2SV, result = true)
       auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
       auditContext.setRoutingReason(HAS_ONLY_ONE_ENROLMENT, result = true)
+      auditContext.setRoutingReason(HAS_INDIVIDUAL_AFFINITY_GROUP, result = true)
 
       auditContext.ruleApplied = "rule-name"
 
@@ -116,7 +118,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-sa-utr" -> "true",
         "has-registered-for-2sv" -> "true",
         "has-strong-credentials" -> "true",
-        "has-only-one-enrolment" -> "true"
+        "has-only-one-enrolment" -> "true",
+        "has-individual-affinity-group" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()
