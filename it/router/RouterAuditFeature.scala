@@ -526,8 +526,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has self assessment enrolments")
-      stubProfileWithNoEnrolments()
+      And("the user has self assessment enrolments and individual affinity group")
+      stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       val auditEventStub = stubAuditEvent()
 

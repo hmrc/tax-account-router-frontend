@@ -426,13 +426,13 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG with any business account with individual affinity group should be redirected to PTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has business related enrolments")
-      stubProfileWithBusinessEnrolments()
+      And("the user has self assessment enrolments and individual affinity group")
+      stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       createStubs(PtaHomeStubPage)
 
