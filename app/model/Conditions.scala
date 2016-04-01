@@ -150,7 +150,7 @@ object HasOnlyOneEnrolment extends Condition {
 object HasIndividualAffinityGroup extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.affinityGroup.map(_.equalsIgnoreCase(AffinityGroupValue.INDIVIDUAL))
+    ruleContext.affinityGroup.map(_ == AffinityGroupValue.INDIVIDUAL)
 
   override val auditType = Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
 }
