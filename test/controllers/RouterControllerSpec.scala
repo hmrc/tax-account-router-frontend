@@ -106,7 +106,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val route = controller.route
 
       //then
-      val locationWithOrigin = Location(location1.name, location1.url, queryParams = "_origin" -> origin)
+      val locationWithOrigin = Location(location1.name, location1.url, queryParams = Map("_origin" -> origin))
       checkResult(route, locationWithOrigin, "none")
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])

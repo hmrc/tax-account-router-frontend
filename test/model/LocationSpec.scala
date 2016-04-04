@@ -23,14 +23,11 @@ class LocationSpec extends UnitSpec {
   "location" should {
 
     "return a url without query string when no query params are provided" in {
-
       Location("test-tax-account", "/some-url").fullUrl shouldBe "/some-url"
     }
 
     "return a url with an encoded query string when query params are provided" in {
-
-      Location("test-tax-account", "/some-url", "a" -> "/b", "c" -> "/d").fullUrl shouldBe "/some-url?a=%2Fb&c=%2Fd"
+      Location("test-tax-account", "/some-url", Map("a" -> "/b", "c" -> "/d")).fullUrl shouldBe "/some-url?a=%2Fb&c=%2Fd"
     }
   }
-
 }

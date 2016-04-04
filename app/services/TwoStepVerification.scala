@@ -58,7 +58,7 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification("continue" -> continue.fullUrl, "failure" -> continue.fullUrl)
+  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> continue.fullUrl))
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {

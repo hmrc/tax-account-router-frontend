@@ -85,9 +85,9 @@ trait RouterController extends FrontendController with Actions {
       destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
-      val origin = originService.origin(destinationAfterThrottleApplied).fold(Seq.empty[(String, String)])(origin => Seq("_origin" -> origin))
-      val destinationAfterThrottleAppliedWithOrigin = Location(destinationAfterThrottleApplied.name, destinationAfterThrottleApplied.url, destinationAfterThrottleApplied.queryParams ++ origin: _*)
-      val finalDestinationWithOrigin = Location(finalDestination.name, finalDestination.url, finalDestination.queryParams ++ origin: _*)
+      val origin = originService.origin(destinationAfterThrottleApplied).fold(Map.empty[String, String])(origin => Map("_origin" -> origin))
+      val destinationAfterThrottleAppliedWithOrigin = Location(destinationAfterThrottleApplied.name, destinationAfterThrottleApplied.url, destinationAfterThrottleApplied.queryParams ++ origin)
+      val finalDestinationWithOrigin = Location(finalDestination.name, finalDestination.url, finalDestination.queryParams ++ origin)
 
       sendAuditEvent(auditContext, destinationAfterThrottleAppliedWithOrigin)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleAppliedWithOrigin)

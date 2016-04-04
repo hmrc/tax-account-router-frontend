@@ -20,7 +20,7 @@ import java.net.{URI, URLEncoder}
 
 import controllers.ExternalUrls
 
-case class Location(name: String, url: String, queryParams: (String, String)*) {
+case class Location(name: String, url: String, queryParams: Map[String, String] = Map.empty[String, String]) {
 
   lazy val fullUrl = {
     def encode(value: String) = URLEncoder.encode(value, "utf-8")
@@ -47,7 +47,7 @@ object Locations {
 
   val twoStepVerificationLocationName = "two-step-verification"
 
-  def twoStepVerification(queryString: (String, String)*) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationLocationName), queryString: _*)
+  def twoStepVerification(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationLocationName), queryString)
 
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
 
