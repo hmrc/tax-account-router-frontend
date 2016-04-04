@@ -48,6 +48,8 @@ object RouterController extends RouterController {
   override def auditConnector = FrontendAuditConnector
 
   override def createAuditContext() = AuditContext()
+
+  override lazy val originService = OriginService
 }
 
 trait RouterController extends FrontendController with Actions {
@@ -66,6 +68,8 @@ trait RouterController extends FrontendController with Actions {
 
   def createAuditContext(): TAuditContext
 
+  def originService: OriginService
+
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
@@ -81,10 +85,14 @@ trait RouterController extends FrontendController with Actions {
       destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
-      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
-      Logger.debug(s"routing to: ${finalDestination.name}")
-      sendGAEventAndRedirect(auditContext, finalDestination)
+      val origin = originService.origin(destinationAfterThrottleApplied).fold(Seq.empty[(String, String)])(origin => Seq("_origin" -> origin))
+      val destinationAfterThrottleAppliedWithOrigin = Location(destinationAfterThrottleApplied.name, destinationAfterThrottleApplied.url, destinationAfterThrottleApplied.queryParams ++ origin: _*)
+      val finalDestinationWithOrigin = Location(finalDestination.name, finalDestination.url, finalDestination.queryParams ++ origin: _*)
+
+      sendAuditEvent(auditContext, destinationAfterThrottleAppliedWithOrigin)
+      metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleAppliedWithOrigin)
+      Logger.debug(s"routing to: ${finalDestinationWithOrigin.name}")
+      sendGAEventAndRedirect(auditContext, finalDestinationWithOrigin)
     }
   }
 

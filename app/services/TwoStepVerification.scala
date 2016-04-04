@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package services
 
 import config.AppConfigHelpers
 import engine.Condition._
@@ -40,8 +40,6 @@ trait TwoStepVerification {
     BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
   )
 
-  private val locationToAppName = Map(BusinessTaxAccount -> "business-tax-account")
-
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled) {
@@ -60,9 +58,7 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  def origin(location: Location) = locationToAppName.get(location)
-
-  private def wrapLocationWith2SV(continue: Location) = Locations.TwoStepVerification("continue" -> continue.fullUrl, "failure" -> continue.fullUrl)
+  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification("continue" -> continue.fullUrl, "failure" -> continue.fullUrl)
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {

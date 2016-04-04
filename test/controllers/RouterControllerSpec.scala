@@ -76,7 +76,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     val mockThrottlingService = mock[ThrottlingService]
     val mockTwoStepVerification = Mocks.mockTwoStepVerification
     val mockMetricsMonitoringService = mock[MetricsMonitoringService]
-
+    val originService = Mocks.mockOriginService
 
     def checkResult(route: Future[Result], location: Location, eventName: String) = {
       status(route) shouldBe 200
@@ -95,10 +95,29 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
   "router controller" should {
 
-    "return location provided by rules" in new Setup {
+    "return location with origin when location is provided by rules and there is an origin for this location" in new Setup {
+      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(location1)
+      val origin = "some-origin"
+      when(originService.origin(eqTo(location1))).thenReturn(Some(origin))
+
+      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService, twoStepVerification = mockTwoStepVerification, originService = originService)
+
+      //when
+      val route = controller.route
+
+      //then
+      val locationWithOrigin = Location(location1.name, location1.url, queryParams = "_origin" -> origin)
+      checkResult(route, locationWithOrigin, "none")
+
+      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(originService).origin(eqTo(location1))
+    }
+
+    "return location without origin when location is provided by rules and there is not an origin for this location" in new Setup {
       when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(location1)
 
-      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService, twoStepVerification = mockTwoStepVerification)
+      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService, twoStepVerification = mockTwoStepVerification, originService = originService)
 
       //when
       val route = controller.route
@@ -108,6 +127,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
       verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(originService).origin(eqTo(location1))
     }
 
     "return default location when location provided by rules is not defined" in new Setup {
@@ -203,13 +223,19 @@ object Mocks extends MockitoSugar {
   def mockMetricsMonitoringService = mock[MetricsMonitoringService]
 
   def mockTwoStepVerification = {
-    val aMock: TwoStepVerification = mock[TwoStepVerification]
-    when(aMock.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
+    val twoStepVerification = mock[TwoStepVerification]
+    when(twoStepVerification.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
       override def answer(invocationOnMock: InvocationOnMock): Future[Option[Location]] = {
         Future.successful(Some(invocationOnMock.getArguments()(0).asInstanceOf[Location]))
       }
     })
-    aMock
+    twoStepVerification
+  }
+
+  def mockOriginService = {
+    val originService = mock[OriginService]
+    when(originService.origin(any[Location])).thenReturn(None)
+    originService
   }
 }
 
@@ -219,7 +245,8 @@ class TestRouterController(override val defaultLocation: Location = BusinessTaxA
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
                            override val auditConnector: AuditConnector = Mocks.mockAuditConnector,
                            override val twoStepVerification: TwoStepVerification = Mocks.mockTwoStepVerification,
-                           auditContext: Option[TAuditContext] = None) extends RouterController {
+                           auditContext: Option[TAuditContext] = None,
+                           override val originService: OriginService = Mocks.mockOriginService) extends RouterController {
 
   override protected def authConnector = ???
 
