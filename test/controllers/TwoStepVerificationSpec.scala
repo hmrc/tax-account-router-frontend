@@ -236,4 +236,16 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       verifyNoMoreInteractions(ruleContext)
     }
   }
+
+  "origin" should {
+
+    "return None when location is not in the list" in new Setup {
+      val location = Location("some-name", "some-url")
+      TwoStepVerification.origin(location) shouldBe None
+    }
+
+    "return app name when location is in the list" in new Setup {
+      TwoStepVerification.origin(BusinessTaxAccount) shouldBe Some("business-tax-account")
+    }
+  }
 }

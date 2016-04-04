@@ -30,15 +30,17 @@ import scala.util.Success
 
 trait TwoStepVerification {
 
-  private val conditionsByDestination = Map(
-    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
-  )
-
   def twoStepVerificationHost: String
 
   def twoStepVerificationPath: String
 
   def twoStepVerificationEnabled: Boolean
+
+  private val conditionsByDestination = Map(
+    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
+  )
+
+  private val locationToAppName = Map(BusinessTaxAccount -> "business-tax-account")
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -57,6 +59,8 @@ trait TwoStepVerification {
       }.andThen { case Success(Some(_)) => auditContext.sentTo2SVRegister = true }
     } else Future.successful(None)
   }
+
+  def origin(location: Location) = locationToAppName.get(location)
 
   private def wrapLocationWith2SV(continue: Location) = Locations.TwoStepVerification("continue" -> continue.fullUrl, "failure" -> continue.fullUrl)
 }
