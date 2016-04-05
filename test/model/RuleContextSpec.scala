@@ -44,7 +44,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       //and
       implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+      implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //and
       val expectedActiveEnrolments: Set[String] = Set("enr1")
@@ -76,7 +76,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       //and
       implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+      implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //and
       val expectedAwaitingActivationEnrolments = Set("enr2")
@@ -89,7 +89,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val result = await(ruleContext.awaitingActivationEnrolments)
 
       //then
-      expectedAwaitingActivationEnrolments shouldBe result
+      result shouldBe expectedAwaitingActivationEnrolments
 
       //and
       verify(mockGovernmentGatewayConnector).profile(eqTo(hc))
