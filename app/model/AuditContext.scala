@@ -52,6 +52,7 @@ object RoutingReason {
   val HAS_STRONG_CREDENTIALS = Reason("has-strong-credentials")
   val HAS_ONLY_ONE_ENROLMENT = Reason("has-only-one-enrolment")
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
+  val HAS_ANY_AWAITING_ACTIVATION_ENROLMENT = Reason("has-any-awaiting-activation-enrolment")
 
   val allReasons = List(
     IS_A_VERIFY_USER,

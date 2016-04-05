@@ -64,6 +64,39 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     }
   }
 
+  "awaitingActivationEnrolments" should {
+    "return awaiting activation enrolments when available" in {
+      //given
+      val profileResponse = ProfileResponse(
+        affinityGroup = "",
+        enrolments = List(Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED), Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED))
+      )
+      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
+      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
+
+      //and
+      implicit lazy val request = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+
+      //and
+      val expectedAwaitingActivationEnrolments = Set("enr2")
+
+      val ruleContext = new RuleContext(mock[AuthContext]) {
+        override val governmentGatewayConnector = mockGovernmentGatewayConnector
+      }
+
+      //when
+      val result = await(ruleContext.awaitingActivationEnrolments)
+
+      //then
+      expectedAwaitingActivationEnrolments shouldBe result
+
+      //and
+      verify(mockGovernmentGatewayConnector).profile(eqTo(hc))
+      verifyNoMoreInteractions(mockGovernmentGatewayConnector)
+    }
+  }
+
   "saUserInfo" should {
     "return the last self-assessment return if available in SA and the user has an SA account" in {
       //given

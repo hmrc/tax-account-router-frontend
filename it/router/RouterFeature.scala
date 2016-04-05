@@ -426,12 +426,38 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group should be redirected to PTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and awaiting activation enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has self assessment enrolments and individual affinity group")
+      And("the user has an awaiting activation enrolment and individual affinity group")
+      stubProfileWithAwaitingActivationEnrolmentsAndIndividualAffinityGroup()
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("the user profile should be fetched from the Government Gateway")
+      verify(getRequestedFor(urlEqualTo("/profile")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
+    }
+
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no awaiting activation enrolments should be redirected to PTA") {
+
+      Given("a user logged in through Government Gateway")
+      createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
+
+      And("the user has an no awaiting activation enrolment and individual affinity group")
       stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       createStubs(PtaHomeStubPage)
