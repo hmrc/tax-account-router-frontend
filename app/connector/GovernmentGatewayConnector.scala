@@ -20,8 +20,8 @@ import config.WSHttp
 import play.api.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 
 import scala.concurrent.Future
 
@@ -66,4 +66,6 @@ object AffinityGroupValue {
 object EnrolmentState {
   val ACTIVATED = "Activated"
   val NOT_YET_ACTIVATED = "NotYetActivated"
+  val HANDED_TO_AGENT = "HandedToAgent"
+  val PENDING = "Pending"
 }
