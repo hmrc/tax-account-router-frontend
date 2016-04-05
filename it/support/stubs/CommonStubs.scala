@@ -21,6 +21,22 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
+  def stubProfileWithAwaitingActivationEnrolmentsAndIndividualAffinityGroup() = {
+    stubFor(get(urlMatching("/profile"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(
+          """
+            |{
+            |"affinityGroup":"Individual",
+            |"enrolments":[
+            |                {"key": "enr1", "identifier": "5597800686", "state": "NotYetActivated"},
+            |                {"key": "enr10", "identifier": "5597800686", "state": "NotYetActivated"}
+            |             ]
+            |}
+            | """.stripMargin)))
+  }
+
   def stubProfileWithSelfAssessmentEnrolments() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()

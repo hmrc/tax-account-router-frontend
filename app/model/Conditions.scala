@@ -154,3 +154,12 @@ object HasIndividualAffinityGroup extends Condition {
 
   override val auditType = Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
 }
+
+
+object HasAnyAwaitingActivationEnrolment extends Condition {
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    ruleContext.awaitingActivationEnrolments.map(_.nonEmpty)
+
+  override val auditType = Some(HAS_ANY_AWAITING_ACTIVATION_ENROLMENT)
+}

@@ -555,4 +555,33 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       }
     }
   }
+
+  "HasAnyAwaitingActivationEnrolment" should {
+
+    "have an audit type specified" in {
+      HasAnyAwaitingActivationEnrolment.auditType shouldBe Some(HAS_ANY_AWAITING_ACTIVATION_ENROLMENT)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("return false when no awaiting activation enrolments", Set.empty[String], false),
+        ("return true when there's at least one awaiting activation enrolment", Set("enr1"), true)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.awaitingActivationEnrolments).thenReturn(Future.successful(enrolments))
+
+        val result = await(HasAnyAwaitingActivationEnrolment.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
+    }
+  }
 }

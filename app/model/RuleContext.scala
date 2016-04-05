@@ -30,9 +30,9 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val futureProfile = governmentGatewayConnector.profile
 
-  lazy val activeEnrolments = futureProfile.map { profile =>
-    profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
-  }
+  lazy val activeEnrolments = futureProfile.map(getEnrolmentsWithState(EnrolmentState.ACTIVATED))
+
+  lazy val awaitingActivationEnrolments = futureProfile.map(getEnrolmentsWithState(EnrolmentState.NOT_YET_ACTIVATED))
 
   lazy val lastSaReturn = authContext.principal.accounts.sa
     .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
@@ -40,4 +40,7 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
   lazy val affinityGroup = futureProfile.map(_.affinityGroup)
+
+  private def getEnrolmentsWithState(state: String)(profile: ProfileResponse): Set[String] =
+    profile.enrolments.filter(_.state == state).map(_.key).toSet[String]
 }
