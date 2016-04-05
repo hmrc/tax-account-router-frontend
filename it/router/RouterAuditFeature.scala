@@ -545,7 +545,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "false",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "true",
-        HAS_ANY_AWAITING_ACTIVATION_ENROLMENT.key -> "false"
+        HAS_ANY_INACTIVE_ENROLMENT.key -> "false"
         ))
 
       val expectedTransactionName = "sent to personal tax account"

@@ -426,13 +426,13 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and awaiting activation enrolments should be redirected to BTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has an awaiting activation enrolment and individual affinity group")
-      stubProfileWithAwaitingActivationEnrolmentsAndIndividualAffinityGroup()
+      And("the user has an inactive enrolment and individual affinity group")
+      stubProfileWithInactiveEnrolmentsAndIndividualAffinityGroup()
 
       createStubs(BtaHomeStubPage)
 
@@ -452,12 +452,12 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no awaiting activation enrolments should be redirected to PTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has an no awaiting activation enrolment and individual affinity group")
+      And("the user has an no inactive enrolment and individual affinity group")
       stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       createStubs(PtaHomeStubPage)

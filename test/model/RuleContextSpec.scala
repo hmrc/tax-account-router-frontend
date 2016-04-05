@@ -64,12 +64,17 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     }
   }
 
-  "awaitingActivationEnrolments" should {
-    "return awaiting activation enrolments when available" in {
+  "notActivatedEnrolments" should {
+    "return not activated enrolments when available" in {
       //given
       val profileResponse = ProfileResponse(
         affinityGroup = "",
-        enrolments = List(Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED), Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED))
+        enrolments = List(
+          Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED),
+          Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED),
+          Enrolment("enr3", "identifier2", EnrolmentState.HANDED_TO_AGENT),
+          Enrolment("enr4", "identifier2", EnrolmentState.PENDING)
+        )
       )
       val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
       when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
@@ -79,17 +84,17 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       //and
-      val expectedAwaitingActivationEnrolments = Set("enr2")
+      val expectedInactiveEnrolments = Set("enr2", "enr3", "enr4")
 
       val ruleContext = new RuleContext(mock[AuthContext]) {
         override val governmentGatewayConnector = mockGovernmentGatewayConnector
       }
 
       //when
-      val result = await(ruleContext.awaitingActivationEnrolments)
+      val result = await(ruleContext.notActivatedEnrolments)
 
       //then
-      result shouldBe expectedAwaitingActivationEnrolments
+      result shouldBe expectedInactiveEnrolments
 
       //and
       verify(mockGovernmentGatewayConnector).profile(eqTo(hc))

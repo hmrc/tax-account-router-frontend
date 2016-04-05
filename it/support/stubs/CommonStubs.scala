@@ -21,7 +21,7 @@ trait CommonStubs {
             | """.stripMargin)))
   }
 
-  def stubProfileWithAwaitingActivationEnrolmentsAndIndividualAffinityGroup() = {
+  def stubProfileWithInactiveEnrolmentsAndIndividualAffinityGroup() = {
     stubFor(get(urlMatching("/profile"))
       .willReturn(aResponse()
         .withStatus(200)
