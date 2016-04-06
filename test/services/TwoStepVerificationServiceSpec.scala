@@ -210,7 +210,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verifyNoMoreInteractions(ruleContext)
     }
 
-    "rewrite the location to have the 2SV url when the continue url is BTA, the user is not registered for 2SV, has one enrolment, has SA enrolment" in new Setup {
+    "rewrite the location to have the 2SV url and the origin when the continue url is BTA, the user is not registered for 2SV, has one enrolment, has SA enrolment" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
@@ -230,7 +230,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> continueUrl, "failure" -> continueUrl)))
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> continueUrl, "failure" -> continueUrl, "_origin" -> "business-tax-account")))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(3)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
