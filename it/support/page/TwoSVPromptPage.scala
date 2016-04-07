@@ -30,7 +30,7 @@ object TwoSVPromptPage extends WebPage {
   private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
   private val continueUrl = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
   private val failureUrl  = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
-  private val queryString = s"continue=$continueUrl&failure=$failureUrl&_origin=business-tax-account"
+  private val queryString = s"continue=$continueUrl&failure=$failureUrl&origin=business-tax-account"
 
   val uri = s"/coafe/two-step-verification/register?$queryString"
   override val url = s"$hostPort$uri"
