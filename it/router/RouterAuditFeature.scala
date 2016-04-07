@@ -23,7 +23,9 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
     "ws.timeout.connection" -> 500,
-    "two-step-verification.enabled" -> true
+    "two-step-verification.enabled" -> true,
+    "logger.application" -> "ERROR",
+    "logger.connector" -> "ERROR"
   )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)

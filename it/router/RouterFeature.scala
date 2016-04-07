@@ -15,7 +15,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     "self-assessment-enrolments" -> "enr3,enr4",
     "ws.timeout.request" -> 1000,
     "ws.timeout.connection" -> 500,
-    "two-step-verification.enabled" -> true
+    "two-step-verification.enabled" -> true,
+    "logger.application" -> "ERROR",
+    "logger.connector" -> "ERROR"
   )
 
   override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
