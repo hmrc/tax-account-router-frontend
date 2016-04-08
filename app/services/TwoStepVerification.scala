@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package services
 
 import config.AppConfigHelpers
 import engine.Condition._
@@ -30,15 +30,19 @@ import scala.util.Success
 
 trait TwoStepVerification {
 
-  private val conditionsByDestination = Map(
-    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
-  )
-
   def twoStepVerificationHost: String
 
   def twoStepVerificationPath: String
 
   def twoStepVerificationEnabled: Boolean
+
+  private val conditionsByDestination = Map(
+    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
+  )
+
+  private val locationToAppName = Map(
+    BusinessTaxAccount -> "business-tax-account"
+  )
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -58,7 +62,8 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location) = Locations.TwoStepVerification("continue" -> continue.fullUrl, "failure" -> continue.fullUrl)
+  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> continue.fullUrl) ++
+    locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin)))
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {

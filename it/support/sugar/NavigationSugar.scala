@@ -40,7 +40,7 @@ trait NavigationSugar extends WebBrowser with Eventually with Assertions with Sh
     eventually {
       webDriver.findElement(By.tagName("body"))
     }
-    assert(page.isCurrentPage, s"Page was not loaded: ${page} instead the url is: ${currentUrl}")
+    assert(page.isCurrentPage, s"Page was not loaded: current url [$currentUrl] was not equal to expected url [${page.url}]")
   }
 
   def loadPage()(implicit webDriver: WebDriver) = {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package services
 
 import helpers.SpecHelpers
 import model.Locations._
@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
+class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 
@@ -164,32 +164,6 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
       verifyNoMoreInteractions(ruleContext)
     }
 
-    "rewrite the location using 2SV url when the continue url is BTA and the user is not registered for 2SV with SA enrolment" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      val continueUrl = "http://localhost:9020/business-account"
-
-      val twoStepVerification = new TwoStepVerification {
-        override def twoStepVerificationPath = "/register"
-
-        override def twoStepVerificationHost = "http://some-host"
-
-        override def twoStepVerificationEnabled = true
-      }
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
-
-      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
-
-      result shouldBe Some(Locations.TwoStepVerification("continue" -> continueUrl, "failure" -> continueUrl))
-      verify(ruleContext).currentCoAFEAuthority
-      verify(ruleContext, times(3)).activeEnrolments
-      verifyNoMoreInteractions(ruleContext)
-    }
-
     "not rewrite the location when continue is BTA and GG returns 500" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
@@ -233,6 +207,32 @@ class TwoStepVerificationSpec extends UnitSpec with MockitoSugar with WithFakeAp
 
       result shouldBe None
       verify(ruleContext, times(2)).activeEnrolments
+      verifyNoMoreInteractions(ruleContext)
+    }
+
+    "rewrite the location to have the 2SV url and the origin when the continue url is BTA, the user is not registered for 2SV, has one enrolment, has SA enrolment" in new Setup {
+
+      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      val continueUrl = "http://localhost:9020/business-account"
+
+      val twoStepVerification = new TwoStepVerification {
+        override def twoStepVerificationPath = "/register"
+
+        override def twoStepVerificationHost = "http://some-host"
+
+        override def twoStepVerificationEnabled = true
+      }
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> continueUrl, "failure" -> continueUrl, "origin" -> "business-tax-account")))
+      verify(ruleContext).currentCoAFEAuthority
+      verify(ruleContext, times(3)).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
   }

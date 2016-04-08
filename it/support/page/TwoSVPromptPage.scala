@@ -23,16 +23,17 @@ import support.Env
 import support.stubs.{Stub, StubbedPage}
 
 object TwoSVPromptStubPage extends Stub with StubbedPage {
-  override def create() = {
-    val continueUrl = URLEncoder.encode(s"http://${Env.stubHost}:${Env.stubPort}/business-account", "UTF-8")
-    val failureUrl = URLEncoder.encode(s"http://${Env.stubHost}:${Env.stubPort}/business-account", "UTF-8")
-    val queryString = s"continue=$continueUrl&amp\\;failure=$failureUrl"
-    stubOut(urlMatching(s"/coafe/two-step-verification/register\\?$queryString.*"), "2SV Prompt Page")
-  }
+  override def create() = stubOut(urlEqualTo(TwoSVPromptPage.uri), "2SV Prompt Page")
 }
 
 object TwoSVPromptPage extends WebPage {
-  override val url: String = Env.host + "/coafe/two-step-verification/register"
+  private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
+  private val continueUrl = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
+  private val failureUrl  = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
+  private val queryString = s"continue=$continueUrl&failure=$failureUrl&origin=business-tax-account"
+
+  val uri = s"/coafe/two-step-verification/register?$queryString"
+  override val url = s"$hostPort$uri"
 
   override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "2SV Prompt Page")
 }

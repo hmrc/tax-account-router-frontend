@@ -16,12 +16,12 @@
         ga('create', '@{gaToken}', 'auto');
         ga('send', 'event', 'routing', '@{location.name}', '@{eventName}', {
           'hitCallback': function() {
-            window.location='@{location.fullUrl}';
+            window.location='@Html(location.fullUrl)';
           }
         });
 
         setTimeout(function() {
-            window.location='@{location.fullUrl}';
+            window.location='@Html(location.fullUrl)';
         }, 3000);
 
     </script>
