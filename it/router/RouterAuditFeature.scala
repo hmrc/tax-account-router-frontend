@@ -20,9 +20,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     "self-assessment-enrolments" -> "enr3,enr4",
-    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 1000,
-    "ws.timeout.connection" -> 500,
+    "ws.timeout.request" -> 10000,
+    "ws.timeout.connection" -> 6000,
     "two-step-verification.enabled" -> true,
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR"
@@ -122,46 +121,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
     }
 
-    scenario("a user logged in through GG and sa is unresponsive should be redirected and an audit event should be raised") {
-
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
-
-      And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
-
-      And("the user has previous returns")
-      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        SA_RETURN_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
-        ))
-      val expectedTransactionName = "sent to business tax account"
-      eventually {
-        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
-      }
-    }
-
     scenario("a user logged in through GG and has no sa and no business enrolment should have no calls to sa in the audit record") {
 
       Given("a user logged in through Government Gateway")
@@ -194,35 +153,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-passed-through")
-    }
-
-    scenario("a user logged in through GG and GG is unresponsive should be redirected and an audit event should be raised") {
-
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
-
-      And("the user has self assessment enrolments")
-      stubProfileToReturnAfter2Seconds()
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false"
-        ))
-      val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")
     }
 
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {
@@ -489,7 +419,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
     }
-
 
     scenario("a BTA eligible user with NINO and not registered for 2SV and more than one enrolment should be redirected and an audit event should be raised") {
 
