@@ -43,6 +43,6 @@ object Env {
     new PhantomJSDriver(capabilities)
   }
 
-  val driver = phantomJsDriver
+  val driver = firefoxDriver
 
 }
