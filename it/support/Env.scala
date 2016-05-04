@@ -18,6 +18,7 @@ package support
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.DesiredCapabilities
@@ -43,6 +44,26 @@ object Env {
     new PhantomJSDriver(capabilities)
   }
 
-  val driver = firefoxDriver
+  def createBrowser() = {
+    val capabilities = DesiredCapabilities.chrome()
+    new ChromeDriver(capabilities)
+  }
+
+  def getInstance() = {
+    val instance = createBrowser()
+    instance.manage().window().maximize()
+    instance
+  }
+
+  lazy val chromeWebDriver = {
+    val os = System.getProperty("os.name").toLowerCase.replaceAll(" ", "")
+    val chromeDriver = getClass.getResource("/chromedriver/chromedriver_" + os).getPath
+    Runtime.getRuntime.exec("chmod u+x " + chromeDriver)
+    System.setProperty("webdriver.chrome.driver", chromeDriver)
+    System.setProperty("browser", "chrome")
+    getInstance()
+  }
+
+  val driver = chromeWebDriver
 
 }
