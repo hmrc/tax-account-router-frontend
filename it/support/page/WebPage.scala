@@ -24,7 +24,7 @@ import support.sugar.ImplicitWebDriverSugar
 
 trait WebPage extends Page with WebBrowser with ShouldMatchers with ImplicitWebDriverSugar {
 
-  def isCurrentPage: Boolean = false
+  def assertPageLoaded(): Unit
 
   def heading = tagName("h1").element.text
 
@@ -32,7 +32,11 @@ trait WebPage extends Page with WebBrowser with ShouldMatchers with ImplicitWebD
 
   def at() = {
     loadPage()
-    isCurrentPage shouldBe true
+    assertPageLoaded()
+  }
+
+  def assertPageIs(expectedPage: String) {
+    assertResult(expectedPage, "The actual page is: " + webDriver.getPageSource)(heading)
   }
 
   def containsFragment(fragment: String) =

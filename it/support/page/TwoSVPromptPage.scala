@@ -35,5 +35,5 @@ object TwoSVPromptPage extends WebPage {
   val uri = s"/coafe/two-step-verification/register?$queryString"
   override val url = s"$hostPort$uri"
 
-  override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "2SV Prompt Page")
+  override def assertPageLoaded() = assertPageIs("2SV Prompt Page")
 }

@@ -29,5 +29,5 @@ object BtaHomeStubPage extends Stub with StubbedPage {
 object BtaHomePage extends WebPage {
   override val url: String = Env.host + "/business-account"
 
-  override def isCurrentPage: Boolean = find(xpath("//h1")).fold(false)(_.text == "BTA Home Page")
+  override def assertPageLoaded() = assertPageIs("BTA Home Page")
 }
