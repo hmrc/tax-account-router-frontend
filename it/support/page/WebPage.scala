@@ -37,7 +37,7 @@ trait WebPage extends Page with WebBrowser with ShouldMatchers with ImplicitWebD
 
   def assertPageIs(expectedPage: String) {
     val title =  find(xpath("//h1")).map(_.text)
-    assertResult(Some(expectedPage), s"The actual page url is [${webDriver.getCurrentUrl]}] and the content is: [${webDriver.getPageSource}]")(title)
+    assertResult(Some(expectedPage), s"The actual page url is [${webDriver.getCurrentUrl}] and the content is: [${webDriver.getPageSource}]")(title)
   }
 
   def containsFragment(fragment: String) =
