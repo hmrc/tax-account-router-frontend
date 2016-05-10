@@ -27,7 +27,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-ui" % "4.1.0",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "4.5.0",
     "uk.gov.hmrc" %% "http-caching-client" % "5.3.0",
-    "uk.gov.hmrc" %% "mongo-caching" % "3.0.0"
+    "uk.gov.hmrc" %% "mongo-caching" % "3.2.0"
   )
 
   abstract class TestDependencies(scope: String) {
@@ -40,7 +40,7 @@ private object AppDependencies {
       "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
       "org.scalatestplus" %% "play" % "1.2.0" % scope,
       "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
-      "uk.gov.hmrc" %% "reactivemongo-test" % "1.2.0" % scope
+      "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope
     )
   }
 
