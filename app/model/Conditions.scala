@@ -125,13 +125,6 @@ object HasSaUtr extends Condition {
     Future.successful(authContext.principal.accounts.sa.isDefined)
 }
 
-object HasRegisteredFor2SV extends Condition {
-  override val auditType = Some(HAS_REGISTERED_FOR_2SV)
-
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.currentCoAFEAuthority.map(_.twoFactorAuthOtpId.isDefined)
-}
-
 object HasStrongCredentials extends Condition {
   override val auditType = Some(HAS_STRONG_CREDENTIALS)
 

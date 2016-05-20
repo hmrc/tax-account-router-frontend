@@ -21,7 +21,6 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStr
 
 class TaxAccountUser(loggedIn: Boolean,
                      tokenPresent: Boolean,
-                     isRegisteredFor2SV: Boolean,
                      accounts: Accounts,
                      credentialStrength: CredentialStrength,
                      affinityGroup: String)
@@ -29,7 +28,7 @@ class TaxAccountUser(loggedIn: Boolean,
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup).create()
+      LoggedInSessionUser(tokenPresent, accounts, credentialStrength, affinityGroup).create()
 
     } else {
       LoggedOutSessionUser.create
@@ -41,10 +40,9 @@ object TaxAccountUser {
 
   def apply(loggedIn: Boolean = true,
             tokenPresent: Boolean = true,
-            isRegisteredFor2SV: Boolean = true,
             accounts: Accounts = Accounts(),
             credentialStrength: CredentialStrength = CredentialStrength.None,
             affinityGroup: String = AffinityGroupValue.ORGANISATION) = {
-    new TaxAccountUser(loggedIn, tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup)
+    new TaxAccountUser(loggedIn, tokenPresent, accounts, credentialStrength, affinityGroup)
   }
 }

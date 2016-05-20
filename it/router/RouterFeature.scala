@@ -16,7 +16,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 10000,
     "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR"
   )
@@ -285,69 +284,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to 2SV with continue url BTA") {
-
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-
-      And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
-
-      And("the user has previous returns")
-      stubSaReturnWithNoPreviousReturns(saUtr)
-
-      createStubs(TwoSVPromptStubPage)
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("the user should be routed to 2SV Prompt Page with continue to BTA")
-      on(TwoSVPromptPage)
-
-      And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
-      verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
-
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
-
-      And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
-    }
-
-    scenario("a BTA eligible user with NINO and not registered for 2SV should be redirected to 2SV with continue url BTA") {
+    scenario("a BTA eligible user with NINO, should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-
-      And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
-
-      createStubs(TwoSVPromptStubPage)
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("the user should be routed to 2SV Prompt Page with continue to BTA")
-      on(TwoSVPromptPage)
-
-      And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
-      verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
-
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
-
-      And("Sa micro service should not be invoked")
-      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
-    }
-
-    scenario("a BTA eligible user with NINO, not registered for 2SV but already has strong credentials should be not redirected to 2SV with continue url BTA") {
-
-      Given("a user logged in through Government Gateway")
-      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
+      createStubs(TaxAccountUser(accounts = accounts, credentialStrength = CredentialStrength.Strong))
 
       And("the user has self assessment enrolments")
       stubProfileWithSelfAssessmentEnrolments()

@@ -48,7 +48,6 @@ object RoutingReason {
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
   val HAS_NINO = Reason("has-nino")
   val HAS_SA_UTR = Reason("has-sa-utr")
-  val HAS_REGISTERED_FOR_2SV = Reason("has-registered-for-2sv")
   val HAS_STRONG_CREDENTIALS = Reason("has-strong-credentials")
   val HAS_ONLY_ONE_ENROLMENT = Reason("has-only-one-enrolment")
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
@@ -66,7 +65,6 @@ object RoutingReason {
     IS_SELF_EMPLOYED,
     HAS_NINO,
     HAS_SA_UTR,
-    HAS_REGISTERED_FOR_2SV,
     HAS_STRONG_CREDENTIALS,
     HAS_ONLY_ONE_ENROLMENT,
     HAS_INDIVIDUAL_AFFINITY_GROUP,
