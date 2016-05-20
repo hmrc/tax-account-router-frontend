@@ -50,12 +50,11 @@ trait SessionCookieBaker {
 }
 
 class LoggedInSessionUser(tokenPresent: Boolean,
-                          isRegisteredFor2SV: Boolean,
                           accounts: Accounts,
                           credentialStrength: CredentialStrength,
                           affinityGroup: String) extends Stub with SessionCookieBaker {
 
-  private val twoFactorAuthOtpId = if (isRegisteredFor2SV) """"twoFactorAuthOtpId": "1234",""" else ""
+  private val twoFactorAuthOtpId = """"twoFactorAuthOtpId": "1234","""
   private val credentialStrengthField = s""""credentialStrength": "${credentialStrength.name.toLowerCase}","""
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
 
@@ -120,9 +119,8 @@ class LoggedInSessionUser(tokenPresent: Boolean,
 
 object LoggedInSessionUser {
   def apply(tokenPresent: Boolean,
-            isRegisteredFor2SV: Boolean,
             accounts: Accounts,
             credentialStrength: CredentialStrength,
             affinityGroup: String) =
-    new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup)
+    new LoggedInSessionUser(tokenPresent, accounts, credentialStrength, affinityGroup)
 }

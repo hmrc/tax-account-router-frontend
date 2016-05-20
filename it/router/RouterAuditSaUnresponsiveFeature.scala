@@ -22,7 +22,6 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
     "ws.timeout.connection" -> 500,
-    "two-step-verification.enabled" -> true,
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR"
   )
@@ -59,11 +58,9 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_SA_ENROLMENTS.key -> "true"
         ))
+
       val expectedTransactionName = "sent to business tax account"
       eventually {
         verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
@@ -92,8 +89,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        GG_ENROLMENTS_AVAILABLE.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")
