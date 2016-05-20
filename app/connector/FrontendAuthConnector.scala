@@ -17,10 +17,8 @@
 package connector
 
 import config.WSHttp
-import model.CoAFEAuthority
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
@@ -29,5 +27,4 @@ object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
 
 trait FrontendAuthConnector extends AuthConnector  {
 
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = http.GET[CoAFEAuthority](s"$serviceUrl/auth/authority")
 }

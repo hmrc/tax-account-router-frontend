@@ -26,7 +26,6 @@ import scala.concurrent.Future
 case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
-  val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
 
   lazy val futureProfile = governmentGatewayConnector.profile
 
@@ -40,8 +39,6 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val lastSaReturn = authContext.principal.accounts.sa
     .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
-
-  lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
   lazy val affinityGroup = futureProfile.map(_.affinityGroup)
 }

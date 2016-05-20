@@ -23,7 +23,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     "self-assessment-enrolments" -> "enr3,enr4",
     "ws.timeout.request" -> 10000,
     "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR"
   )
