@@ -50,11 +50,6 @@ trait MetricsMonitoringService {
 
       val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
       falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
-
-      if (auditContext.sentTo2SVRegister) {
-        val name = s"passed-through-2SV.to-${throttledLocation.name}"
-        metricsRegistry.meter(name).mark()
-      }
     }
   }
 

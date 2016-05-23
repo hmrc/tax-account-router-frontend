@@ -45,10 +45,6 @@ object Locations {
   lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
   lazy val BusinessTaxAccount = Location(businessTaxAccountLocationName, ExternalUrls.getUrl(businessTaxAccountLocationName))
 
-  val twoStepVerificationLocationName = "two-step-verification"
-
-  def twoStepVerification(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationLocationName), queryString)
-
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
 
   def find(name: String) = all.find(_.name == name)
