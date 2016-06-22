@@ -25,9 +25,6 @@ import org.scalatestplus.play.OneServerPerSuite
 import play.api.test.FakeApplication
 import support.Env
 import support.sugar._
-import uk.gov.hmrc.mongo.MongoConnector
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait StubbedFeatureSpec
   extends FeatureSpec
@@ -49,8 +46,6 @@ trait StubbedFeatureSpec
 
   val wireMockServer: WireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  val databaseConnection = new MongoConnector(s"mongodb://127.0.0.1:27017/$databaseName").db
-
   override def beforeAll() = {
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
@@ -58,7 +53,6 @@ trait StubbedFeatureSpec
 
   override def afterAll() = {
     wireMockServer.stop()
-    databaseConnection().drop()
   }
 
   sys addShutdownHook {
@@ -68,7 +62,6 @@ trait StubbedFeatureSpec
   override def beforeEach() = {
     Env.driver.manage().deleteAllCookies()
     WireMock.reset()
-    databaseConnection().drop()
   }
 
 }

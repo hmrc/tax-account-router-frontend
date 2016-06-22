@@ -58,7 +58,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser())
 
       And("the user has business related enrolments")
-      stubProfileWithBusinessEnrolments()
+      stubBusinessEnrolments()
 
       val auditEventStub = stubAuditEvent()
 
@@ -90,7 +90,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -128,8 +128,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts))
 
-      And("the user has self assessment enrolments")
-      stubProfileWithNoEnrolments()
+      And("the user has no inactive enrolments")
+      stubNoEnrolments()
+
+      And("the user has organisation affinity group")
+      stubUserDetails(affinityGroup = AffinityGroupValue.ORGANISATION)
 
       val auditEventStub = stubAuditEvent()
 
@@ -163,7 +166,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
@@ -203,7 +206,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
@@ -244,7 +247,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -286,7 +289,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -324,7 +327,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -361,7 +364,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       val auditEventStub = stubAuditEvent()
 
@@ -395,7 +398,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       val auditEventStub = stubAuditEvent()
 
@@ -427,7 +430,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user has self assessment enrolments")
-      stubProfileWithMoreThanOneSAEnrolment()
+      stubMoreThanOneSAEnrolment()
 
       val auditEventStub = stubAuditEvent()
 
@@ -458,7 +461,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
       And("the user has self assessment enrolments and individual affinity group")
-      stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      stubNoEnrolments()
+
+      And("the user has individual affinity group")
+      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       val auditEventStub = stubAuditEvent()
 

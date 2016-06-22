@@ -41,8 +41,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("Government Gateway service should not be invoked")
-      verify(0, getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should not be fetched from Auth")
+      verify(0, getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -54,7 +57,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser())
 
       And("the user has business related enrolments")
-      stubProfileWithBusinessEnrolments()
+      stubBusinessEnrolments()
 
       createStubs(BtaHomeStubPage)
 
@@ -67,8 +70,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -82,7 +88,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -98,8 +104,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -113,7 +122,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the sa is returning 500")
       stubSaReturnToReturn500(saUtr)
@@ -129,14 +138,17 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and gg returning 500 should be redirected to BTA") {
+    scenario("a user logged in through GG and Auth returning 500 on GET enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
@@ -144,7 +156,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("gg is returning 500")
-      stubProfileToReturn500()
+      stubEnrolmentsToReturn500()
 
       createStubs(BtaHomeStubPage)
 
@@ -157,8 +169,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -172,7 +187,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
@@ -188,8 +203,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -203,7 +221,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
@@ -219,8 +237,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -234,7 +255,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -250,8 +271,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -265,7 +289,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -278,8 +302,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to PTA Home Page")
       on(PtaHomePage)
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -293,7 +320,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -309,8 +336,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -323,7 +353,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       createStubs(TwoSVPromptStubPage)
 
@@ -336,8 +366,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -350,7 +383,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       createStubs(BtaHomeStubPage)
 
@@ -363,8 +396,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -376,7 +412,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
       And("the user has an inactive enrolment and individual affinity group")
-      stubProfileWithInactiveEnrolmentsAndIndividualAffinityGroup()
+      stubInactiveEnrolments()
+      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       createStubs(BtaHomeStubPage)
 
@@ -389,8 +426,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -401,8 +441,9 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has an no inactive enrolment and individual affinity group")
-      stubProfileWithNoEnrolments(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      And("the user has no inactive enrolments and individual affinity group")
+      stubNoEnrolments()
+      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
 
       createStubs(PtaHomeStubPage)
 
@@ -415,8 +456,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))

@@ -31,7 +31,7 @@ import scala.concurrent.Future
 
 object GGEnrolmentsAvailable extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolments.map(_ => true).recover { case _ => false}
+    ruleContext.enrolments.map(_ => true).recover { case _ => false}
 
   override val auditType = Some(GG_ENROLMENTS_AVAILABLE)
 }

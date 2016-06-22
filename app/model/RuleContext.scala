@@ -27,15 +27,21 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
   val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
+  val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
 
-  lazy val futureProfile = governmentGatewayConnector.profile
-
-  lazy val activeEnrolments = futureProfile.map { profile =>
-    profile.enrolments.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  lazy val userDetails = currentCoAFEAuthority.flatMap { authority =>
+    userDetailsConnector.getUserDetails(authority.userDetailsLink)
   }
 
-  lazy val notActivatedEnrolments = futureProfile.map { profile =>
-    profile.enrolments.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  // TODO: remove
+  lazy val futureProfile = governmentGatewayConnector.profile
+
+  lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  }
+
+  lazy val notActivatedEnrolments = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
   lazy val lastSaReturn = authContext.principal.accounts.sa
@@ -43,5 +49,9 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
-  lazy val affinityGroup = futureProfile.map(_.affinityGroup)
+  lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
+    frontendAuthConnector.getEnrolments(authority.enrolmentsUri)
+  }
+
+  lazy val affinityGroup = userDetails.map(_.affinityGroup)
 }
