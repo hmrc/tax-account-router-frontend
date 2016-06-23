@@ -164,7 +164,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       result shouldBe None
       verify(ruleContext, times(2)).activeEnrolments
-      verify(ruleContext, times(1)).enrolments
+      verify(ruleContext).enrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -211,8 +211,8 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(1)).enrolments
-      verify(ruleContext, times(1)).activeEnrolments
+      verify(ruleContext).enrolments
+      verify(ruleContext).activeEnrolments
       verifyNoMoreInteractions(ruleContext)
     }
 
@@ -240,7 +240,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       result shouldBe Some(Locations.twoStepVerification(Map("continue" -> continueUrl, "failure" -> continueUrl, "origin" -> "business-tax-account")))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
-      verify(ruleContext, times(1)).enrolments
+      verify(ruleContext).enrolments
       verifyNoMoreInteractions(ruleContext)
     }
   }
