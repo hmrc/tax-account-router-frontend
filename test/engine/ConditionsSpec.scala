@@ -16,7 +16,7 @@
 
 package engine
 
-import connector.{AffinityGroupValue, SaReturn}
+import connector.{GovernmentGatewayEnrolment, AffinityGroupValue, SaReturn}
 import model.RoutingReason._
 import model._
 import org.mockito.Mockito._
@@ -426,15 +426,15 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
 
         val expectedResult = ggEnrolmentsAvailable match {
-          case true => Future.successful(Set.empty[String])
+          case true => Future.successful(Seq.empty[GovernmentGatewayEnrolment])
           case false => Future.failed(new RuntimeException())
         }
-        when(ruleContext.activeEnrolments).thenReturn(expectedResult)
+        when(ruleContext.enrolments).thenReturn(expectedResult)
 
         val result = await(GGEnrolmentsAvailable.isTrue(authContext, ruleContext))
 
         result shouldBe ggEnrolmentsAvailable
-        verify(ruleContext).activeEnrolments
+        verify(ruleContext).enrolments
         verifyNoMoreInteractions(ruleContext, authContext)
       }
     }
