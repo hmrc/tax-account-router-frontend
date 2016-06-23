@@ -24,7 +24,6 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
-  val governmentGatewayConnector: GovernmentGatewayConnector = GovernmentGatewayConnector
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
   val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
   val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
@@ -32,9 +31,6 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   lazy val userDetails = currentCoAFEAuthority.flatMap { authority =>
     userDetailsConnector.getUserDetails(authority.userDetailsLink)
   }
-
-  // TODO: remove
-  lazy val futureProfile = governmentGatewayConnector.profile
 
   lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
     enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
