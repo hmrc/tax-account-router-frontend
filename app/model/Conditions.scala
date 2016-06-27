@@ -36,6 +36,13 @@ object GGEnrolmentsAvailable extends Condition {
   override val auditType = Some(GG_ENROLMENTS_AVAILABLE)
 }
 
+object AffinityGroupAvailable extends Condition {
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    ruleContext.affinityGroup.map(_ => true).recover { case _ => false }
+
+  override val auditType = Some(AFFINITY_GROUP_AVAILABLE)
+}
+
 trait HasAnyBusinessEnrolment extends Condition {
   def businessEnrolments: Set[String]
 

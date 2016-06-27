@@ -27,6 +27,14 @@ trait CommonStubs {
       ))
   }
 
+  def stubUserDetailsToReturn500() = {
+    stubFor(get(urlMatching("/user-details-uri"))
+      .willReturn(
+        aResponse()
+          .withStatus(500)
+      ))
+  }
+
   def stubBusinessEnrolments() = {
     stubFor(get(urlEqualTo("/enrolments-uri"))
       .willReturn(

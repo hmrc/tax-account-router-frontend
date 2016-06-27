@@ -16,7 +16,7 @@
 
 package engine
 
-import connector.{GovernmentGatewayEnrolment, AffinityGroupValue, SaReturn}
+import connector.{AffinityGroupValue, GovernmentGatewayEnrolment, SaReturn}
 import model.RoutingReason._
 import model._
 import org.mockito.Mockito._
@@ -435,6 +435,43 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         result shouldBe ggEnrolmentsAvailable
         verify(ruleContext).enrolments
+        verifyNoMoreInteractions(ruleContext, authContext)
+      }
+    }
+  }
+
+  "AffinityGroupNotAvailable" should {
+
+    "have an audit type specified" in {
+      AffinityGroupAvailable.auditType shouldBe Some(AFFINITY_GROUP_AVAILABLE)
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "affinityGroupAvailable"),
+        ("be true when affinity group is available", true),
+        ("be false when affinity group is not available", false)
+      )
+
+    forAll(scenarios) { (scenario: String, affinityGroupAvailable: Boolean) =>
+
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        val ruleContext = mock[RuleContext]
+
+        val expectedResult = affinityGroupAvailable match {
+          case true => Future.successful("some-affinity-group")
+          case false => Future.failed(new RuntimeException())
+        }
+        when(ruleContext.affinityGroup).thenReturn(expectedResult)
+
+        val result = await(AffinityGroupAvailable.isTrue(authContext, ruleContext))
+
+        result shouldBe affinityGroupAvailable
+        verify(ruleContext).affinityGroup
         verifyNoMoreInteractions(ruleContext, authContext)
       }
     }

@@ -430,7 +430,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
-      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -452,6 +452,36 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the user should be routed to PTA Home Page")
       on(PtaHomePage)
+
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
+
+      And("Sa micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
+    }
+
+    scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
+
+      Given("a user logged in through Government Gateway")
+      createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
+
+      And("the user has no inactive enrolments and affinity group is not available")
+      stubNoEnrolments()
+      stubUserDetailsToReturn500()
+
+      createStubs(BtaHomeStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to PTA Home Page")
+      on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))

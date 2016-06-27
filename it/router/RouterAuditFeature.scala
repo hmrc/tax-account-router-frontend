@@ -121,7 +121,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment should have no calls to sa in the audit record") {
+    scenario("when a user logged in through GG and has no sa and no business enrolment an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
@@ -151,6 +151,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_SA_ENROLMENTS.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
         HAS_ONLY_ONE_ENROLMENT.key -> "false",
+        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
+        AFFINITY_GROUP_AVAILABLE.key -> "true",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "false"
         ))
 
@@ -453,7 +455,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group should have no calls to sa in the audit record and be redirected") {
+    scenario("when a user logged in through GG and has no sa and no business enrolment with individual affinity group an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
@@ -482,11 +484,49 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "false",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "true",
-        HAS_ANY_INACTIVE_ENROLMENT.key -> "false"
+        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
+        AFFINITY_GROUP_AVAILABLE.key -> "true"
         ))
 
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-individual")
+    }
+
+    scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group n/a an audit event should be raised") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
+
+      And("the user has self assessment enrolments and individual affinity group")
+      stubNoEnrolments()
+
+      And("affinity group is not available")
+      stubUserDetailsToReturn500()
+
+      val auditEventStub = stubAuditEvent()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      And("the audit event raised should be the expected one")
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+        IS_A_VERIFY_USER.key -> "false",
+        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+        GG_ENROLMENTS_AVAILABLE.key -> "true",
+        HAS_BUSINESS_ENROLMENTS.key -> "false",
+        HAS_SA_ENROLMENTS.key -> "false",
+        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
+        AFFINITY_GROUP_AVAILABLE.key -> "false",
+        HAS_STRONG_CREDENTIALS.key -> "false",
+        HAS_ONLY_ONE_ENROLMENT.key -> "false"
+        ))
+      val expectedTransactionName = "sent to business tax account"
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-affinity-group-unavailable")
     }
   }
 
