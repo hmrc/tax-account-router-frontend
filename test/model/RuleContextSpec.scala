@@ -17,7 +17,7 @@
 package model
 
 import connector._
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.test.FakeRequest
@@ -32,88 +32,85 @@ import scala.concurrent.Future
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
+  sealed trait Setup {
+
+    implicit val hc = HeaderCarrier()
+    val mockFrontendAuthConnector = mock[FrontendAuthConnector]
+    val mockUserDetailsConnector = mock[UserDetailsConnector]
+    val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
+    val allMocks = Seq(mockFrontendAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)
+
+    val ruleContext = new RuleContext(mock[AuthContext]) {
+      override val frontendAuthConnector = mockFrontendAuthConnector
+      override val userDetailsConnector = mockUserDetailsConnector
+      override val selfAssessmentConnector = mockSelfAssessmentConnector
+    }
+
+    val enrolmentsUri = "/enrolments"
+    val userDetailsLink = "/userDetailsLink"
+    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = enrolmentsUri, userDetailsLink = userDetailsLink)
+
+    val expectedAffinityGroup = "some-affinity-group"
+    val expectedUserDetails = UserDetails(expectedAffinityGroup)
+
+    val expectedActiveEnrolmentsSeq = Seq(
+      GovernmentGatewayEnrolment("some-key", Seq(EnrolmentIdentifier("key-1", "value-1")), EnrolmentState.ACTIVATED),
+      GovernmentGatewayEnrolment("some-other-key", Seq(EnrolmentIdentifier("key-2", "value-2")), EnrolmentState.NOT_YET_ACTIVATED)
+    )
+
+    when(mockUserDetailsConnector.getUserDetails(userDetailsLink)).thenReturn(Future.successful(expectedUserDetails))
+    when(mockFrontendAuthConnector.getEnrolments(enrolmentsUri)).thenReturn(Future.successful(expectedActiveEnrolmentsSeq))
+    when(mockFrontendAuthConnector.currentCoAFEAuthority()).thenReturn(Future.successful(expectedCoafeAuthority))
+  }
+
   "activeEnrolments" should {
-    "return active enrolments when available" in {
+    "return active enrolments when available" in new Setup {
       //given
-      val profileResponse = ProfileResponse(
-        affinityGroup = "",
-        enrolments = List(Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED), Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED))
-      )
-      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
-      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
-
-      //and
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(request.headers)
-
-      //and
-      val expectedActiveEnrolments: Set[String] = Set("enr1")
-
-      val ruleContext = new RuleContext(mock[AuthContext]) {
-        override val governmentGatewayConnector = mockGovernmentGatewayConnector
-      }
+      val expectedActiveEnrolmentsSet = Set("some-key")
 
       //when
-      val returnedActiveEnrolments: Set[String] = await(ruleContext.activeEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.activeEnrolments)
 
       //then
-      expectedActiveEnrolments shouldBe returnedActiveEnrolments
+      expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockGovernmentGatewayConnector).profile(eqTo(hc))
+      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verify(mockFrontendAuthConnector).getEnrolments(enrolmentsUri)
+      verifyNoMoreInteractions(allMocks: _*)
     }
   }
 
   "notActivatedEnrolments" should {
-    "return not activated enrolments when available" in {
+    "return not activated enrolments when available" in new Setup {
       //given
-      val profileResponse = ProfileResponse(
-        affinityGroup = "",
-        enrolments = List(
-          Enrolment("enr1", "identifier1", EnrolmentState.ACTIVATED),
-          Enrolment("enr2", "identifier2", EnrolmentState.NOT_YET_ACTIVATED),
-          Enrolment("enr3", "identifier2", EnrolmentState.HANDED_TO_AGENT),
-          Enrolment("enr4", "identifier2", EnrolmentState.PENDING)
-        )
-      )
-      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
-      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
-
-      //and
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(request.headers)
-
-      //and
-      val expectedInactiveEnrolments = Set("enr2", "enr3", "enr4")
-
-      val ruleContext = new RuleContext(mock[AuthContext]) {
-        override val governmentGatewayConnector = mockGovernmentGatewayConnector
-      }
+      val expectedActiveEnrolmentsSet = Set("some-other-key")
 
       //when
-      val result = await(ruleContext.notActivatedEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolments)
 
       //then
-      result shouldBe expectedInactiveEnrolments
+      expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockGovernmentGatewayConnector).profile(eqTo(hc))
-      verifyNoMoreInteractions(mockGovernmentGatewayConnector)
+      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verify(mockFrontendAuthConnector).getEnrolments(enrolmentsUri)
+      verifyNoMoreInteractions(allMocks: _*)
     }
   }
 
   "saUserInfo" should {
     "return the last self-assessment return if available in SA and the user has an SA account" in {
       //given
-
       val saReturn = SaReturn(List("something"))
 
       implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
 
       val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
-      when(mockSelfAssessmentConnector.lastReturn("123456789")(hc)).thenReturn(Future(saReturn))
+      val expectedUtr = "123456789"
+      when(mockSelfAssessmentConnector.lastReturn(expectedUtr)(hc)).thenReturn(Future(saReturn))
 
-      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = Some(SaAccount("", SaUtr("123456789"))))), None)
+      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = Some(SaAccount("", SaUtr(expectedUtr))))), None)
       //and
       val ruleContext = new RuleContext(authContext) {
         override val selfAssessmentConnector = mockSelfAssessmentConnector
@@ -121,6 +118,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       //then
       await(ruleContext.lastSaReturn) shouldBe saReturn
+      verify(mockSelfAssessmentConnector).lastReturn(expectedUtr)
     }
 
     "return an empty self-assessment return if the user has no SA account" in {
@@ -142,50 +140,25 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
   }
 
   "currentCoAFEAuthority" should {
-    "return the current authority" in {
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
-
-      val mockFrontendAuthConnector = mock[FrontendAuthConnector]
-      val currentAuthority = CoAFEAuthority(Some("1234"))
-      when(mockFrontendAuthConnector.currentCoAFEAuthority()(hc)).thenReturn(Future(currentAuthority))
-
-      val authContext = mock[AuthContext]
-
-      val ruleContext = new RuleContext(authContext) {
-        override val frontendAuthConnector = mockFrontendAuthConnector
-      }
-
+    "return the current authority" in new Setup {
       val result = ruleContext.currentCoAFEAuthority
 
-      await(result) shouldBe currentAuthority
+      await(result) shouldBe expectedCoafeAuthority
+      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verifyNoMoreInteractions(allMocks: _*)
     }
   }
 
   "affinityGroup" should {
-    "return the affinity group from gg profile" in {
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+    "return the affinity group from gg profile" in new Setup {
 
-      val expectedAffinityGroup = "some-affinity-group"
+      val result = await(ruleContext.affinityGroup)
 
-      val profileResponse = ProfileResponse(
-        affinityGroup = expectedAffinityGroup,
-        enrolments = List.empty
-      )
-      val mockGovernmentGatewayConnector = mock[GovernmentGatewayConnector]
-      when(mockGovernmentGatewayConnector.profile).thenReturn(profileResponse)
+      result shouldBe expectedAffinityGroup
 
-      val authContext = mock[AuthContext]
-
-      val ruleContext = new RuleContext(authContext) {
-        override val governmentGatewayConnector = mockGovernmentGatewayConnector
-      }
-
-      val result = ruleContext.affinityGroup
-
-      await(result) shouldBe expectedAffinityGroup
-
-      verify(mockGovernmentGatewayConnector).profile(any[HeaderCarrier])
-      verifyNoMoreInteractions(mockGovernmentGatewayConnector)
+      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
+      verifyNoMoreInteractions(allMocks: _*)
     }
   }
 }

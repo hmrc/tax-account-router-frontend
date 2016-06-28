@@ -32,7 +32,7 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the sa is unresponsive")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
@@ -48,8 +48,11 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("sa returns should be fetched from Sa micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
@@ -63,7 +66,7 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("gg is unresponsive")
-      stubProfileToReturnAfter2Seconds()
+      stubEnrolmentsToReturnAfter2Seconds()
 
       createStubs(BtaHomeStubPage)
 
@@ -76,8 +79,11 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
 
-      And("the user profile should be fetched from the Government Gateway")
-      verify(getRequestedFor(urlEqualTo("/profile")))
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))

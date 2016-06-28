@@ -121,7 +121,9 @@ object TarRules extends RuleEngine {
 
     when(LoggedInViaGovernmentGateway and HasSelfAssessmentEnrolments and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
 
-    when(HasIndividualAffinityGroup and not(HasAnyInactiveEnrolment)) thenGoTo PersonalTaxAccount withName "pta-home-page-individual",
+    when(not(HasAnyInactiveEnrolment) and not(AffinityGroupAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-affinity-group-unavailable",
+
+    when(not(HasAnyInactiveEnrolment) and HasIndividualAffinityGroup) thenGoTo PersonalTaxAccount withName "pta-home-page-individual",
 
     when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount withName "bta-home-page-passed-through"
   )

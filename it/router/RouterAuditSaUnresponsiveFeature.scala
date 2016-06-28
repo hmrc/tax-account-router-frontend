@@ -38,7 +38,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileWithSelfAssessmentEnrolments()
+      stubSelfAssessmentEnrolments()
 
       And("the user has previous returns")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
@@ -78,7 +78,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       createStubs(TaxAccountUser(accounts = accounts))
 
       And("the user has self assessment enrolments")
-      stubProfileToReturnAfter2Seconds()
+      stubEnrolmentsToReturnAfter2Seconds()
 
       val auditEventStub = stubAuditEvent()
 

@@ -23,17 +23,15 @@ trait StubApplicationConfiguration {
 
   val databaseName = "tar-test"
 
+  val stubbedMicroServices = Seq("auth", "cachable.short-lived-cache", "government-gateway", "sa", "user-details")
+    .map(service => Map(
+      s"microservice.services.$service.host" -> stubHost,
+      s"microservice.services.$service.port" -> stubPort
+    )).reduce(_ ++ _)
+
   val config = Map[String, Any](
     "auditing.consumer.baseUri.host" -> stubHost,
     "auditing.consumer.baseUri.port" -> stubPort,
-    "microservice.services.auth.host" -> stubHost,
-    "microservice.services.auth.port" -> stubPort,
-    "microservice.services.cachable.short-lived-cache.host" -> stubHost,
-    "microservice.services.cachable.short-lived-cache.port" -> stubPort,
-    "microservice.services.government-gateway.host" -> stubHost,
-    "microservice.services.government-gateway.port" -> stubPort,
-    "microservice.services.sa.host" -> stubHost,
-    "microservice.services.sa.port" -> stubPort,
     "business-tax-account.host" -> s"http://$stubHost:$stubPort",
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
@@ -42,5 +40,5 @@ trait StubApplicationConfiguration {
     "tax-account-router.host" -> "",
     "throttling.enabled" -> false,
     "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName"
-  )
+  ) ++ stubbedMicroServices
 }
