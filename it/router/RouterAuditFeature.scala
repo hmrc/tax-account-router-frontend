@@ -492,14 +492,14 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-individual")
     }
 
-    scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group n/a an audit event should be raised") {
+    scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group not available an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
 
-      And("the user has self assessment enrolments and individual affinity group")
+      And("the user has no enrolments")
       stubNoEnrolments()
 
       And("affinity group is not available")

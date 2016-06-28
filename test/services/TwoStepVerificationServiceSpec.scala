@@ -157,7 +157,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         override def twoStepVerificationEnabled = true
       }
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
@@ -181,7 +181,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         override def twoStepVerificationEnabled = true
       }
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
       when(ruleContext.enrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
@@ -204,7 +204,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         override def twoStepVerificationEnabled = true
       }
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"))))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
 
@@ -231,7 +231,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         override def twoStepVerificationEnabled = true
       }
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None)))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
 
