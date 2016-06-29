@@ -36,7 +36,7 @@ private object AppDependencies {
       "org.pegdown" % "pegdown" % "1.6.0" % scope,
       "org.jsoup" % "jsoup" % "1.8.3" % scope,
       "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-      "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % scope,
+      "uk.gov.hmrc" %% "hmrctest" % "1.6.0" % scope,
       "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
       "org.scalatestplus" %% "play" % "1.2.0" % scope,
       "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
