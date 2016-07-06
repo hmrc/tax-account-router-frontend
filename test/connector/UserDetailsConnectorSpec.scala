@@ -50,13 +50,13 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
       val userDetailsUri = "userDetailsUri"
 
       val expected = UserDetails(affinityGroup = "Individual")
-      when(mockHttp.GET(eqTo(s"$someServiceUrl$userDetailsUri"))(any[HttpReads[UserDetails]], eqTo(hc))).thenReturn(Future.successful(expected))
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))).thenReturn(Future.successful(expected))
 
       val result = await(connectorUnderTest.getUserDetails(userDetailsUri)(hc))
 
       result shouldBe expected
 
-      verify(mockHttp).GET[UserDetails](eqTo(s"$someServiceUrl$userDetailsUri"))(any[HttpReads[UserDetails]], eqTo(hc))
+      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))
       verifyNoMoreInteractions(mockHttp)
     }
   }

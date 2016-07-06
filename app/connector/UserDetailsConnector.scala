@@ -27,7 +27,7 @@ trait UserDetailsConnector {
 
   def http: HttpGet with HttpPost
 
-  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](s"$serviceUrl$userDetailsUri")
+  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](userDetailsUri)
 }
 
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {

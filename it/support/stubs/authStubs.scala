@@ -54,7 +54,8 @@ class LoggedInSessionUser(tokenPresent: Boolean,
                           accounts: Accounts,
                           credentialStrength: CredentialStrength,
                           affinityGroup: String,
-                          oid: String) extends Stub with SessionCookieBaker {
+                          oid: String,
+                          userDetailsLink: String) extends Stub with SessionCookieBaker {
 
   private val twoFactorAuthOtpId = if (isRegisteredFor2SV) """"twoFactorAuthOtpId": "1234",""" else ""
   private val credentialStrengthField = s""""credentialStrength": "${credentialStrength.name.toLowerCase}","""
@@ -113,7 +114,7 @@ class LoggedInSessionUser(tokenPresent: Boolean,
                |    $credentialStrengthField
                |    "confidenceLevel": 500,
                |    "enrolments": "/enrolments-uri",
-               |    "userDetailsLink": "/user-details-uri"
+               |    "userDetailsLink": "$userDetailsLink"
                |}
                |"""
               .stripMargin
@@ -127,6 +128,7 @@ object LoggedInSessionUser {
             accounts: Accounts,
             credentialStrength: CredentialStrength,
             affinityGroup: String,
-            oid: String) =
-    new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, oid)
+            oid: String,
+            userDetailsLink: String) =
+    new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, oid, userDetailsLink)
 }
