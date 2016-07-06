@@ -132,7 +132,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       }
 
       val mockAuditContext = mock[TAuditContext]
-      when(mockAuditContext.sentTo2SVRegister).thenReturn(true)
+      when(mockAuditContext.getSentTo2SVRegister).thenReturn(true)
       when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
       when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
 
@@ -164,7 +164,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       }
 
       val mockAuditContext = mock[TAuditContext]
-      when(mockAuditContext.sentTo2SVRegister).thenReturn(false)
+      when(mockAuditContext.getSentTo2SVRegister).thenReturn(false)
       when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
       when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
 

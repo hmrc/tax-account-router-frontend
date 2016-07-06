@@ -36,6 +36,8 @@ trait TwoStepVerification {
 
   def twoStepVerificationEnabled: Boolean
 
+  def twoStepVerificationThrottle: TwoStepVerificationThrottle
+
   private val conditionsByDestination = Map(
     BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
   )
@@ -58,7 +60,7 @@ trait TwoStepVerification {
           case true => Some(wrapLocationWith2SV(continue))
           case _ => None
         }
-      }.andThen { case Success(Some(_)) => auditContext.sentTo2SVRegister = true }
+      }.andThen { case Success(Some(_)) => auditContext.setSentTo2SVRegister(true) }
     } else Future.successful(None)
   }
 
@@ -73,4 +75,6 @@ object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
   override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
 
   override lazy val twoStepVerificationEnabled = getConfigurationBoolean("two-step-verification.enabled")
+
+  override lazy val twoStepVerificationThrottle = TwoStepVerificationThrottle
 }

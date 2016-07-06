@@ -237,4 +237,13 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       }
     }
   }
+
+  "TAuditContext" should {
+    "provide a setter and a getter for sentTo2SVRegister" in {
+      val auditContext = new TAuditContext {}
+      auditContext.getSentTo2SVRegister shouldBe false // default value
+      auditContext.setSentTo2SVRegister(true)
+      auditContext.getSentTo2SVRegister shouldBe true
+    }
+  }
 }
