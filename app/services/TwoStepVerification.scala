@@ -57,7 +57,9 @@ trait TwoStepVerification {
           }
         }
         shouldRedirectTo2SV.map {
-          case true => Some(wrapLocationWith2SV(continue))
+          case true =>
+            twoStepVerificationThrottle.registrationMandatory(authContext.user.oid)
+            Some(wrapLocationWith2SV(continue))
           case _ => None
         }
       }.andThen { case Success(Some(_)) => auditContext.setSentTo2SVRegister(true) }

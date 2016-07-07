@@ -35,14 +35,14 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 
-  sealed class Setup(twoStepVerificationOn: Boolean = true) {
+  sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
     implicit val request = FakeRequest()
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
     val principal = Principal(None, Accounts())
     val ruleContext = mock[RuleContext]
-    val twoStepVerificationThrottle = mock[TwoStepVerificationThrottle]
-    val allMocks = Seq(auditContext, twoStepVerificationThrottle, ruleContext)
+    val twoStepVerificationThrottleMock = mock[TwoStepVerificationThrottle]
+    val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
     val businessTaxAccountUrl = "http://localhost:9020/business-account"
     val signOutUrl = "http://localhost:9025/sign-out"
 
@@ -51,15 +51,15 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       override def twoStepVerificationHost = ???
 
-      override def twoStepVerificationEnabled = twoStepVerificationOn
+      override def twoStepVerificationEnabled = twoStepVerificationSwitch
 
-      override def twoStepVerificationThrottle = ???
+      override def twoStepVerificationThrottle = twoStepVerificationThrottleMock
     }
   }
 
   "getDestinationVia2SV" should {
 
-    "not rewrite the location when two step verification is disabled" in new Setup(twoStepVerificationOn = false) {
+    "not rewrite the location when two step verification is disabled" in new Setup(twoStepVerificationSwitch = false) {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
@@ -170,7 +170,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-      when(twoStepVerificationThrottle.registrationMandatory(userid)).thenReturn(Future.successful(false))
+      when(twoStepVerificationThrottleMock.registrationMandatory(userid)).thenReturn(Future.successful(false))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -178,7 +178,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
       verify(ruleContext).enrolments
-      //      verify(twoStepVerificationThrottle).registrationMandatory(userid)
+      verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verify(auditContext).setSentTo2SVRegister(true)
       verifyNoMoreInteractions(allMocks: _*)
