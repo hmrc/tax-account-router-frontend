@@ -22,18 +22,19 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import support.Env
 import support.stubs.{Stub, StubbedPage}
 
-object TwoSVPromptStubPage extends Stub with StubbedPage {
-  override def create() = stubOut(urlEqualTo(TwoSVPromptPage.uri), "2SV Prompt Page")
+object TwoSVMandatoryRegistrationStubPage extends Stub with StubbedPage {
+  override def create() = stubOut(urlEqualTo(TwoSVMandatoryRegistrationPage.uri), "2SV Mandatory Registration Page")
 }
 
-object TwoSVPromptPage extends WebPage {
+object TwoSVMandatoryRegistrationPage extends WebPage {
   private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
   private val continueUrl = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
-  private val failureUrl  = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
+  private val continueToAccount = URLEncoder.encode(s"${Env.host}/account", "UTF-8")
+  private val failureUrl = URLEncoder.encode(s"$hostPort/business-account/two-step-verification/failed?continue=$continueToAccount", "UTF-8")
   private val queryString = s"continue=$continueUrl&failure=$failureUrl&origin=business-tax-account"
 
   val uri = s"/coafe/two-step-verification/register?$queryString"
   override val url = s"$hostPort$uri"
 
-  override def assertPageLoaded() = assertPageIs("2SV Prompt Page")
+  override def assertPageLoaded() = assertPageIs("2SV Mandatory Registration Page")
 }
