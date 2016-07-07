@@ -20,7 +20,7 @@ import com.codahale.metrics.{Meter, MetricRegistry}
 import model.{Location, TAuditContext}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito._
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.collection.mutable.{Map => mutableMap}
 
-class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Eventually with IntegrationPatience {
+class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Eventually {
 
   "MetricsMonitoringService" should {
 
@@ -53,7 +53,7 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         val mockMetricRegistry = mock[MetricRegistry]
 
         val metricsMonitoringService = new MetricsMonitoringService {
-          override val metricsRegistry: MetricRegistry = mockMetricRegistry
+          override val metricsRegistry = mockMetricRegistry
         }
 
         val mockAuditContext = mock[TAuditContext]
@@ -114,36 +114,55 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
         }
       }
     }
+  }
 
-    "send passed-through-2SV metric when flag is true" in {
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-      implicit val authContext = mock[AuthContext]
+  it should {
 
-      val throttledLocation = "some-destination"
-      val mockMeter = mock[Meter]
-      val mockMeterDontCare = mock[Meter]
-      val mockMetricRegistry = mock[MetricRegistry]
-      when(mockMetricRegistry.meter(any[String])).thenReturn(mockMeterDontCare)
-      when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.to-$throttledLocation"))).thenReturn(mockMeter)
+    val scenarios = Table(
+      ("scenario", "twoStepVerificationMandatory"),
+      ("2sv registration is mandatory", true),
+      ("2sv registration is optional", false)
+    )
 
-      val metricsMonitoringService = new MetricsMonitoringService {
-        override val metricsRegistry: MetricRegistry = mockMetricRegistry
-      }
+    forAll(scenarios) { (scenario: String, twoStepVerificationMandatory: Boolean) =>
 
-      val mockAuditContext = mock[TAuditContext]
-      when(mockAuditContext.getSentTo2SVRegister).thenReturn(true)
-      when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
-      when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
+      s"send passed-through-2SV metric when flag is true - $scenario" in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+        implicit val authContext = mock[AuthContext]
 
-      val mockThrottledLocation = mock[Location]
-      when(mockThrottledLocation.name).thenReturn(throttledLocation)
+        val throttledLocation = "some-destination"
+        val mockMeter = mock[Meter]
+        val mockMeterMandatory = mock[Meter]
+        val mockMeterOptional = mock[Meter]
+        val mockMeterDontCare = mock[Meter]
+        val mockMetricRegistry = mock[MetricRegistry]
+        when(mockMetricRegistry.meter(any[String])).thenReturn(mockMeterDontCare)
+        when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.to-$throttledLocation"))).thenReturn(mockMeter)
+        when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.mandatory.to-$throttledLocation"))).thenReturn(mockMeterMandatory)
+        when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.optional.to-$throttledLocation"))).thenReturn(mockMeterOptional)
 
-      // when
-      metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)
+        val metricsMonitoringService = new MetricsMonitoringService {
+          override val metricsRegistry = mockMetricRegistry
+        }
 
-      eventually {
-        verify(mockMeter).mark()
+        val mockAuditContext = mock[TAuditContext]
+        when(mockAuditContext.getSentToMandatory2SVRegister).thenReturn(twoStepVerificationMandatory)
+        when(mockAuditContext.getSentToOptional2SVRegister).thenReturn(!twoStepVerificationMandatory)
+        when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
+        when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
+
+        val mockThrottledLocation = mock[Location]
+        when(mockThrottledLocation.name).thenReturn(throttledLocation)
+
+        // when
+        metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)
+
+        eventually {
+          verify(mockMeter).mark()
+          verify(mockMeterMandatory, if (twoStepVerificationMandatory) times(1) else never()).mark()
+          verify(mockMeterOptional, if (!twoStepVerificationMandatory) times(1) else never()).mark()
+        }
       }
     }
 
@@ -160,11 +179,11 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.to-$throttledLocation"))).thenReturn(mockMeter)
 
       val metricsMonitoringService = new MetricsMonitoringService {
-        override val metricsRegistry: MetricRegistry = mockMetricRegistry
+        override val metricsRegistry = mockMetricRegistry
       }
 
       val mockAuditContext = mock[TAuditContext]
-      when(mockAuditContext.getSentTo2SVRegister).thenReturn(false)
+      when(mockAuditContext.getSentToOptional2SVRegister).thenReturn(false)
       when(mockAuditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
       when(mockAuditContext.getReasons).thenReturn(mutableMap.empty[String, String])
 

@@ -28,7 +28,6 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
-import scala.util.Success
 
 trait TwoStepVerification {
 
@@ -63,13 +62,16 @@ trait TwoStepVerification {
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
                 val continueToAccountUrl = URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")
-                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=${continueToAccountUrl}"
+                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$continueToAccountUrl"
+                auditContext.setSentToMandatory2SVRegister()
                 Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))
-              case _ => Some(wrapLocationWith2SV(continue, continue.fullUrl))
+              case _ =>
+                auditContext.setSentToOptional2SVRegister()
+                Some(wrapLocationWith2SV(continue, continue.fullUrl))
             }
           case _ => None
         }
-      }.andThen { case Success(Some(_)) => auditContext.setSentTo2SVRegister(true) }
+      }
     } else Future.successful(None)
   }
 
