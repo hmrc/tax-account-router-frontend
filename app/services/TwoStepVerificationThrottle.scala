@@ -16,7 +16,7 @@
 
 package services
 
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import play.api.Play.{current, _}
 
 trait TwoStepVerificationThrottle {
@@ -24,7 +24,7 @@ trait TwoStepVerificationThrottle {
 
   def registrationMandatory(discriminator: String) = {
     val userValue = Math.abs(discriminator.hashCode % 100)
-    val threshold = hourlyLimit.getCurrentLimit()
+    val threshold = hourlyLimit.getCurrentLimit
     userValue <= threshold
   }
 }
@@ -37,7 +37,7 @@ object TwoStepVerificationThrottle extends TwoStepVerificationThrottle {
 trait HourlyLimit {
   def dateTimeProvider: () => DateTime
 
-  def getCurrentLimit() = {
+  def getCurrentLimit = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay
     configuration.getInt(s"two-step-verification.throttle.$currentHourOfDay")
       .orElse(configuration.getInt("two-step-verification.throttle.other"))
@@ -46,5 +46,5 @@ trait HourlyLimit {
 }
 
 object HourlyLimit extends HourlyLimit {
-  override def dateTimeProvider = () => DateTime.now(DateTimeZone.UTC)
+  override def dateTimeProvider = () => DateTime.now()
 }

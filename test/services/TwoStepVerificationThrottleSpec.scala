@@ -38,11 +38,11 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
 
     forAll(scenarios) { (scenario: String, expectedThreshold: Int, expectedResult: Boolean) =>
       scenario in new Setup {
-        when(hourlyLimitMock.getCurrentLimit()).thenReturn(expectedThreshold)
+        when(hourlyLimitMock.getCurrentLimit).thenReturn(expectedThreshold)
 
         twoStepVerificationThrottle.registrationMandatory(discriminator) shouldBe expectedResult
 
-        verify(hourlyLimitMock).getCurrentLimit()
+        verify(hourlyLimitMock).getCurrentLimit
         verifyNoMoreInteractions(allMocks: _*)
       }
     }

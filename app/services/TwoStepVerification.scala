@@ -62,7 +62,8 @@ trait TwoStepVerification {
           case true =>
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
-                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=${URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")}"
+                val continueToAccountUrl = URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")
+                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=${continueToAccountUrl}"
                 Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))
               case _ => Some(wrapLocationWith2SV(continue, continue.fullUrl))
             }
