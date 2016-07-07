@@ -16,6 +16,8 @@
 
 package services
 
+import java.net.URLEncoder
+
 import connector.GovernmentGatewayEnrolment
 import helpers.SpecHelpers
 import model.Locations._
@@ -36,14 +38,13 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 
   sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
-    implicit val request = FakeRequest()
+    implicit val request = FakeRequest().withHeaders("Host" -> "some-host")
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
     val principal = Principal(None, Accounts())
     val ruleContext = mock[RuleContext]
     val twoStepVerificationThrottleMock = mock[TwoStepVerificationThrottle]
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
-    val businessTaxAccountUrl = "http://localhost:9020/business-account"
     val signOutUrl = "http://localhost:9025/sign-out"
 
     val twoStepVerification = new TwoStepVerification {
@@ -51,9 +52,9 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       override def twoStepVerificationHost = ???
 
-      override def twoStepVerificationEnabled = twoStepVerificationSwitch
+      override val twoStepVerificationEnabled = twoStepVerificationSwitch
 
-      override def twoStepVerificationThrottle = twoStepVerificationThrottleMock
+      override val twoStepVerificationThrottle = twoStepVerificationThrottleMock
     }
   }
 
@@ -174,7 +175,31 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> businessTaxAccountUrl, "failure" -> businessTaxAccountUrl, "origin" -> "business-tax-account")))
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.BusinessTaxAccount.url, "origin" -> "business-tax-account")))
+      verify(ruleContext).currentCoAFEAuthority
+      verify(ruleContext, times(2)).activeEnrolments
+      verify(ruleContext).enrolments
+      verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
+      verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
+      verify(auditContext).setSentTo2SVRegister(true)
+      verifyNoMoreInteractions(allMocks: _*)
+    }
+
+    "rewrite the location to have the 2SV url and the origin when the continue url is BTA, the user is not registered for 2SV, no strong credentials, has one enrolment, has SA enrolment and throttle chooses mandatory registration" in new Setup {
+
+      val userid = "userId"
+      val loggedInUser = LoggedInUser(userid, None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
+      implicit val authContext = AuthContext(loggedInUser, principal, None)
+
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
+      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
+      when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
+      when(twoStepVerificationThrottleMock.registrationMandatory(userid)).thenReturn(Future.successful(true))
+      val expectedContinueUrl = URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")
+
+      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$expectedContinueUrl", "origin" -> "business-tax-account")))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
       verify(ruleContext).enrolments

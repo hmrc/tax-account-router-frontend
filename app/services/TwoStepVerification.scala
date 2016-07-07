@@ -16,6 +16,8 @@
 
 package services
 
+import java.net.URLEncoder
+
 import config.AppConfigHelpers
 import engine.Condition._
 import model.Locations._
@@ -58,15 +60,19 @@ trait TwoStepVerification {
         }
         shouldRedirectTo2SV.map {
           case true =>
-            twoStepVerificationThrottle.registrationMandatory(authContext.user.oid)
-            Some(wrapLocationWith2SV(continue))
+            twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
+              case true =>
+                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=${URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")}"
+                Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))
+              case _ => Some(wrapLocationWith2SV(continue, continue.fullUrl))
+            }
           case _ => None
         }
       }.andThen { case Success(Some(_)) => auditContext.setSentTo2SVRegister(true) }
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> continue.fullUrl) ++
+  private def wrapLocationWith2SV(continue: Location, failure: String) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure) ++
     locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin)))
 }
 
