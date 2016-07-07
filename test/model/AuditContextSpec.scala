@@ -244,6 +244,9 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.getSentToOptional2SVRegister shouldBe false // default value
       auditContext.setSentToOptional2SVRegister()
       auditContext.getSentToOptional2SVRegister shouldBe true
+      auditContext.getSentToMandatory2SVRegister shouldBe false // default value
+      auditContext.setSentToMandatory2SVRegister()
+      auditContext.getSentToMandatory2SVRegister shouldBe true
     }
   }
 }
