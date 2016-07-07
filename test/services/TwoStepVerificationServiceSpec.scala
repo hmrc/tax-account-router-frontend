@@ -39,7 +39,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 
   sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
-    implicit val request = FakeRequest().withHeaders("Host" -> "some-host")
+    implicit val request = FakeRequest()
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
     val principal = Principal(None, Accounts())
@@ -196,7 +196,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(twoStepVerificationThrottleMock.registrationMandatory(userid)).thenReturn(Future.successful(true))
-      val expectedContinueUrl = URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")
+      val expectedContinueUrl = URLEncoder.encode("http://localhost:9280/account", "UTF-8")
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 

@@ -19,6 +19,7 @@ package services
 import java.net.URLEncoder
 
 import config.AppConfigHelpers
+import controllers.ExternalUrls
 import engine.Condition._
 import model.Locations._
 import model._
@@ -61,7 +62,7 @@ trait TwoStepVerification {
           case true =>
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
-                val continueToAccountUrl = URLEncoder.encode(controllers.routes.RouterController.account.absoluteURL(request.secure), "UTF-8")
+                val continueToAccountUrl = URLEncoder.encode(s"${ExternalUrls.taxAccountRouterHost}/account", "UTF-8")
                 val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$continueToAccountUrl"
                 auditContext.setSentToMandatory2SVRegister()
                 Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))

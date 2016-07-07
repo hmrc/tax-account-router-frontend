@@ -19,6 +19,7 @@ package support.page
 import java.net.URLEncoder
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import controllers.ExternalUrls
 import support.Env
 import support.stubs.{Stub, StubbedPage}
 
@@ -29,7 +30,7 @@ object TwoSVMandatoryRegistrationStubPage extends Stub with StubbedPage {
 object TwoSVMandatoryRegistrationPage extends WebPage {
   private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
   private val continueUrl = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
-  private val continueToAccount = URLEncoder.encode(s"${Env.host}/account", "UTF-8")
+  private val continueToAccount = URLEncoder.encode(s"${ExternalUrls.taxAccountRouterHost}/account", "UTF-8")
   private val failureUrl = URLEncoder.encode(s"$hostPort/business-account/two-step-verification/failed?continue=$continueToAccount", "UTF-8")
   private val queryString = s"continue=$continueUrl&failure=$failureUrl&origin=business-tax-account"
 
