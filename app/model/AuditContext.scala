@@ -98,6 +98,8 @@ trait TAuditContext {
 
   def getSentToMandatory2SVRegister = this.sentToMandatory2SVRegister
 
+  def isSentTo2SVRegister() = sentToOptional2SVRegister || sentToMandatory2SVRegister
+
   private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",
     Locations.BusinessTaxAccount -> "sent to business tax account"

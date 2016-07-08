@@ -51,7 +51,7 @@ trait MetricsMonitoringService {
       val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
       falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
 
-      if (auditContext.getSentToOptional2SVRegister || auditContext.getSentToMandatory2SVRegister) {
+      if (auditContext.isSentTo2SVRegister) {
         metricsRegistry.meter(s"passed-through-2SV.to-${throttledLocation.name}").mark()
         if (auditContext.getSentToOptional2SVRegister) metricsRegistry.meter(s"passed-through-2SV.optional.to-${throttledLocation.name}").mark()
         if (auditContext.getSentToMandatory2SVRegister) metricsRegistry.meter(s"passed-through-2SV.mandatory.to-${throttledLocation.name}").mark()
