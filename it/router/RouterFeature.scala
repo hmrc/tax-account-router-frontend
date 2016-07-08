@@ -504,7 +504,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
 
   override lazy val app = FakeApplication(
     additionalConfiguration = config ++ PlayConfig.additionalConfiguration +
-      ("two-step-verification.throttle.other" -> "100")
+      ("two-step-verification.throttle.default" -> "100")
   )
 
   feature("Router feature") {

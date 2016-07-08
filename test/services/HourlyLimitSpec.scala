@@ -30,16 +30,16 @@ class HourlyLimitSpec extends UnitSpec {
         hourlyLimit.getCurrentLimit shouldBe expectedLimit
       }
     }
-    "return the 'other' limit in configuration if hourly limit is not defined for current hour" in new Setup {
+    "return the 'default' limit in configuration if hourly limit is not defined for current hour" in new Setup {
       val expectedLimit = 15
       running(FakeApplication(additionalConfiguration = Map(
         "two-step-verification.throttle.12" -> null,
-        "two-step-verification.throttle.other" -> expectedLimit
+        "two-step-verification.throttle.default" -> expectedLimit
       ))) {
         hourlyLimit.getCurrentLimit shouldBe expectedLimit
       }
     }
-    "return the zero if both hourly limit for current hour and 'other' limit are not defined in configuration" in new Setup {
+    "return the zero if both hourly limit for current hour and 'default' limit are not defined in configuration" in new Setup {
       running(FakeApplication(additionalConfiguration = Map("two-step-verification.throttle" -> null))) {
         hourlyLimit.getCurrentLimit shouldBe 0
       }

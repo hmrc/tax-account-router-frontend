@@ -24,7 +24,6 @@ import model.Locations._
 import model._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
@@ -34,7 +33,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with Eventually {
+class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
 

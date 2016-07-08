@@ -40,7 +40,7 @@ trait HourlyLimit {
   def getCurrentLimit = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay
     configuration.getInt(s"two-step-verification.throttle.$currentHourOfDay")
-      .orElse(configuration.getInt("two-step-verification.throttle.other"))
+      .orElse(configuration.getInt("two-step-verification.throttle.default"))
       .getOrElse(0)
   }
 }
