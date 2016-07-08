@@ -48,6 +48,9 @@ trait TwoStepVerification {
     BusinessTaxAccount -> "business-tax-account"
   )
 
+  val continueToAccountUrl = URLEncoder.encode(s"${ExternalUrls.taxAccountRouterHost}/account", "UTF-8")
+  val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$continueToAccountUrl"
+
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled) {
@@ -62,8 +65,6 @@ trait TwoStepVerification {
           case true =>
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
-                val continueToAccountUrl = URLEncoder.encode(s"${ExternalUrls.taxAccountRouterHost}/account", "UTF-8")
-                val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$continueToAccountUrl"
                 auditContext.setSentToMandatory2SVRegister()
                 Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))
               case _ =>
