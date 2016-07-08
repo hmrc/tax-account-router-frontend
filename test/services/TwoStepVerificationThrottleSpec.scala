@@ -38,21 +38,21 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
 
     forAll(scenarios) { (scenario: String, expectedThreshold: Int, expectedResult: Boolean) =>
       scenario in new Setup {
-        when(hourlyLimitMock.getCurrentLimit).thenReturn(expectedThreshold)
+        when(timeBasedLimitMock.getCurrentPercentageLimit).thenReturn(expectedThreshold)
 
         twoStepVerificationThrottle.registrationMandatory(discriminator) shouldBe expectedResult
 
-        verify(hourlyLimitMock).getCurrentLimit
-        verifyNoMoreInteractions(hourlyLimitMock)
+        verify(timeBasedLimitMock).getCurrentPercentageLimit
+        verifyNoMoreInteractions(timeBasedLimitMock)
       }
     }
   }
 
   sealed trait Setup {
-    val hourlyLimitMock = mock[HourlyLimit]
+    val timeBasedLimitMock = mock[TimeBasedLimit]
 
     val twoStepVerificationThrottle = new TwoStepVerificationThrottle {
-      override lazy val hourlyLimit = hourlyLimitMock
+      override lazy val timeBasedLimit = timeBasedLimitMock
     }
   }
 

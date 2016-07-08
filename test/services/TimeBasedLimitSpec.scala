@@ -21,13 +21,13 @@ import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
 
-class HourlyLimitSpec extends UnitSpec {
+class TimeBasedLimitSpec extends UnitSpec {
 
-  "HourlyLimit" should {
+  "TimeBasedLimit" should {
     "return the hourly limit in the configuration for the current hour if defined" in new Setup {
       val expectedLimit = 10
       running(FakeApplication(additionalConfiguration = Map("two-step-verification.throttle.12" -> expectedLimit))) {
-        hourlyLimit.getCurrentLimit shouldBe expectedLimit
+        timeBasedLimit.getCurrentPercentageLimit shouldBe expectedLimit
       }
     }
     "return the 'default' limit in configuration if hourly limit is not defined for current hour" in new Setup {
@@ -36,21 +36,20 @@ class HourlyLimitSpec extends UnitSpec {
         "two-step-verification.throttle.12" -> null,
         "two-step-verification.throttle.default" -> expectedLimit
       ))) {
-        hourlyLimit.getCurrentLimit shouldBe expectedLimit
+        timeBasedLimit.getCurrentPercentageLimit shouldBe expectedLimit
       }
     }
     "return the zero if both hourly limit for current hour and 'default' limit are not defined in configuration" in new Setup {
       running(FakeApplication(additionalConfiguration = Map("two-step-verification.throttle" -> null))) {
-        hourlyLimit.getCurrentLimit shouldBe 0
+        timeBasedLimit.getCurrentPercentageLimit shouldBe 0
       }
     }
   }
 
   sealed trait Setup {
     val fixedDateTime = DateTime.parse("2016-07-07T12:30:00Z")
-    val hourlyLimit = new HourlyLimit {
+    val timeBasedLimit = new TimeBasedLimit {
       override def dateTimeProvider: () => DateTime = () => fixedDateTime
     }
   }
-
 }

@@ -20,31 +20,31 @@ import org.joda.time.DateTime
 import play.api.Play.{current, _}
 
 trait TwoStepVerificationThrottle {
-  def hourlyLimit: HourlyLimit
+  def timeBasedLimit: TimeBasedLimit
 
   def registrationMandatory(discriminator: String) = {
     val userValue = Math.abs(discriminator.hashCode % 100)
-    val threshold = hourlyLimit.getCurrentLimit
+    val threshold = timeBasedLimit.getCurrentPercentageLimit
     userValue <= threshold
   }
 }
 
 object TwoStepVerificationThrottle extends TwoStepVerificationThrottle {
-  override lazy val hourlyLimit = HourlyLimit
+  override lazy val timeBasedLimit = TimeBasedLimit
 }
 
 
-trait HourlyLimit {
+trait TimeBasedLimit {
   def dateTimeProvider: () => DateTime
 
-  def getCurrentLimit = {
+  def getCurrentPercentageLimit = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay
-    configuration.getInt(s"two-step-verification.throttle.$currentHourOfDay")
-      .orElse(configuration.getInt("two-step-verification.throttle.default"))
-      .getOrElse(0)
+    val hourlyLimit = configuration.getInt(s"two-step-verification.throttle.$currentHourOfDay")
+    val defaultLimit = configuration.getInt("two-step-verification.throttle.default")
+    hourlyLimit.orElse(defaultLimit).getOrElse(0)
   }
 }
 
-object HourlyLimit extends HourlyLimit {
+object TimeBasedLimit extends TimeBasedLimit {
   override def dateTimeProvider = () => DateTime.now()
 }
