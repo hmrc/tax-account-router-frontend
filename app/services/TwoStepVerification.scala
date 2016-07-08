@@ -63,7 +63,7 @@ trait TwoStepVerification {
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
                 auditContext.setSentToMandatory2SVRegister()
-                Some(wrapLocationWith2SV(continue, Locations.twoStepVerificationRequired(Map("continue" -> continueToAccountUrl))))
+                Some(wrapLocationWith2SV(continue, Locations.TaxAccountRouterHome))
               case _ =>
                 auditContext.setSentToOptional2SVRegister()
                 Some(wrapLocationWith2SV(continue, continue))

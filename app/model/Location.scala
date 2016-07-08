@@ -42,8 +42,10 @@ case class Location(name: String, url: String, queryParams: Map[String, String] 
 object Locations {
   val personalTaxAccountLocationName = "personal-tax-account"
   val businessTaxAccountLocationName = "business-tax-account"
+  val taxAccountRouterHomeLocationName = "tax-account-router"
   lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
   lazy val BusinessTaxAccount = Location(businessTaxAccountLocationName, ExternalUrls.getUrl(businessTaxAccountLocationName))
+  lazy val TaxAccountRouterHome = Location(taxAccountRouterHomeLocationName, s"${ExternalUrls.taxAccountRouterHost}/account")
 
   val twoStepVerificationLocationName = "two-step-verification"
   val twoStepVerificationRequiredLocationName = "two-step-verification-required"
