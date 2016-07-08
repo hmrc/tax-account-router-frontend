@@ -17,6 +17,7 @@
 package services
 
 import config.AppConfigHelpers
+import controllers.ExternalUrls
 import engine.Condition._
 import model.Locations._
 import model._
@@ -26,7 +27,6 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
-import scala.util.Success
 
 trait TwoStepVerification {
 
@@ -36,6 +36,8 @@ trait TwoStepVerification {
 
   def twoStepVerificationEnabled: Boolean
 
+  def twoStepVerificationThrottle: TwoStepVerificationThrottle
+
   private val conditionsByDestination = Map(
     BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
   )
@@ -43,6 +45,8 @@ trait TwoStepVerification {
   private val locationToAppName = Map(
     BusinessTaxAccount -> "business-tax-account"
   )
+
+  val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -55,14 +59,22 @@ trait TwoStepVerification {
           }
         }
         shouldRedirectTo2SV.map {
-          case true => Some(wrapLocationWith2SV(continue))
+          case true =>
+            twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
+              case true =>
+                auditContext.setSentToMandatory2SVRegister()
+                Some(wrapLocationWith2SV(continue, Locations.twoStepVerificationRequired(Map("continue" -> continueToAccountUrl))))
+              case _ =>
+                auditContext.setSentToOptional2SVRegister()
+                Some(wrapLocationWith2SV(continue, continue))
+            }
           case _ => None
         }
-      }.andThen { case Success(Some(_)) => auditContext.sentTo2SVRegister = true }
+      }
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> continue.fullUrl) ++
+  private def wrapLocationWith2SV(continue: Location, failure: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl) ++
     locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin)))
 }
 
@@ -73,4 +85,6 @@ object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
   override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
 
   override lazy val twoStepVerificationEnabled = getConfigurationBoolean("two-step-verification.enabled")
+
+  override lazy val twoStepVerificationThrottle = TwoStepVerificationThrottle
 }

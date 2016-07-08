@@ -8,8 +8,7 @@ import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
-class RouterFeature extends StubbedFeatureSpec with CommonStubs {
-
+object PlayConfig {
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     "self-assessment-enrolments" -> "enr3,enr4",
@@ -20,8 +19,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR"
   )
+}
 
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
+class RouterFeature extends StubbedFeatureSpec with CommonStubs {
+
+  override lazy val app = FakeApplication(additionalConfiguration = config ++ PlayConfig.additionalConfiguration)
 
   feature("Router feature") {
 
@@ -312,7 +314,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to 2SV with continue url BTA") {
+    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to optional 2SV registration with continue url BTA") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
@@ -325,13 +327,13 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      createStubs(TwoSVPromptStubPage)
+      createStubs(TwoSVOptionalRegistrationStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
 
-      Then("the user should be routed to 2SV Prompt Page with continue to BTA")
-      on(TwoSVPromptPage)
+      Then("the user should be routed to 2SV Optional Registration Page with continue to BTA")
+      on(TwoSVOptionalRegistrationPage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -355,13 +357,13 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      createStubs(TwoSVPromptStubPage)
+      createStubs(TwoSVOptionalRegistrationStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Prompt Page with continue to BTA")
-      on(TwoSVPromptPage)
+      on(TwoSVOptionalRegistrationPage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -498,4 +500,46 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
   }
 }
 
+class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with CommonStubs {
 
+  override lazy val app = FakeApplication(
+    additionalConfiguration = config ++ PlayConfig.additionalConfiguration +
+      ("two-step-verification.throttle.default" -> "100")
+  )
+
+  feature("Router feature") {
+    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to mandatory 2SV registration with continue url BTA") {
+
+      Given("a user logged in through Government Gateway")
+      val saUtr = "12345"
+      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+
+      And("the user has self assessment enrolments")
+      stubSelfAssessmentEnrolments()
+
+      And("the user has previous returns")
+      stubSaReturnWithNoPreviousReturns(saUtr)
+
+      createStubs(TwoSVMandatoryRegistrationStubPage)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
+      on(TwoSVMandatoryRegistrationPage)
+
+      And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
+      verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+
+      And("user's enrolments should be fetched from Auth")
+      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+
+      And("user's details should not be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+
+      And("sa returns should be fetched from Sa micro service")
+      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+    }
+  }
+}

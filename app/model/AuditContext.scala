@@ -87,7 +87,17 @@ trait TAuditContext {
 
   private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
-  var sentTo2SVRegister = false
+  private var sentToMandatory2SVRegister: Option[Boolean] = None
+
+  def setSentToOptional2SVRegister() = this.sentToMandatory2SVRegister = Some(false)
+
+  def setSentToMandatory2SVRegister() = this.sentToMandatory2SVRegister = Some(true)
+
+  def isSentToOptional2SVRegister = this.sentToMandatory2SVRegister.contains(false)
+
+  def isSentToMandatory2SVRegister = this.sentToMandatory2SVRegister.contains(true)
+
+  def isSentTo2SVRegister() = sentToMandatory2SVRegister.isDefined
 
   private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",

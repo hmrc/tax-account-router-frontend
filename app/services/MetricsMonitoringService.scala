@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 object MetricsMonitoringService extends MetricsMonitoringService {
-  override val metricsRegistry: MetricRegistry = MetricsRegistry.defaultRegistry
+  override val metricsRegistry = MetricsRegistry.defaultRegistry
 }
 
 trait MetricsMonitoringService {
@@ -51,9 +51,10 @@ trait MetricsMonitoringService {
       val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
       falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
 
-      if (auditContext.sentTo2SVRegister) {
-        val name = s"passed-through-2SV.to-${throttledLocation.name}"
-        metricsRegistry.meter(name).mark()
+      if (auditContext.isSentTo2SVRegister) {
+        metricsRegistry.meter(s"passed-through-2SV.to-${throttledLocation.name}").mark()
+        if (auditContext.isSentToOptional2SVRegister) metricsRegistry.meter(s"passed-through-2SV.optional.to-${throttledLocation.name}").mark()
+        if (auditContext.isSentToMandatory2SVRegister) metricsRegistry.meter(s"passed-through-2SV.mandatory.to-${throttledLocation.name}").mark()
       }
     }
   }
