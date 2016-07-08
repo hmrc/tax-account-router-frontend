@@ -16,8 +16,6 @@
 
 package services
 
-import java.net.URLEncoder
-
 import config.AppConfigHelpers
 import controllers.ExternalUrls
 import engine.Condition._
@@ -48,8 +46,7 @@ trait TwoStepVerification {
     BusinessTaxAccount -> "business-tax-account"
   )
 
-  val continueToAccountUrl = URLEncoder.encode(s"${ExternalUrls.taxAccountRouterHost}/account", "UTF-8")
-  val twoStepVerificationRequiredUrl = s"${Locations.BusinessTaxAccount.url}/two-step-verification/failed?continue=$continueToAccountUrl"
+  val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -66,10 +63,10 @@ trait TwoStepVerification {
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
                 auditContext.setSentToMandatory2SVRegister()
-                Some(wrapLocationWith2SV(continue, twoStepVerificationRequiredUrl))
+                Some(wrapLocationWith2SV(continue, Locations.twoStepVerificationRequired(Map("continue" -> continueToAccountUrl))))
               case _ =>
                 auditContext.setSentToOptional2SVRegister()
-                Some(wrapLocationWith2SV(continue, continue.fullUrl))
+                Some(wrapLocationWith2SV(continue, continue))
             }
           case _ => None
         }
@@ -77,7 +74,7 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location, failure: String) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure) ++
+  private def wrapLocationWith2SV(continue: Location, failure: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl) ++
     locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin)))
 }
 

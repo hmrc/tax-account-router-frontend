@@ -37,6 +37,7 @@ trait StubApplicationConfiguration {
     "contact-frontend.host" -> s"http://$stubHost:$stubPort",
     "personal-tax-account.host" -> s"http://$stubHost:$stubPort",
     "two-step-verification.host" -> s"http://$stubHost:$stubPort",
+    "two-step-verification-required.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> "",
     "throttling.enabled" -> false,
     "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName"
