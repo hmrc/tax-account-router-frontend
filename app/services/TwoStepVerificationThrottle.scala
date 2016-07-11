@@ -37,11 +37,11 @@ object TwoStepVerificationThrottle extends TwoStepVerificationThrottle {
 trait TimeBasedLimit {
   def dateTimeProvider: () => DateTime
 
-  val defaultLimit = configuration.getInt("two-step-verification.throttle.default").getOrElse(0)
+  val defaultLimit = configuration.getDouble("two-step-verification.throttle.default").getOrElse(0.0)
 
   def getCurrentPercentageLimit = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay
-    val hourlyLimit = configuration.getInt(s"two-step-verification.throttle.$currentHourOfDay")
+    val hourlyLimit = configuration.getDouble(s"two-step-verification.throttle.$currentHourOfDay")
     hourlyLimit.getOrElse(defaultLimit)
   }
 }
