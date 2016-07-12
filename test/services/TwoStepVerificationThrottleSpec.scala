@@ -26,17 +26,17 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
 
   "registrationMandatory" should {
 
-    // expected user modulus is always -50
-    val discriminator = "2d5577e9-cc54-4faa-9f88-a60ac56bac1e" // Math.abs("2d5577e9-cc54-4faa-9f88-a60ac56bac1e".hashCode % 100) = 50
+    // expected user modulus is always -500
+    val discriminator = "74165acd-8edd-4768-83a8-848f3bbadc19" // Math.abs("74165acd-8edd-4768-83a8-848f3bbadc19".hashCode % 1000) = 500
 
     val scenarios = Table(
       ("scenario", "expectedThreshold", "expectedResult"),
-      ("return true when threshold is same as user modulus", 50, true),
-      ("return true when user modulus is lower than threshold", 51, true),
-      ("return false when user modulus is greater than threshold", 49, false)
+      ("return true when threshold is same as user modulus", 50.0, true),
+      ("return true when user modulus is lower than threshold", 50.1, true),
+      ("return false when user modulus is greater than threshold", 49.9, false)
     )
 
-    forAll(scenarios) { (scenario: String, expectedThreshold: Int, expectedResult: Boolean) =>
+    forAll(scenarios) { (scenario: String, expectedThreshold: Double, expectedResult: Boolean) =>
       scenario in new Setup {
         when(timeBasedLimitMock.getCurrentPercentageLimit).thenReturn(expectedThreshold)
 

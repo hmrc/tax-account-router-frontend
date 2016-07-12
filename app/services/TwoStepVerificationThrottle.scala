@@ -23,7 +23,7 @@ trait TwoStepVerificationThrottle {
   def timeBasedLimit: TimeBasedLimit
 
   def registrationMandatory(discriminator: String) = {
-    val userValue = Math.abs(discriminator.hashCode % 100)
+    val userValue = Math.abs(discriminator.hashCode % 1000) / 10
     val threshold = timeBasedLimit.getCurrentPercentageLimit
     userValue <= threshold
   }
