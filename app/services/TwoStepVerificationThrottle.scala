@@ -17,6 +17,7 @@
 package services
 
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.Play.{current, _}
 
 trait TwoStepVerificationThrottle {
@@ -25,6 +26,7 @@ trait TwoStepVerificationThrottle {
   def registrationMandatory(discriminator: String) = {
     val userValue = Math.abs((discriminator.hashCode % 1000).toDouble) / 10
     val threshold = timeBasedLimit.getCurrentPercentageLimit
+    Logger.info(s"Threshold: $threshold - userValue: $userValue")
     userValue <= threshold
   }
 }
