@@ -23,7 +23,7 @@ trait TwoStepVerificationThrottle {
   def timeBasedLimit: TimeBasedLimit
 
   def registrationMandatory(discriminator: String) = {
-    val userValue = Math.abs(discriminator.hashCode % 1000) / 10
+    val userValue = Math.abs((discriminator.hashCode % 1000).toDouble) / 10
     val threshold = timeBasedLimit.getCurrentPercentageLimit
     userValue <= threshold
   }
@@ -37,7 +37,7 @@ object TwoStepVerificationThrottle extends TwoStepVerificationThrottle {
 trait TimeBasedLimit {
   def dateTimeProvider: () => DateTime
 
-  val defaultLimit = configuration.getDouble("two-step-verification.throttle.default").getOrElse(0.0)
+  val defaultLimit = configuration.getDouble("two-step-verification.throttle.default").getOrElse(-1.0)
 
   def getCurrentPercentageLimit = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay

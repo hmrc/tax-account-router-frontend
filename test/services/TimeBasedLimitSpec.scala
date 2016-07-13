@@ -39,9 +39,9 @@ class TimeBasedLimitSpec extends UnitSpec {
         timeBasedLimit().getCurrentPercentageLimit shouldBe expectedLimit
       }
     }
-    "return the zero if both hourly limit for current hour and 'default' limit are not defined in configuration" in new Setup {
+    "return a value lower than zero if both hourly limit for current hour and 'default' limit are not defined in configuration" in new Setup {
       running(FakeApplication(additionalConfiguration = Map("two-step-verification.throttle" -> null))) {
-        timeBasedLimit().getCurrentPercentageLimit shouldBe 0
+        timeBasedLimit().getCurrentPercentageLimit should be < 0.0
       }
     }
   }
