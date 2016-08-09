@@ -39,7 +39,7 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  case class B2svRule(name: String = "sa-only", conditions: List[Condition])
+  case class B2svRule(name: String, conditions: List[Condition])
 
   private val conditionsByDestination = Map(
     BusinessTaxAccount -> B2svRule(name = "sa-only", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
