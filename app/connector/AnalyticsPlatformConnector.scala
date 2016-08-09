@@ -18,9 +18,11 @@ package connector
 
 import play.api.libs.json.{Json, Writes}
 
-case class GaEvent(category: String, action: String, label: String, dimensions: List[String] = Nil)
+case class GaEvent(category: String, action: String, label: String, dimensions: List[GaDimension] = Nil)
+case class GaDimension(index: Int, value: String)
 
 object GaEvent {
+  implicit val gaDimensionWrites: Writes[GaDimension] = Json.writes[GaDimension]
   implicit val writes: Writes[GaEvent] = Json.writes[GaEvent]
 }
 
@@ -30,6 +32,8 @@ object AnalyticsData {
   implicit val writes: Writes[AnalyticsData] = Json.writes[AnalyticsData]
 }
 
-class AnalyticsPlatformConnector {
-
+trait AnalyticsPlatformConnector {
+  def sendEvent(gaClientId: String, events: List[GaEvent]) = ???
 }
+
+object AnalyticsPlatformConnector extends AnalyticsPlatformConnector

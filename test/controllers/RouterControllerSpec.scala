@@ -51,47 +51,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   private val gaToken = "GA-TOKEN"
   override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url))
 
-  case class TestCondition(truth: Boolean) extends Condition {
-    override val auditType = None
-
-    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
-  }
-
-  trait Setup {
-
-    val ruleEngineStubReturningSomeLocation = new RuleEngine {
-      override val rules = List(When(TestCondition(true)).thenGoTo(location1))
-    }
-
-    val ruleEngineStubReturningNoneLocation = new RuleEngine {
-      override val rules = List(When(TestCondition(false)).thenGoTo(location2))
-    }
-
-    implicit val fakeRequest = FakeRequest()
-    implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-    implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-    implicit lazy val ruleContext = RuleContext(authContext)
-    val auditContext: TAuditContext = AuditContext()
-    val mockThrottlingService = mock[ThrottlingService]
-    val mockTwoStepVerification = Mocks.mockTwoStepVerification
-    val mockMetricsMonitoringService = mock[MetricsMonitoringService]
-
-    def checkResult(route: Future[Result], location: Location, eventName: String) = {
-      status(route) shouldBe 200
-      val body = contentAsString(route)
-
-      //and
-      val page = Jsoup.parse(body)
-
-      page.select("p#non-js-only a").attr("href") shouldBe location.fullUrl
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');") shouldBe true
-      body.contains(s"ga('send', 'event', 'routing', '${location.name}', '$eventName', {") shouldBe true
-    }
-  }
-
   "router controller" should {
 
     "return location when location is provided by rules and there is an origin for this location" in new Setup {
@@ -143,7 +102,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
     }
 
-    "send monitoring events" in new Setup {
+    "send events to graphite and GA" in new Setup {
 
       //given
       val expectedLocation = BusinessTaxAccount
@@ -151,18 +110,29 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedLocation)
 
+      val ruleApplied = "some-rule"
+      auditContext.ruleApplied = ruleApplied
 
-      val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService, metricsMonitoringService = mockMetricsMonitoringService)
+      val controller = new TestRouterController(
+        defaultLocation = expectedLocation,
+        ruleEngine = ruleEngineStubReturningNoneLocation,
+        throttlingService = mockThrottlingService,
+        metricsMonitoringService = mockMetricsMonitoringService,
+        auditContext = Some(auditContext),
+        analyticsEventSender = mockAnalyticsEventSender
+      )
 
       //when
       val route = controller.route
 
       //then
-      checkResult(route, BusinessTaxAccount, "")
+      checkResult(route, BusinessTaxAccount, ruleApplied)
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
 
       verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+
+      verify(mockAnalyticsEventSender).sendRoutingEvent(expectedLocation.name, ruleApplied)(fakeRequest)
     }
 
     "audit the event before redirecting" in new Setup {
@@ -208,6 +178,50 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
     }
   }
+
+  case class TestCondition(truth: Boolean) extends Condition {
+    override val auditType = None
+
+    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
+  }
+
+  trait Setup {
+
+    val ruleEngineStubReturningSomeLocation = new RuleEngine {
+      override val rules = List(When(TestCondition(true)).thenGoTo(location1))
+    }
+
+    val ruleEngineStubReturningNoneLocation = new RuleEngine {
+      override val rules = List(When(TestCondition(false)).thenGoTo(location2))
+    }
+
+    val gaClientId = "gaClientId"
+    implicit val fakeRequest = FakeRequest().withCookies(Cookie("_ga", gaClientId))
+    implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+    implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
+    implicit lazy val ruleContext = RuleContext(authContext)
+    val auditContext: TAuditContext = AuditContext()
+    val mockThrottlingService = mock[ThrottlingService]
+    val mockTwoStepVerification = Mocks.mockTwoStepVerification
+    val mockMetricsMonitoringService = mock[MetricsMonitoringService]
+    val mockAnalyticsEventSender = mock[AnalyticsEventSender]
+
+    def checkResult(route: Future[Result], location: Location, eventName: String) = {
+      status(route) shouldBe 200
+      val body = contentAsString(route)
+
+      //and
+      val page = Jsoup.parse(body)
+
+      page.select("p#non-js-only a").attr("href") shouldBe location.fullUrl
+
+      //and
+      body.contains(s"ga('create', '$gaToken', 'auto');") shouldBe true
+      val s = s"ga('send', 'event', 'routing', '${location.name}', '$eventName', {"
+      body.contains(s) shouldBe true
+    }
+  }
 }
 
 object Mocks extends MockitoSugar {
@@ -227,6 +241,8 @@ object Mocks extends MockitoSugar {
     twoStepVerification
   }
 
+  def mockAnalyticsEventSender = mock[AnalyticsEventSender]
+
 }
 
 class TestRouterController(override val defaultLocation: Location = BusinessTaxAccount,
@@ -235,6 +251,7 @@ class TestRouterController(override val defaultLocation: Location = BusinessTaxA
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
                            override val auditConnector: AuditConnector = Mocks.mockAuditConnector,
                            override val twoStepVerification: TwoStepVerification = Mocks.mockTwoStepVerification,
+                           override val analyticsEventSender: AnalyticsEventSender = Mocks.mockAnalyticsEventSender,
                            auditContext: Option[TAuditContext] = None) extends RouterController {
 
   override protected def authConnector = ???

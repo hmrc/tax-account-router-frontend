@@ -41,13 +41,15 @@ object RouterController extends RouterController {
 
   override val ruleEngine = TarRules
 
-  override def throttlingService = ThrottlingService
+  override val throttlingService = ThrottlingService
 
-  override def twoStepVerification = TwoStepVerification
+  override val twoStepVerification = TwoStepVerification
 
-  override def auditConnector = FrontendAuditConnector
+  override val auditConnector = FrontendAuditConnector
 
   override def createAuditContext() = AuditContext()
+
+  override val analyticsEventSender = AnalyticsEventSender
 }
 
 trait RouterController extends FrontendController with Actions {
@@ -65,6 +67,8 @@ trait RouterController extends FrontendController with Actions {
   def auditConnector: AuditConnector
 
   def createAuditContext(): TAuditContext
+
+  def analyticsEventSender: AnalyticsEventSender
 
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
@@ -84,6 +88,7 @@ trait RouterController extends FrontendController with Actions {
       sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
+      analyticsEventSender.sendRoutingEvent(finalDestination.name, auditContext.ruleApplied)
       sendGAEventAndRedirect(auditContext, finalDestination)
     }
   }
