@@ -41,7 +41,7 @@ trait TwoStepVerification {
 
   case class B2svRule(name: String, conditions: List[Condition])
 
-  private val conditionsByDestination = Map(
+  private val destinationToRule = Map(
     BusinessTaxAccount -> B2svRule(name = "sa-only", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
   )
 
@@ -54,7 +54,7 @@ trait TwoStepVerification {
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled) {
-      conditionsByDestination.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { b2svRule =>
+      destinationToRule.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { b2svRule =>
         val shouldRedirectTo2SV = b2svRule.conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
           preconditionsTrue.flatMap { precondition =>
             if (!precondition) Future.successful(false)
