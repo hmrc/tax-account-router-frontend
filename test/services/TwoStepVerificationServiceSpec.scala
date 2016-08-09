@@ -175,7 +175,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.BusinessTaxAccount.url, "origin" -> "business-tax-account")))
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.BusinessTaxAccount.url, "origin" -> "business-tax-account", "b2sv-registration" -> "optional", "b2sv-rule" -> "sa-only")))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
       verify(ruleContext).enrolments
@@ -199,7 +199,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.TaxAccountRouterHome.url, "origin" -> "business-tax-account")))
+      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.TaxAccountRouterHome.url, "origin" -> "business-tax-account", "b2sv-registration" -> "mandatory", "b2sv-rule" -> "sa-only")))
       verify(ruleContext).currentCoAFEAuthority
       verify(ruleContext, times(2)).activeEnrolments
       verify(ruleContext).enrolments
