@@ -80,7 +80,7 @@ class LoggedInSessionUser(tokenPresent: Boolean,
       .willReturn(aResponse()
         .withStatus(303)
         .withHeader(HeaderNames.SET_COOKIE, cookieValue(data))
-//        .withHeader(HeaderNames.SET_COOKIE, s"""_ga="GA1.4.405633776.1470748420"; Path=/; HTTPOnly"; Path=/; HTTPOnly""")
+        .withHeader(HeaderNames.SET_COOKIE, s"""_ga="GA1.4.405633776.1470748420"; Path=/; HTTPOnly"; Path=/; HTTPOnly""")
         .withHeader(HeaderNames.LOCATION, "http://localhost:9000/account")))
 
 
