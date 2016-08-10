@@ -33,7 +33,7 @@ object AnalyticsData {
 }
 
 trait AnalyticsPlatformConnector {
-  def sendEvent(gaClientId: String, events: List[GaEvent]) = ???
+  def sendEvents(data: AnalyticsData): Unit = ???
 }
 
 object AnalyticsPlatformConnector extends AnalyticsPlatformConnector
