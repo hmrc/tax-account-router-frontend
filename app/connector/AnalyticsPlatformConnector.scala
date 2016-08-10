@@ -16,7 +16,11 @@
 
 package connector
 
+import config.WSHttp
 import play.api.libs.json.{Json, Writes}
+import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.http.ws.WSPost
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
 case class GaEvent(category: String, action: String, label: String, dimensions: List[GaDimension] = Nil)
 case class GaDimension(index: Int, value: String)
@@ -33,7 +37,14 @@ object AnalyticsData {
 }
 
 trait AnalyticsPlatformConnector {
-  def sendEvents(data: AnalyticsData): Unit = ???
+  def serviceUrl: String
+
+  def http: WSPost
+
+  def sendEvents(data: AnalyticsData)(implicit hc: HeaderCarrier): Unit = http.POST[AnalyticsData, HttpResponse](s"$serviceUrl/platform-analytics/event", data, Seq.empty)
 }
 
-object AnalyticsPlatformConnector extends AnalyticsPlatformConnector
+object AnalyticsPlatformConnector extends AnalyticsPlatformConnector with ServicesConfig {
+  override val serviceUrl = baseUrl("platform-analytics")
+  override lazy val http = WSHttp
+}

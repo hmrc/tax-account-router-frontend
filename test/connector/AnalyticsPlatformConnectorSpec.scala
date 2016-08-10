@@ -1,0 +1,52 @@
+package connector
+
+import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
+import play.api.libs.json.Writes
+import uk.gov.hmrc.play.http.ws.WSPost
+import uk.gov.hmrc.play.http.{HeaderCarrier, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.test.UnitSpec
+
+import scala.concurrent.Future
+
+class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
+
+  "AnalyticsPlatformConnector" should {
+
+    val scenarios = Table(
+      ("scenario", "response"),
+      ("response is successful", Future.successful(mock[HttpResponse])),
+      ("response status different from 2xx", Future.failed(new RuntimeException()))
+    )
+
+    forAll(scenarios) { (scenario: String, response: Future[HttpResponse]) =>
+      s"send a GA event to platform-analytics - $scenario" in new Setup {
+        when(
+          mockHttp.POST[AnalyticsData, HttpResponse]
+          (eqTo(s"$aServiceUrl/platform-analytics/event"), eqTo(data), any[Seq[(String, String)]])
+          (any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier])
+        ).thenReturn(response)
+
+        noException should be thrownBy analyticsPlatformConnector.sendEvents(data)
+
+        verify(mockHttp).POST[AnalyticsData, HttpResponse](eqTo(s"$aServiceUrl/platform-analytics/event"), eqTo(data), eqTo(Seq.empty))(any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier])
+      }
+    }
+  }
+
+  trait Setup {
+    val data = AnalyticsData("gaClientId", List.empty)
+    val aServiceUrl = "service-url"
+    implicit val hc = HeaderCarrier()
+
+    val mockHttp = mock[WSPost]
+    val analyticsPlatformConnector = new AnalyticsPlatformConnector {
+      override val serviceUrl = aServiceUrl
+      override val http = mockHttp
+    }
+  }
+
+}

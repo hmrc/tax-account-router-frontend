@@ -5,6 +5,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.Cookie
 import play.api.test.FakeRequest
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
@@ -24,6 +25,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
   sealed trait Setup {
     val gaClientId = "gaClientId"
     implicit val request = FakeRequest().withCookies(Cookie("_ga", gaClientId))
+    implicit val hc = HeaderCarrier()
     val mockAnalyticsPlatformConnector = mock[AnalyticsPlatformConnector]
     val analyticsEventSender = new AnalyticsEventSender {
       override val analyticsPlatformConnector = mockAnalyticsPlatformConnector
