@@ -19,7 +19,6 @@ package controllers
 import engine.{Condition, RuleEngine, When}
 import model.Locations._
 import model.{Location, _}
-import org.jsoup.Jsoup
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
@@ -30,7 +29,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
-import play.api.test.{FakeApplication, FakeRequest}
+import play.api.test.{FakeApplication, FakeRequest, Helpers}
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
@@ -49,7 +48,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   val location2 = Location("location2", "/location2")
 
   private val gaToken = "GA-TOKEN"
-  override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url))
+  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url))
 
   "router controller" should {
 
@@ -208,18 +207,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     val mockAnalyticsEventSender = mock[AnalyticsEventSender]
 
     def checkResult(route: Future[Result], location: Location, eventName: String) = {
-      status(route) shouldBe 200
-      val body = contentAsString(route)
-
-      //and
-      val page = Jsoup.parse(body)
-
-      page.select("p#non-js-only a").attr("href") shouldBe location.fullUrl
-
-      //and
-      body.contains(s"ga('create', '$gaToken', 'auto');") shouldBe true
-      val s = s"ga('send', 'event', 'routing', '${location.name}', '$eventName', {"
-      body.contains(s) shouldBe true
+      status(route) shouldBe 303
+      Helpers.redirectLocation(route) should contain(location.fullUrl)
     }
   }
 }

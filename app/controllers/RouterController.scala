@@ -89,12 +89,8 @@ trait RouterController extends FrontendController with Actions {
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
       analyticsEventSender.sendRoutingEvent(finalDestination.name, auditContext.ruleApplied)
-      sendGAEventAndRedirect(auditContext, finalDestination)
+      Redirect(finalDestination.fullUrl)
     }
-  }
-
-  private def sendGAEventAndRedirect(auditContext: TAuditContext, finalDestination: Location) = {
-    Ok(views.html.uplift(finalDestination, auditContext.ruleApplied, FrontendAppConfig.analyticsToken))
   }
 
   private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
