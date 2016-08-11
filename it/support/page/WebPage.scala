@@ -45,11 +45,6 @@ trait WebPage extends Page with WebBrowser with ShouldMatchers with ImplicitWebD
 
   def clickElement(elementId: String) = click on id(elementId)
 
-  def assertHasUrlParams(expected: String*): Unit = {
-    expected.foreach { param =>
-      webDriver.getCurrentUrl.split("&") should contain(param)
-    }
-  }
 
   private def loadPage()(implicit webDriver: WebDriver) = {
     val wait = new WebDriverWait(webDriver, 30)
