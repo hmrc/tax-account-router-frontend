@@ -18,7 +18,6 @@ package services
 
 import config.AppConfigHelpers
 import controllers.ExternalUrls
-import engine.Condition
 import engine.Condition._
 import model.Locations._
 import model._
@@ -39,10 +38,8 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  case class B2svRule(name: String, conditions: List[Condition])
-
-  private val destinationToRule = Map(
-    BusinessTaxAccount -> B2svRule(name = "sa-only", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
+  private val conditionsByDestination = Map(
+    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
   )
 
   private val locationToAppName = Map(
@@ -54,8 +51,8 @@ trait TwoStepVerification {
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled) {
-      destinationToRule.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { b2svRule =>
-        val shouldRedirectTo2SV = b2svRule.conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
+      conditionsByDestination.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { conditions =>
+        val shouldRedirectTo2SV = conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
           preconditionsTrue.flatMap { precondition =>
             if (!precondition) Future.successful(false)
             else condition.evaluate(authContext, ruleContext, auditContext)
@@ -66,10 +63,10 @@ trait TwoStepVerification {
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
                 auditContext.setSentToMandatory2SVRegister()
-                Some(wrapLocationWith2SV(continue, Locations.TaxAccountRouterHome, b2svRegistration = "mandatory", b2svRule = b2svRule.name))
+                Some(wrapLocationWith2SV(continue, Locations.TaxAccountRouterHome))
               case _ =>
                 auditContext.setSentToOptional2SVRegister()
-                Some(wrapLocationWith2SV(continue, continue, b2svRegistration = "optional", b2svRule = b2svRule.name))
+                Some(wrapLocationWith2SV(continue, continue))
             }
           case _ => None
         }
@@ -77,8 +74,8 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  private def wrapLocationWith2SV(continue: Location, failure: Location, b2svRegistration: String, b2svRule: String) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl) ++
-    locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin, "b2sv-registration" -> b2svRegistration, "b2sv-rule" -> b2svRule)))
+  private def wrapLocationWith2SV(continue: Location, failure: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl) ++
+    locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin)))
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
