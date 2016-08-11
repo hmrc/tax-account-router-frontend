@@ -78,7 +78,7 @@ trait TwoStepVerification {
   }
 
   private def wrapLocationWith2SV(continue: Location, failure: Location, b2svRegistration: String, b2svRule: String) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl) ++
-    locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin, "b2svRegistration" -> b2svRegistration, "b2svRule" -> b2svRule)))
+    locationToAppName.get(continue).fold(Map.empty[String, String])(origin => Map("origin" -> origin, "b2sv-registration" -> b2svRegistration, "b2sv-rule" -> b2svRule)))
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
