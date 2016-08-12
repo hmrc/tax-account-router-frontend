@@ -42,7 +42,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
       analyticsEventSender.sendRoutingEvents(locationName, auditContext)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
         GaEvent("routing", locationName, auditContext.ruleApplied),
-        GaEvent("sos_b2sv_registration_route", s"Rule_SA", "Optional")
+        GaEvent("sos_b2sv_registration_route", s"rule_sa", "optional")
       )))
     }
 
@@ -52,7 +52,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
       analyticsEventSender.sendRoutingEvents(locationName, auditContext)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
         GaEvent("routing", locationName, auditContext.ruleApplied),
-        GaEvent("sos_b2sv_registration_route", s"Rule_SA", "Mandatory")
+        GaEvent("sos_b2sv_registration_route", s"rule_sa", "mandatory")
       )))
     }
   }

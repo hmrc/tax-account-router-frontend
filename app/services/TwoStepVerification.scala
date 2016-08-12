@@ -41,7 +41,7 @@ trait TwoStepVerification {
 
   case class Biz2SVRule(name: String, conditions: List[Condition])
 
-  private val biz2svRule = Biz2SVRule("SA", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
+  private val biz2svRule = Biz2SVRule("sa", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
 
   val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"
 
