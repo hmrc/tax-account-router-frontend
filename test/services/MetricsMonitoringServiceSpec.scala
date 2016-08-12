@@ -120,9 +120,9 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
         val auditContext = AuditContext()
         if (twoStepVerificationMandatory)
-          auditContext.setSentToMandatory2SVRegister()
+          auditContext.setSentToMandatory2SVRegister("rule1")
         else
-          auditContext.setSentToOptional2SVRegister()
+          auditContext.setSentToOptional2SVRegister("rule1")
 
         val mockThrottledLocation = mock[Location]
         when(mockThrottledLocation.name).thenReturn(throttledLocation)

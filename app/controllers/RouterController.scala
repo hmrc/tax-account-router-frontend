@@ -17,7 +17,7 @@
 package controllers
 
 import auth.RouterAuthenticationProvider
-import config.{FrontendAppConfig, FrontendAuditConnector}
+import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.{Condition, RuleEngine}
 import model.Locations._
@@ -41,13 +41,15 @@ object RouterController extends RouterController {
 
   override val ruleEngine = TarRules
 
-  override def throttlingService = ThrottlingService
+  override val throttlingService = ThrottlingService
 
-  override def twoStepVerification = TwoStepVerification
+  override val twoStepVerification = TwoStepVerification
 
-  override def auditConnector = FrontendAuditConnector
+  override val auditConnector = FrontendAuditConnector
 
   override def createAuditContext() = AuditContext()
+
+  override val analyticsEventSender = AnalyticsEventSender
 }
 
 trait RouterController extends FrontendController with Actions {
@@ -65,6 +67,8 @@ trait RouterController extends FrontendController with Actions {
   def auditConnector: AuditConnector
 
   def createAuditContext(): TAuditContext
+
+  def analyticsEventSender: AnalyticsEventSender
 
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
@@ -84,12 +88,9 @@ trait RouterController extends FrontendController with Actions {
       sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
-      sendGAEventAndRedirect(auditContext, finalDestination)
+      analyticsEventSender.sendEvents(finalDestination.name, auditContext)
+      Redirect(finalDestination.fullUrl)
     }
-  }
-
-  private def sendGAEventAndRedirect(auditContext: TAuditContext, finalDestination: Location) = {
-    Ok(views.html.uplift(finalDestination, auditContext.ruleApplied, FrontendAppConfig.analyticsToken))
   }
 
   private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
