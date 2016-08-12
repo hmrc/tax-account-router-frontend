@@ -181,7 +181,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verify(ruleContext).enrolments
       verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
-      verify(auditContext).setSentToOptional2SVRegister()
+      verify(auditContext).setSentToOptional2SVRegister("sa-only")
       verifyNoMoreInteractions(allMocks: _*)
     }
 
@@ -205,7 +205,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verify(ruleContext).enrolments
       verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
-      verify(auditContext).setSentToMandatory2SVRegister()
+      verify(auditContext).setSentToMandatory2SVRegister("sa-only")
       verifyNoMoreInteractions(allMocks: _*)
     }
   }

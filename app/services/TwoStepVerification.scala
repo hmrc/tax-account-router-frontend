@@ -18,6 +18,7 @@ package services
 
 import config.AppConfigHelpers
 import controllers.ExternalUrls
+import engine.Condition
 import engine.Condition._
 import model.Locations._
 import model._
@@ -38,8 +39,10 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  private val conditionsByDestination = Map(
-    BusinessTaxAccount -> List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV))
+  case class Biz2SVRule(name: String, conditions: List[Condition])
+
+  private val biz2svRulesByDestination = Map(
+    BusinessTaxAccount -> Biz2SVRule("SA", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
   )
 
   private val locationToAppName = Map(
@@ -51,8 +54,8 @@ trait TwoStepVerification {
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled) {
-      conditionsByDestination.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { conditions =>
-        val shouldRedirectTo2SV = conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
+      biz2svRulesByDestination.get(continue).fold[Future[Option[Location]]](Future.successful(None)) { biz2svRule =>
+        val shouldRedirectTo2SV = biz2svRule.conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
           preconditionsTrue.flatMap { precondition =>
             if (!precondition) Future.successful(false)
             else condition.evaluate(authContext, ruleContext, auditContext)
@@ -62,10 +65,10 @@ trait TwoStepVerification {
           case true =>
             twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
               case true =>
-                auditContext.setSentToMandatory2SVRegister()
+                auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
                 Some(wrapLocationWith2SV(continue, Locations.TaxAccountRouterHome))
               case _ =>
-                auditContext.setSentToOptional2SVRegister()
+                auditContext.setSentToOptional2SVRegister(biz2svRule.name)
                 Some(wrapLocationWith2SV(continue, continue))
             }
           case _ => None

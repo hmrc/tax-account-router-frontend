@@ -83,21 +83,25 @@ object AuditContext {
   def defaultRoutingReasons = mutableMap(allReasons.map(reason => reason.key -> "-"): _*)
 }
 
+case class TwoStepVerificationContext(ruleApplied: String, mandatory: Boolean)
+
 trait TAuditContext {
 
   private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
-  private var sentToMandatory2SVRegister: Option[Boolean] = None
+  private var twoStepVerificationContext: Option[TwoStepVerificationContext] = None
 
-  def setSentToOptional2SVRegister() = this.sentToMandatory2SVRegister = Some(false)
+  def setSentToOptional2SVRegister(rule: String) = this.twoStepVerificationContext = Some(TwoStepVerificationContext(rule, false))
 
-  def setSentToMandatory2SVRegister() = this.sentToMandatory2SVRegister = Some(true)
+  def setSentToMandatory2SVRegister(rule: String) = this.twoStepVerificationContext = Some(TwoStepVerificationContext(rule, true))
 
-  def isSentToOptional2SVRegister = this.sentToMandatory2SVRegister.contains(false)
+  def isSentToOptional2SVRegister = this.twoStepVerificationContext.exists(!_.mandatory)
 
-  def isSentToMandatory2SVRegister = this.sentToMandatory2SVRegister.contains(true)
+  def isSentToMandatory2SVRegister = this.twoStepVerificationContext.exists(_.mandatory)
 
-  def isSentTo2SVRegister() = sentToMandatory2SVRegister.isDefined
+  def twoStepVerificationRuleApplied = twoStepVerificationContext.map(_.ruleApplied)
+
+  def isSentTo2SVRegister() = twoStepVerificationContext.isDefined
 
   private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",
@@ -111,7 +115,7 @@ trait TAuditContext {
   def getThrottlingDetails: mutableMap[String, String] = throttlingDetails
 
   def setThrottlingDetails(throttlingAuditContext: ThrottlingAuditContext): Unit =
-    throttlingDetails +=(
+    throttlingDetails += (
       "enabled" -> throttlingAuditContext.throttlingEnabled.toString,
       "sticky-routing-applied" -> throttlingAuditContext.stickyRoutingApplied.toString,
       "percentage" -> throttlingAuditContext.throttlingPercentage.getOrElse("-").toString,
