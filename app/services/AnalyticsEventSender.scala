@@ -29,7 +29,7 @@ trait AnalyticsEventSender {
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  def sendRoutingEvents(locationName: String, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
+  def sendEvents(locationName: String, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 

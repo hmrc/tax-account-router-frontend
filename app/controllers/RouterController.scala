@@ -88,7 +88,7 @@ trait RouterController extends FrontendController with Actions {
       sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
-      analyticsEventSender.sendRoutingEvents(finalDestination.name, auditContext)
+      analyticsEventSender.sendEvents(finalDestination.name, auditContext)
       Redirect(finalDestination.fullUrl)
     }
   }
