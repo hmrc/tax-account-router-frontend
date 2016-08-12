@@ -17,6 +17,7 @@
 package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
+import model.AuditContext
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.Cookie
@@ -28,13 +29,31 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
   "AnalyticsEventSender" should {
 
-    "send a routing event to GA" in new Setup {
-      val locationName = "some-location"
-      val ruleApplied = "some-rule"
+    "send event to GA when not routed to 2sv registration" in new Setup {
 
-      analyticsEventSender.sendRoutingEvent(locationName, ruleApplied)
+      analyticsEventSender.sendRoutingEvents(locationName, auditContext)
 
-      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, ruleApplied))))
+      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, auditContext.ruleApplied))))
+    }
+
+    "send events to GA when routed to optional 2sv registration" in new Setup {
+      val biz2svRuleName = "sa"
+      auditContext.setSentToOptional2SVRegister(biz2svRuleName)
+      analyticsEventSender.sendRoutingEvents(locationName, auditContext)
+      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
+        GaEvent("routing", locationName, auditContext.ruleApplied),
+        GaEvent("sos_b2sv_registration_route", s"Rule_SA", "Optional")
+      )))
+    }
+
+    "send events to GA when routed to mandatory 2sv registration" in new Setup {
+      val biz2svRuleName = "sa"
+      auditContext.setSentToMandatory2SVRegister(biz2svRuleName)
+      analyticsEventSender.sendRoutingEvents(locationName, auditContext)
+      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
+        GaEvent("routing", locationName, auditContext.ruleApplied),
+        GaEvent("sos_b2sv_registration_route", s"Rule_SA", "Mandatory")
+      )))
     }
   }
 
@@ -46,6 +65,10 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
     val analyticsEventSender = new AnalyticsEventSender {
       override val analyticsPlatformConnector = mockAnalyticsPlatformConnector
     }
+    val locationName = "some-location"
+    val auditContext = AuditContext()
+    auditContext.ruleApplied = "some rule"
+
   }
 
 }

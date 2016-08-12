@@ -2,7 +2,7 @@ package router
 
 import connector.{AnalyticsData, GaEvent}
 import play.api.test.FakeApplication
-import support.page.{RouterRootPath, TwoSVMandatoryRegistrationPage, TwoSVMandatoryRegistrationStubPage}
+import support.page._
 import support.stubs.PlatformAnalyticsStub.verifyAnalytics
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.SaUtr
@@ -28,7 +28,7 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
 
   feature("Router analytics feature") {
 
-    scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected to mandatory 2SV registration with continue url BTA and analytics details should be sent appropriately to google") {
+    scenario("send analytics details for mandatory 2sv registration journey") {
 
       Given("User has google analytics cookie in browser")
 
@@ -52,7 +52,12 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       on(TwoSVMandatoryRegistrationPage)
 
       And("analytic details were sent to google")
-      verifyAnalytics(AnalyticsData("GA1.4.405633776.1470748420", List(GaEvent("routing", "two-step-verification", "bta-home-page-for-user-with-no-previous-return"))))
+      verifyAnalytics(
+        AnalyticsData("GA1.4.405633776.1470748420", List(
+          GaEvent("routing", "two-step-verification", "bta-home-page-for-user-with-no-previous-return"),
+          GaEvent("sos_b2sv_registration_route", "Rule_SA", "Mandatory")
+        ))
+      )
     }
   }
 }

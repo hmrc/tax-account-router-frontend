@@ -17,7 +17,7 @@
 package controllers
 
 import auth.RouterAuthenticationProvider
-import config.{FrontendAppConfig, FrontendAuditConnector}
+import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.{Condition, RuleEngine}
 import model.Locations._
@@ -88,7 +88,7 @@ trait RouterController extends FrontendController with Actions {
       sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
-      analyticsEventSender.sendRoutingEvent(finalDestination.name, auditContext.ruleApplied)
+      analyticsEventSender.sendRoutingEvents(finalDestination.name, auditContext)
       Redirect(finalDestination.fullUrl)
     }
   }

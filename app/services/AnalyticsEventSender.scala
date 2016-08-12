@@ -17,6 +17,7 @@
 package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
+import model.TAuditContext
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -24,14 +25,25 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 trait AnalyticsEventSender {
 
   private val routingCategory = "routing"
+  private val b2svRegistrationCategory = "sos_b2sv_registration_route"
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  private def gaClientId(request: Request[Any]) = request.cookies.get("_ga").map(_.value)
+  def sendRoutingEvents(locationName: String, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
 
-  def sendRoutingEvent(locationName: String, ruleApplied: String)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
-    gaClientId(request).fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
-      clientId => analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, List(GaEvent(routingCategory, locationName, ruleApplied))))
+    val gaClientId = request.cookies.get("_ga").map(_.value)
+
+    val biz2svRegistrationLabel = if (auditContext.isSentToMandatory2SVRegister) "Mandatory" else "Optional"
+
+    val biz2svRegistrationEvent = auditContext.twoStepVerificationRuleApplied.fold(List[GaEvent]()) { ruleName =>
+      List(GaEvent(b2svRegistrationCategory, s"Rule_${ruleName.toUpperCase}", biz2svRegistrationLabel))
+    }
+
+    gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
+      clientId =>
+        val routingEvent = List(GaEvent(routingCategory, locationName, auditContext.ruleApplied))
+        val allEvents = routingEvent ++ biz2svRegistrationEvent
+        analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, allEvents))
     }
   }
 }

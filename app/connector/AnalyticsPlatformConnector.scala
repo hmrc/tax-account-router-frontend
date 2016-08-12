@@ -22,11 +22,9 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.ws.WSPost
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 
-case class GaEvent(category: String, action: String, label: String, dimensions: List[GaDimension] = Nil)
-case class GaDimension(index: Int, value: String)
+case class GaEvent(category: String, action: String, label: String)
 
 object GaEvent {
-  implicit val gaDimensionWrites: Writes[GaDimension] = Json.writes[GaDimension]
   implicit val writes: Writes[GaEvent] = Json.writes[GaEvent]
 }
 
