@@ -54,8 +54,8 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       And("analytic details were sent to google")
       verifyAnalytics(
         AnalyticsData("GA1.4.405633776.1470748420", List(
-          GaEvent("routing", "two-step-verification", "bta-home-page-for-user-with-no-previous-return"),
-          GaEvent("sos_b2sv_registration_route", "rule_sa", "mandatory")
+          GaEvent("routing", "two-step-verification", "bta-home-page-for-user-with-no-previous-return", Nil),
+          GaEvent("sos_b2sv_registration_route", "rule_sa", "mandatory", Nil)
         ))
       )
     }

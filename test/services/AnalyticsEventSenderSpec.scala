@@ -33,7 +33,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
       analyticsEventSender.sendEvents(locationName, auditContext)
 
-      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, auditContext.ruleApplied))))
+      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, auditContext.ruleApplied, Nil))))
     }
 
     "send events to GA when routed to optional 2sv registration" in new Setup {
@@ -41,8 +41,8 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
       auditContext.setSentToOptional2SVRegister(biz2svRuleName)
       analyticsEventSender.sendEvents(locationName, auditContext)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
-        GaEvent("routing", locationName, auditContext.ruleApplied),
-        GaEvent("sos_b2sv_registration_route", s"rule_sa", "optional")
+        GaEvent("routing", locationName, auditContext.ruleApplied, Nil),
+        GaEvent("sos_b2sv_registration_route", s"rule_sa", "optional", Nil)
       )))
     }
 
@@ -51,8 +51,8 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
       auditContext.setSentToMandatory2SVRegister(biz2svRuleName)
       analyticsEventSender.sendEvents(locationName, auditContext)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
-        GaEvent("routing", locationName, auditContext.ruleApplied),
-        GaEvent("sos_b2sv_registration_route", s"rule_sa", "mandatory")
+        GaEvent("routing", locationName, auditContext.ruleApplied, Nil),
+        GaEvent("sos_b2sv_registration_route", s"rule_sa", "mandatory", Nil)
       )))
     }
   }
