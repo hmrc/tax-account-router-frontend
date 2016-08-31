@@ -4,8 +4,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
-import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
+import uk.gov.hmrc.domain.{Nino, SaUtr, Vrn}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 
 class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -47,7 +47,8 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     Given("a user logged in through Government Gateway")
     val saUtr = "12345"
-    val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+    val vrn = "45678"
+    val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))),vat= Some(VatAccount("", Vrn(vrn))))
     createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
     And("the user is an admin")
@@ -59,13 +60,11 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has no previous returns")
     stubSaReturnWithNoPreviousReturns(saUtr)
 
-    createStubs(SetupExtraSecurityStubPage)
-
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to Set Up Extra Security Page")
-    on(SetupExtraSecurityPage)
+    currentUrl shouldBe "http://localhost:9851/user-delegation/set-up-extra-security"
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))

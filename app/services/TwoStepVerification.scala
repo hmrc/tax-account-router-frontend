@@ -41,21 +41,20 @@ trait TwoStepVerification {
 
   case class Biz2SVRule(name: String, conditions: List[Condition])
 
-  private val biz2svRule = Biz2SVRule("sa", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
+  private val biz2svRules = List(
+    Biz2SVRule("sa", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyOneEnrolment, HasSelfAssessmentEnrolments, not(HasRegisteredFor2SV)))
+  )
 
   val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     if (twoStepVerificationEnabled && continue == BusinessTaxAccount) {
-      val shouldRedirectTo2SV = biz2svRule.conditions.foldLeft(Future.successful(true)) { (preconditionsTrue, condition) =>
-        preconditionsTrue.flatMap { precondition =>
-          if (!precondition) Future.successful(false)
-          else condition.evaluate(authContext, ruleContext, auditContext)
-        }
-      }
-      shouldRedirectTo2SV.map {
-        case true =>
+
+      val applicableRule = biz2svRules.find(_.conditions.forall(_.evaluate(authContext, ruleContext, auditContext)))
+
+      applicableRule.map {
+        case Some(biz2svRule) =>
           twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
             case true =>
               auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
