@@ -79,7 +79,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       createStubs(BtaHomeStubPage)
@@ -308,7 +308,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user has an inactive enrolment and individual affinity group")
       stubInactiveEnrolments()
-      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       createStubs(BtaHomeStubPage)
 
@@ -338,7 +338,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user has no inactive enrolments and individual affinity group")
       stubNoEnrolments()
-      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       createStubs(PtaHomeStubPage)
 

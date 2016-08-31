@@ -82,7 +82,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
@@ -122,7 +122,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubNoEnrolments()
 
       And("the user has organisation affinity group")
-      stubUserDetails(affinityGroup = AffinityGroupValue.ORGANISATION)
+      stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
 
       val auditEventStub = stubAuditEvent()
 
@@ -321,7 +321,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
@@ -456,7 +456,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubNoEnrolments()
 
       And("the user has individual affinity group")
-      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       val auditEventStub = stubAuditEvent()
 

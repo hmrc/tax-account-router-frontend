@@ -28,7 +28,7 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       createStubs(TwoSVMandatoryRegistrationStubPage)
