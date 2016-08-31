@@ -40,6 +40,14 @@ trait StubApplicationConfiguration {
     "two-step-verification-required.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> "",
     "throttling.enabled" -> false,
-    "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName"
+    "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName",
+    "business-enrolments" -> "enr1,enr2",
+    "self-assessment-enrolments" -> "enr3,enr4",
+    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
+    "ws.timeout.request" -> 10000,
+    "ws.timeout.connection" -> 6000,
+    "two-step-verification.enabled" -> true,
+    "logger.application" -> "ERROR",
+    "logger.connector" -> "ERROR"
   ) ++ stubbedMicroServices
 }

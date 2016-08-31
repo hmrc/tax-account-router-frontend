@@ -9,22 +9,10 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
-  val additionalConfiguration = Map[String, Any](
-    "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
-    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 10000,
-    "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
-    "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR"
-  )
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config ++ PlayConfig.additionalConfiguration +
-      ("two-step-verification.throttle.default" -> "1000")
+    additionalConfiguration = config + ("two-step-verification.throttle.default" -> "1000")
   )
-
 
   feature("Router analytics feature") {
 

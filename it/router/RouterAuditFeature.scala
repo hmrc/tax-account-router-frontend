@@ -17,17 +17,7 @@ import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
-  val additionalConfiguration = Map[String, Any](
-    "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
-    "ws.timeout.request" -> 10000,
-    "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
-    "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR"
-  )
-
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
+  override lazy val app = FakeApplication(additionalConfiguration = config)
 
   feature("Router audit feature") {
 
