@@ -61,8 +61,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         SA_RETURN_AVAILABLE.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_SA_ENROLMENTS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       eventually {

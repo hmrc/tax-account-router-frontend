@@ -93,7 +93,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_SA_UTR, result = true)
       auditContext.setRoutingReason(HAS_REGISTERED_FOR_2SV, result = true)
       auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
-      auditContext.setRoutingReason(HAS_ONLY_ONE_ENROLMENT, result = true)
       auditContext.setRoutingReason(HAS_INDIVIDUAL_AFFINITY_GROUP, result = true)
       auditContext.setRoutingReason(HAS_ANY_INACTIVE_ENROLMENT, result = true)
       auditContext.setRoutingReason(AFFINITY_GROUP_AVAILABLE, result = true)

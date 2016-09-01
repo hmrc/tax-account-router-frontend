@@ -50,7 +50,6 @@ object RoutingReason {
   val HAS_SA_UTR = Reason("has-sa-utr")
   val HAS_REGISTERED_FOR_2SV = Reason("has-registered-for-2sv")
   val HAS_STRONG_CREDENTIALS = Reason("has-strong-credentials")
-  val HAS_ONLY_ONE_ENROLMENT = Reason("has-only-one-enrolment")
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
   val HAS_ANY_INACTIVE_ENROLMENT = Reason("has-any-inactive-enrolment")
   val AFFINITY_GROUP_AVAILABLE = Reason("affinity-group-available")
@@ -70,7 +69,6 @@ object RoutingReason {
     HAS_SA_UTR,
     HAS_REGISTERED_FOR_2SV,
     HAS_STRONG_CREDENTIALS,
-    HAS_ONLY_ONE_ENROLMENT,
     HAS_INDIVIDUAL_AFFINITY_GROUP,
     HAS_ANY_INACTIVE_ENROLMENT,
     AFFINITY_GROUP_AVAILABLE
