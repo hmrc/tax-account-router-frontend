@@ -53,14 +53,14 @@ object RoutingReason {
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
   val HAS_ANY_INACTIVE_ENROLMENT = Reason("has-any-inactive-enrolment")
   val AFFINITY_GROUP_AVAILABLE = Reason("affinity-group-available")
-  def HAS_ONLY_ENROLMENTS(enrolments : Set[String]) = Reason(enrolments.mkString(","))
+  def HAS_ENROLMENTS(enrolments : Set[String]) = Reason(s"""has:${enrolments.mkString(",")}""")
+  def HAS_ONLY_ENROLMENTS(enrolments : Set[String]) = Reason(s"""has-only:${enrolments.mkString(",")}""")
 
   val allReasons = List(
     IS_A_VERIFY_USER,
     IS_A_GOVERNMENT_GATEWAY_USER,
     GG_ENROLMENTS_AVAILABLE,
     HAS_BUSINESS_ENROLMENTS,
-    HAS_SA_ENROLMENTS,
     SA_RETURN_AVAILABLE,
     HAS_PREVIOUS_RETURNS,
     IS_IN_A_PARTNERSHIP,

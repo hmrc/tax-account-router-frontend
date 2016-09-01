@@ -77,39 +77,35 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasSelfAssessmentEnrolments" should {
+  "HasEnrolments" should {
 
     "have an audit type specified" in {
-      HasSelfAssessmentEnrolments.auditType shouldBe Some(HAS_SA_ENROLMENTS)
+      HasEnrolments(SA, VAT).auditType.get.key shouldBe "has:self-assessment-enrolments,vat-enrolments"
     }
 
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("has self assessment enrolments", Set("enr3"), true),
-        ("has no self assessment enrolments", Set.empty[String], false)
+        ("return false when user has does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
+        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
+        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-      val authContext = mock[AuthContext]
-
-      s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
-
+        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
-        val hasSelfAssessmentEnrolments = new HasSelfAssessmentEnrolments {
-          override val selfAssessmentEnrolments = Set("enr3")
-        }
 
-        val result = await(hasSelfAssessmentEnrolments.isTrue(authContext, ruleContext))
+        val result = await(HasEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }
     }
+
   }
 
   "HasPreviousReturns" should {
@@ -595,7 +591,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   "HasOnlyEnrolmentsCondition" should {
     "have an audit type specified" in {
-      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "self-assessment-enrolments,vat-enrolments"
+      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "has-only:self-assessment-enrolments,vat-enrolments"
     }
 
     val scenarios =

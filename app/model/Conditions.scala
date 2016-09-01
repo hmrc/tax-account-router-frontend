@@ -32,7 +32,7 @@ import scala.concurrent.Future
 
 object GGEnrolmentsAvailable extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.enrolments.map(_ => true).recover { case _ => false}
+    ruleContext.enrolments.map(_ => true).recover { case _ => false }
 
   override val auditType = Some(GG_ENROLMENTS_AVAILABLE)
 }
@@ -59,13 +59,14 @@ object HasAnyBusinessEnrolment extends HasAnyBusinessEnrolment {
 
 object SAReturnAvailable extends Condition {
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.lastSaReturn.map(_ => true).recover { case _ => false}
+    ruleContext.lastSaReturn.map(_ => true).recover { case _ => false }
 
   override val auditType = Some(SA_RETURN_AVAILABLE)
 }
 
 sealed trait EnrolmentCategory {
   def enrolmentCategoryName: String
+
   def enrolments: Set[String]
 }
 
@@ -81,36 +82,36 @@ object VAT extends EnrolmentCategoryFromConf {
   val enrolmentCategoryName = "vat-enrolments"
 }
 
-trait HasSelfAssessmentEnrolments extends Condition {
-  def selfAssessmentEnrolments: Set[String]
+trait HasEnrolmentsCondition extends Condition {
+
+  protected def strict: Boolean
+
+  def enrolmentCategories: Set[EnrolmentCategory]
+
+  private def validateAllEnrolmentCategoriesExist(enrolments: Set[String]) = enrolmentCategories.forall(_.enrolments.intersect(enrolments).nonEmpty)
+
+  private def validateExtraEnrolments(enrolments: Set[String]) = !strict || (strict && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolments.map(_.intersect(selfAssessmentEnrolments).nonEmpty)
-
-  override val auditType = Some(HAS_SA_ENROLMENTS)
+    ruleContext.activeEnrolments.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
 }
 
-object HasSelfAssessmentEnrolments extends HasSelfAssessmentEnrolments {
-  override lazy val selfAssessmentEnrolments = SA.enrolments
+case class HasOnlyEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
+  protected val strict = true
+  override val auditType = Some(HAS_ONLY_ENROLMENTS(enrolmentCategories.map(_.enrolmentCategoryName)))
 }
 
-trait HasOnlyEnrolmentsCondition extends Condition {
-
-  def onlyEnrolmentCategories: Set[EnrolmentCategory]
-
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolments.map { userEnrolments =>
-      onlyEnrolmentCategories.forall(_.enrolments.intersect(userEnrolments).nonEmpty) &&
-        userEnrolments.diff(onlyEnrolmentCategories.flatMap(_.enrolments)).isEmpty
-    }
-
-  override val auditType = Some(HAS_ONLY_ENROLMENTS(onlyEnrolmentCategories.map(_.enrolmentCategoryName)))
+case class HasEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
+  protected val strict = false
+  override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories.map(_.enrolmentCategoryName)))
 }
-
-case class HasOnlyEnrolments(onlyEnrolmentCategories: Set[EnrolmentCategory]) extends HasOnlyEnrolmentsCondition
 
 object HasOnlyEnrolments {
   def apply(enrolmentCategories: EnrolmentCategory*): HasOnlyEnrolments = HasOnlyEnrolments(enrolmentCategories.toSet)
+}
+
+object HasEnrolments {
+  def apply(enrolmentCategories: EnrolmentCategory*): HasEnrolments = HasEnrolments(enrolmentCategories.toSet)
 }
 
 object HasPreviousReturns extends Condition {
