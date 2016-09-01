@@ -37,7 +37,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3"
+    "self-assessment-enrolments" -> Set("enr3"),
+    "vat-enrolments" -> Set("enr4", "enr5")
   )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)
@@ -616,6 +617,36 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(ruleContext.notActivatedEnrolments).thenReturn(Future.successful(enrolments))
 
         val result = await(HasAnyInactiveEnrolment.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
+    }
+  }
+
+  "HasOnlyEnrolmentsCondition" should {
+    "have an audit type specified" in {
+      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "self-assessment-enrolments,vat-enrolments"
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("return false when user has does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
+        ("return false when user has extra enrolments other than enrolment type", Set("enr3", "enr4", "enr99"), false),
+        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
+        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+
+        val result = await(HasOnlyEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }

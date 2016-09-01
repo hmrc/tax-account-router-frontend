@@ -27,6 +27,7 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 object GGEnrolmentsAvailable extends Condition {
@@ -63,6 +64,23 @@ object SAReturnAvailable extends Condition {
   override val auditType = Some(SA_RETURN_AVAILABLE)
 }
 
+sealed trait EnrolmentCategory {
+  def enrolmentCategoryName: String
+  def enrolments: Set[String]
+}
+
+trait EnrolmentCategoryFromConf extends EnrolmentCategory {
+  lazy val enrolments = Play.configuration.getStringList(enrolmentCategoryName).map(_.toSet).getOrElse(Set.empty[String])
+}
+
+object SA extends EnrolmentCategoryFromConf {
+  val enrolmentCategoryName = "self-assessment-enrolments"
+}
+
+object VAT extends EnrolmentCategoryFromConf {
+  val enrolmentCategoryName = "vat-enrolments"
+}
+
 trait HasSelfAssessmentEnrolments extends Condition {
   def selfAssessmentEnrolments: Set[String]
 
@@ -73,7 +91,26 @@ trait HasSelfAssessmentEnrolments extends Condition {
 }
 
 object HasSelfAssessmentEnrolments extends HasSelfAssessmentEnrolments {
-  override lazy val selfAssessmentEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+  override lazy val selfAssessmentEnrolments = SA.enrolments
+}
+
+trait HasOnlyEnrolmentsCondition extends Condition {
+
+  def onlyEnrolmentCategories: Set[EnrolmentCategory]
+
+  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    ruleContext.activeEnrolments.map { userEnrolments =>
+      onlyEnrolmentCategories.forall(_.enrolments.intersect(userEnrolments).nonEmpty) &&
+        userEnrolments.diff(onlyEnrolmentCategories.flatMap(_.enrolments)).isEmpty
+    }
+
+  override val auditType = Some(HAS_ONLY_ENROLMENTS(onlyEnrolmentCategories.map(_.enrolmentCategoryName)))
+}
+
+case class HasOnlyEnrolments(onlyEnrolmentCategories: Set[EnrolmentCategory]) extends HasOnlyEnrolmentsCondition
+
+object HasOnlyEnrolments {
+  def apply(enrolmentCategories: EnrolmentCategory*): HasOnlyEnrolments = HasOnlyEnrolments(enrolmentCategories.toSet)
 }
 
 object HasPreviousReturns extends Condition {

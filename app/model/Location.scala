@@ -43,10 +43,12 @@ object Locations {
   val personalTaxAccountLocationName = "personal-tax-account"
   val businessTaxAccountLocationName = "business-tax-account"
   val taxAccountRouterHomeLocationName = "tax-account-router"
+  val setUpExtraSecurityLocationName = "set-up-extra-security"
   lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
   lazy val BusinessTaxAccount = Location(businessTaxAccountLocationName, ExternalUrls.getUrl(businessTaxAccountLocationName))
-  lazy val TaxAccountRouterHome = Location(taxAccountRouterHomeLocationName, s"${ExternalUrls.taxAccountRouterHost}/account")
+  lazy val SetUpExtraSecurity = Location(setUpExtraSecurityLocationName, ExternalUrls.getUrl(setUpExtraSecurityLocationName))
 
+  lazy val TaxAccountRouterHome = Location(taxAccountRouterHomeLocationName, s"${ExternalUrls.taxAccountRouterHost}/account")
   val twoStepVerificationLocationName = "two-step-verification"
   val twoStepVerificationRequiredLocationName = "two-step-verification-required"
 
