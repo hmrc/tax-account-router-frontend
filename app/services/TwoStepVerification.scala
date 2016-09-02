@@ -56,7 +56,7 @@ trait TwoStepVerification {
 
       applicableRule.map {
         case Some(biz2svRule) =>
-          twoStepVerificationThrottle.registrationMandatory(authContext.user.oid) match {
+          twoStepVerificationThrottle.registrationMandatory(biz2svRule.name, authContext.user.oid) match {
             case true =>
               auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
               Some(wrapLocationWith2SV(continue, Locations.TaxAccountRouterHome))
