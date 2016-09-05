@@ -17,9 +17,11 @@
 package connector
 
 import config.WSHttp
+import connector.CredentialRole.CredentialRole
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
+import utils.EnumJson.enumReads
 
 trait UserDetailsConnector {
 
@@ -30,13 +32,20 @@ trait UserDetailsConnector {
   def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](userDetailsUri)
 }
 
+object CredentialRole extends Enumeration {
+  type CredentialRole = Value
+  val User, Unknown = Value
+}
+
+
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
   override lazy val serviceUrl = baseUrl("user-details")
   override lazy val http = WSHttp
 }
 
-case class UserDetails(affinityGroup: String)
+case class UserDetails(credentialRole: CredentialRole, affinityGroup: String)
 
 object UserDetails {
+  implicit val credentialRoleReads: Reads[CredentialRole] = enumReads(CredentialRole).orElse(Reads.pure(CredentialRole.Unknown))
   implicit val reads: Reads[UserDetails] = Json.reads[UserDetails]
 }

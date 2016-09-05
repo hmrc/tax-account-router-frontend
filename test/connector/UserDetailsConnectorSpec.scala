@@ -16,9 +16,11 @@
 
 package connector
 
+import connector.CredentialRole.{Unknown, User}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import play.api.libs.json.Json
 import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost, HttpReads}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -49,7 +51,7 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
 
       val userDetailsUri = "userDetailsUri"
 
-      val expected = UserDetails(affinityGroup = "Individual")
+      val expected = UserDetails(User, affinityGroup = "Individual")
       when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))).thenReturn(Future.successful(expected))
 
       val result = await(connectorUnderTest.getUserDetails(userDetailsUri)(hc))
@@ -58,6 +60,19 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
 
       verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))
       verifyNoMoreInteractions(mockHttp)
+    }
+  }
+
+}
+
+class UserDetailsDeserializationSpec extends UnitSpec {
+  "reads of user details" should {
+    "read credentialRole if available" in {
+      Json.parse("""{"credentialRole":"User","affinityGroup":"Organisation"}""").as[UserDetails] shouldBe UserDetails(User, "Organisation")
+    }
+
+    "read any other role as unknown" in {
+      Json.parse("""{"credentialRole":"FooBar","affinityGroup":"Baz"}""").as[UserDetails] shouldBe UserDetails(Unknown, "Baz")
     }
   }
 }
