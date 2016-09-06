@@ -32,13 +32,13 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      createStubs(TwoSVMandatoryRegistrationStubPage)
+      createStubs(TwoSVMandatoryRegistrationStubPage())
 
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      on(TwoSVMandatoryRegistrationPage)
+      on(TwoSVMandatoryRegistrationPage())
 
       And("analytic details were sent to google")
       verifyAnalytics(

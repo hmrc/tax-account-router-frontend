@@ -20,20 +20,26 @@ import java.net.URLEncoder
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import support.Env
+import support.page.TwoSVMandatoryRegistration.defaultContinueUrl
 import support.stubs.{Stub, StubbedPage}
 
-object TwoSVMandatoryRegistrationStubPage extends Stub with StubbedPage {
-  override def create() = stubOut(urlEqualTo(TwoSVMandatoryRegistrationPage.uri), "2SV Mandatory Registration Page")
+object TwoSVMandatoryRegistration {
+  val defaultContinueUrl = "/business-account"
 }
 
-object TwoSVMandatoryRegistrationPage extends WebPage {
+case class TwoSVMandatoryRegistrationStubPage(continueUrl: String = defaultContinueUrl) extends Stub with StubbedPage {
+  override def create = stubOut(urlEqualTo(TwoSVMandatoryRegistrationPage(continueUrl).uri), "2SV Mandatory Registration Page")
+}
+
+case class TwoSVMandatoryRegistrationPage(continueUrl: String = defaultContinueUrl) extends WebPage {
   private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
-  private val continueUrl = URLEncoder.encode(s"$hostPort/business-account", "UTF-8")
+  private val encodedContinueUrl = URLEncoder.encode(s"$hostPort$continueUrl", "UTF-8")
   private val failureUrl = URLEncoder.encode("/account", "UTF-8")
-  private val queryString = s"continue=$continueUrl&failure=$failureUrl&origin=business-tax-account"
+  private val queryString = s"continue=$encodedContinueUrl&failure=$failureUrl&origin=business-tax-account"
 
   val uri = s"/coafe/two-step-verification/register?$queryString"
   override val url = s"$hostPort$uri"
 
   override def assertPageLoaded() = assertPageIs("2SV Mandatory Registration Page")
+
 }

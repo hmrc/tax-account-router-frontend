@@ -2,12 +2,12 @@ package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue.ORGANISATION
-import connector.CredentialRole.User
+import connector.CredentialRole.{CredentialRole, User}
 import play.api.libs.json.Json
 
 trait CommonStubs {
 
-  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[String] = None) = {
+  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[CredentialRole] = None) = {
     stubFor(get(urlMatching("/user-details-uri"))
       .willReturn(
         aResponse()
@@ -23,7 +23,7 @@ trait CommonStubs {
                |    "dateOfBirth": "1980-06-31",
                |    "postcode": "NW94HD",
                |    "authProviderId": "12345-credId",
-               |    "credentialRole": "${credentialRole.getOrElse(User)}",
+               |    "credentialRole": "${credentialRole.getOrElse(User).toString}",
                |    "authProviderType": "Verify"
                |}
       """.stripMargin)
