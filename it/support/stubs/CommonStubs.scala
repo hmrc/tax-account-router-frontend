@@ -1,7 +1,8 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.AffinityGroupValue
+import connector.AffinityGroupValue.ORGANISATION
+import connector.CredentialRole.User
 import play.api.libs.json.Json
 
 trait CommonStubs {
@@ -16,14 +17,14 @@ trait CommonStubs {
                |{
                |    "name": "test",
                |    "email": "test@test.com",
-               |    "affinityGroup": "${affinityGroup.getOrElse(AffinityGroupValue.ORGANISATION)}",
+               |    "affinityGroup": "${affinityGroup.getOrElse(ORGANISATION)}",
                |    "description": "description",
                |    "lastName": "test",
                |    "dateOfBirth": "1980-06-31",
                |    "postcode": "NW94HD",
                |    "authProviderId": "12345-credId",
-               |    "credentialRole": "${credentialRole.getOrElse("User")}"
-               |    "authProviderType": "Verify",
+               |    "credentialRole": "${credentialRole.getOrElse(User)}",
+               |    "authProviderType": "Verify"
                |}
       """.stripMargin)
       ))

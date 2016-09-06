@@ -71,7 +71,7 @@ sealed trait EnrolmentCategory {
 }
 
 trait EnrolmentCategoryFromConf extends EnrolmentCategory {
-  lazy val enrolments = Play.configuration.getStringList(enrolmentCategoryName).map(_.toSet).getOrElse(Set.empty[String])
+  def enrolments = Play.configuration.getStringList(enrolmentCategoryName).map(_.toSet).getOrElse(Set.empty[String])
 }
 
 object SA extends EnrolmentCategoryFromConf {
@@ -98,12 +98,12 @@ trait HasEnrolmentsCondition extends Condition {
 
 case class HasOnlyEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
   protected val strict = true
-  override val auditType = Some(HAS_ONLY_ENROLMENTS(enrolmentCategories.map(_.enrolmentCategoryName)))
+  override val auditType = Some(HAS_ONLY_ENROLMENTS(enrolmentCategories))
 }
 
 case class HasEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
   protected val strict = false
-  override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories.map(_.enrolmentCategoryName)))
+  override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories))
 }
 
 object HasOnlyEnrolments {

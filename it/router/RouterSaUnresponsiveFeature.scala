@@ -11,7 +11,6 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
     "ws.timeout.connection" -> 500,

@@ -41,7 +41,6 @@ object RoutingReason {
   val IS_A_GOVERNMENT_GATEWAY_USER = Reason("is-a-government-gateway-user")
   val GG_ENROLMENTS_AVAILABLE = Reason("gg-enrolments-available")
   val HAS_BUSINESS_ENROLMENTS = Reason("has-business-enrolments")
-  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
   val SA_RETURN_AVAILABLE = Reason("sa-return-available")
   val HAS_PREVIOUS_RETURNS = Reason("has-previous-returns")
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
@@ -53,8 +52,8 @@ object RoutingReason {
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
   val HAS_ANY_INACTIVE_ENROLMENT = Reason("has-any-inactive-enrolment")
   val AFFINITY_GROUP_AVAILABLE = Reason("affinity-group-available")
-  def HAS_ENROLMENTS(enrolments : Set[String]) = Reason(s"""has:${enrolments.mkString(",")}""")
-  def HAS_ONLY_ENROLMENTS(enrolments : Set[String]) = Reason(s"""has-only:${enrolments.mkString(",")}""")
+  def HAS_ENROLMENTS(enrolmentCategories : Set[EnrolmentCategory]) = Reason(s"""has:${enrolmentCategories.map(_.enrolmentCategoryName).mkString(",")}""")
+  def HAS_ONLY_ENROLMENTS(enrolmentCategories : Set[EnrolmentCategory]) = Reason(s"""has-only:${enrolmentCategories.map(_.enrolmentCategoryName).mkString(",")}""")
 
   val allReasons = List(
     IS_A_VERIFY_USER,
@@ -100,7 +99,7 @@ trait TAuditContext {
 
   def twoStepVerificationRuleApplied = twoStepVerificationContext.map(_.ruleApplied)
 
-  def isSentTo2SVRegister() = twoStepVerificationContext.isDefined
+  def isSentTo2SVRegister = twoStepVerificationContext.isDefined
 
   private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",

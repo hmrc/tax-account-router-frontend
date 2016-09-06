@@ -86,7 +86,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("return false when user has does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
+        ("return false when user does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
         ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
         ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
       )

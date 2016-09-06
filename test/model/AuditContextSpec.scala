@@ -62,12 +62,10 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-previous-returns" -> "-",
         "is-in-a-partnership" -> "-",
         "is-self-employed" -> "-",
-        "has-self-assessment-enrolments" -> "-",
         "has-nino" -> "-",
         "has-sa-utr" -> "-",
         "has-registered-for-2sv" -> "-",
         "has-strong-credentials" -> "-",
-        "has-only-one-enrolment" -> "-",
         "has-individual-affinity-group" -> "-",
         "has-any-inactive-enrolment" -> "-",
         "affinity-group-available" -> "-"
@@ -88,11 +86,12 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_PREVIOUS_RETURNS, result = true)
       auditContext.setRoutingReason(IS_IN_A_PARTNERSHIP, result = true)
       auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
-      auditContext.setRoutingReason(HAS_SA_ENROLMENTS, result = true)
+      auditContext.setRoutingReason(HAS_ENROLMENTS(Set(SA,VAT)), result = true)
       auditContext.setRoutingReason(HAS_NINO, result = true)
       auditContext.setRoutingReason(HAS_SA_UTR, result = true)
       auditContext.setRoutingReason(HAS_REGISTERED_FOR_2SV, result = true)
       auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
+      auditContext.setRoutingReason(HAS_ONLY_ENROLMENTS(Set(SA,VAT)), result = true)
       auditContext.setRoutingReason(HAS_INDIVIDUAL_AFFINITY_GROUP, result = true)
       auditContext.setRoutingReason(HAS_ANY_INACTIVE_ENROLMENT, result = true)
       auditContext.setRoutingReason(AFFINITY_GROUP_AVAILABLE, result = true)
@@ -111,20 +110,19 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-a-government-gateway-user" -> "true",
         "gg-enrolments-available" -> "true",
         "has-business-enrolments" -> "true",
-        "has-self-assessment-enrolments" -> "true",
         "sa-return-available" -> "true",
         "has-previous-returns" -> "true",
         "is-in-a-partnership" -> "true",
         "is-self-employed" -> "true",
-        "has-self-assessment-enrolments" -> "true",
         "has-nino" -> "true",
         "has-sa-utr" -> "true",
         "has-registered-for-2sv" -> "true",
         "has-strong-credentials" -> "true",
-        "has-only-one-enrolment" -> "true",
         "has-individual-affinity-group" -> "true",
         "has-any-inactive-enrolment" -> "true",
-        "affinity-group-available" -> "true"
+        "affinity-group-available" -> "true",
+        "has:self-assessment-enrolments,vat-enrolments" -> "true",
+        "has-only:self-assessment-enrolments,vat-enrolments" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()
