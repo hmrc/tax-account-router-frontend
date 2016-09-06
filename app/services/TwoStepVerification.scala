@@ -44,8 +44,8 @@ trait TwoStepVerification {
   private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
   private val biz2svRules = List(
-    Biz2SVRule("sa", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA), not(HasRegisteredFor2SV)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome))),
-    Biz2SVRule("sa_vat", List(not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA, VAT), not(HasRegisteredFor2SV)), ThrottleLocations(SetUpExtraSecurity, twoStepVerification(AreYouSharing)(TaxAccountRouterHome)), ThrottleLocations(BusinessTaxAccount, BusinessTaxAccount))
+    Biz2SVRule("sa", List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome))),
+    Biz2SVRule("sa_vat", List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA, VAT)), ThrottleLocations(SetUpExtraSecurity, twoStepVerification(AreYouSharing)(TaxAccountRouterHome)), ThrottleLocations(BusinessTaxAccount, BusinessTaxAccount))
   )
 
   val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"

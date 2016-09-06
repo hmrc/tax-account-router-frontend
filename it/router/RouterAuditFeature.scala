@@ -65,9 +65,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -103,10 +101,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -139,13 +134,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
         AFFINITY_GROUP_AVAILABLE.key -> "true",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "false"
+        HAS_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -182,11 +175,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -224,11 +214,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -266,13 +253,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
         HAS_NINO.key -> "false",
         HAS_SA_UTR.key -> "-",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino")
@@ -416,7 +400,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "true"
+        HAS_STRONG_CREDENTIALS.key -> "true",
+        HAS_REGISTERED_FOR_2SV.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -446,8 +431,9 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false"
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -519,10 +505,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
         AFFINITY_GROUP_AVAILABLE.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "false"
+        HAS_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-affinity-group-unavailable")
