@@ -21,7 +21,7 @@ import controllers.ExternalUrls
 import engine.Condition
 import engine.Condition._
 import model.Locations._
-import model._
+import model.{Locations, _}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -80,8 +80,6 @@ trait TwoStepVerification {
   private def twoStepVerification(continue: Location)(failure: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl, "origin" -> "business-tax-account"))
 
   private def twoStepVerificationContinueBTA = twoStepVerification(BusinessTaxAccount) _
-
-
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
