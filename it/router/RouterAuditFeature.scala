@@ -333,6 +333,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false",
         HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -368,7 +369,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
+        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
+        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")

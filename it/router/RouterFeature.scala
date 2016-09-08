@@ -48,13 +48,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has business related enrolments")
       stubBusinessEnrolments()
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -82,13 +80,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -116,13 +112,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the sa is returning 500")
       stubSaReturnToReturn500(saUtr)
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -147,13 +141,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("gg is returning 500")
       stubEnrolmentsToReturn500()
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -181,13 +173,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -215,13 +205,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -249,13 +237,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -310,13 +296,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubInactiveEnrolments()
       stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -370,13 +354,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       stubNoEnrolments()
       stubUserDetailsToReturn500()
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to PTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
