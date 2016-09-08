@@ -28,7 +28,7 @@ case class TwoStepVerificationRule(name: String, enrolmentCategories: Set[Enrolm
 
 trait TwoStepVerificationRuleFactory {
 
-  private val twoStepVerificationRulesConfigName = "two-step-verification.rules"
+  private val twoStepVerificationRulesConfigName = "two-step-verification.user-segment"
 
   lazy val rules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationRule]) { rules =>
     rules.subKeys.toList.map { ruleName =>

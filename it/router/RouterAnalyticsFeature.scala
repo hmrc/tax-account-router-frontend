@@ -12,7 +12,7 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config + ("two-step-verification.throttle.sa.default" -> "1000")
+    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000")
   )
 
   feature("Router analytics feature") {

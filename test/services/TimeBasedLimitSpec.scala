@@ -27,23 +27,23 @@ class TimeBasedLimitSpec extends UnitSpec {
     "return the hourly limit in the configuration for the current hour if defined" in new Setup {
       val expectedLimit = 10
       running(FakeApplication(additionalConfiguration = Map(
-        "two-step-verification.throttle.sa.12" -> expectedLimit,
-        "two-step-verification.throttle.sa_vat.12" -> (expectedLimit + 1)))) {
+        "two-step-verification.user-segment.sa.throttle.12" -> expectedLimit,
+        "two-step-verification.user-segment.sa_vat.throttle.12" -> (expectedLimit + 1)))) {
         timeBasedLimit().getCurrentPercentageLimit("sa") shouldBe expectedLimit
       }
     }
     "return the 'default' limit in configuration if hourly limit is not defined for current hour" in new Setup {
       val expectedLimit = 15
       running(FakeApplication(additionalConfiguration = Map(
-        "two-step-verification.throttle.sa.default" -> expectedLimit,
-        "two-step-verification.throttle.sa.12" -> null,
-        "two-step-verification.throttle.sa_vat.12" -> (expectedLimit + 1)
+        "two-step-verification.user-segment.sa.throttle.default" -> expectedLimit,
+        "two-step-verification.user-segment.sa.throttle.12" -> null,
+        "two-step-verification.user-segment.sa_vat.throttle.12" -> (expectedLimit + 1)
       ))) {
         timeBasedLimit().getCurrentPercentageLimit("sa") shouldBe expectedLimit
       }
     }
     "return a value lower than zero if both hourly limit for current hour and 'default' limit are not defined in configuration" in new Setup {
-      running(FakeApplication(additionalConfiguration = Map("two-step-verification.throttle" -> null))) {
+      running(FakeApplication(additionalConfiguration = Map("two-step-verification.user-segment.sa.throttle" -> null))) {
         timeBasedLimit().getCurrentPercentageLimit("sa") should be < 0.0
       }
     }

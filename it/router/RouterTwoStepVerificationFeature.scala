@@ -209,7 +209,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config + ("two-step-verification.throttle.sa.default" -> "1000", "two-step-verification.throttle.sa_vat.default" -> "1000", "user-delegation-frontend.host" -> "http://localhost:11111")
+    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000", "two-step-verification.user-segment.sa_vat.throttle.default" -> "1000", "user-delegation-frontend.host" -> "http://localhost:11111")
   )
 
   feature("Router feature") {

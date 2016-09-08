@@ -41,8 +41,8 @@ trait TimeBasedLimit {
 
   def getCurrentPercentageLimit(ruleName : String) = {
     val currentHourOfDay = dateTimeProvider().getHourOfDay
-    val hourlyLimit = configuration.getDouble(s"two-step-verification.throttle.$ruleName.$currentHourOfDay")
-    hourlyLimit.getOrElse(configuration.getDouble(s"two-step-verification.throttle.$ruleName.default").getOrElse(-1.0))
+    val hourlyLimit = configuration.getDouble(s"two-step-verification.user-segment.$ruleName.throttle.$currentHourOfDay")
+    hourlyLimit.getOrElse(configuration.getDouble(s"two-step-verification.user-segment.$ruleName.throttle.default").getOrElse(-1.0))
   }
 }
 
