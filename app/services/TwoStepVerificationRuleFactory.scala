@@ -28,7 +28,9 @@ case class TwoStepVerificationRule(name: String, enrolmentCategories: Set[Enrolm
 
 trait TwoStepVerificationRuleFactory {
 
-  lazy val rules = configuration.getConfig("two-step-verification-rules").fold(List.empty[TwoStepVerificationRule]) { rules =>
+  private val twoStepVerificationRulesConfigName = "two-step-verification.rules"
+
+  lazy val rules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationRule]) { rules =>
     rules.subKeys.toList.map { ruleName =>
       val ruleLocation = location(ruleName) _
       TwoStepVerificationRule(ruleName, enrolments(ruleName), ruleLocation("admin"), ruleLocation("assistant"))
@@ -36,10 +38,10 @@ trait TwoStepVerificationRuleFactory {
   }
 
   private def enrolments(ruleName: String) =
-    configuration.getStringList(s"two-step-verification-rules.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.toSet.map(ConfiguredEnrolmentCategory))
+    configuration.getStringList(s"$twoStepVerificationRulesConfigName.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.toSet.map(ConfiguredEnrolmentCategory))
 
   private def location(ruleName: String)(roleIdentifier: String) = {
-    def locationConfigurationKey(throttleIdentifier: String) = configuration.getString(s"two-step-verification-rules.$ruleName.$roleIdentifier.$throttleIdentifier").getOrElse(throw new RuntimeException(s"location not defined for 2sv rule - $ruleName - $roleIdentifier - $throttleIdentifier"))
+    def locationConfigurationKey(throttleIdentifier: String) = configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.$roleIdentifier.$throttleIdentifier").getOrElse(throw new RuntimeException(s"location not defined for 2sv rule - $ruleName - $roleIdentifier - $throttleIdentifier"))
     def aLocation(throttleIdentifier: String) = {
       locationFromConf(locationConfigurationKey(throttleIdentifier).split("""\.""")(1))
     }
