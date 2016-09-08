@@ -1,6 +1,6 @@
 package services
 
-import model.Location
+import model.{Location, SA, VAT}
 import play.api.test.FakeApplication
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -17,9 +17,9 @@ class TwoStepVerificationRuleFactoryTest extends UnitSpec with WithFakeApplicati
     }
 
     "have correct enrolments" in new Setup {
-      val enrolments = rules.map(rule => (rule.name, rule.enrolments))
-      enrolments should contain(("sa", Set(saEnrolments)))
-      enrolments should contain(("sa_vat", Set(saEnrolments, vatEnrolments)))
+      val enrolments = rules.map(rule => (rule.name, rule.enrolmentCategories))
+      enrolments should contain(("sa", Set(SA)))
+      enrolments should contain(("sa_vat", Set(SA, VAT)))
     }
 
     "have correct admin optional locations" in new Setup {
@@ -42,7 +42,6 @@ class TwoStepVerificationRuleFactoryTest extends UnitSpec with WithFakeApplicati
       locations should contain(("sa", Location("two-step-verification", "http://localhost:9025/coafe/two-step-verification/register", Map("continue" -> "http://localhost:9020/business-account", "failure" -> "http://localhost:9020/business-account", "origin" -> "business-tax-account"))))
       locations should contain(("sa_vat", Location("business-tax-account", "http://localhost:9020/business-account")))
     }
-
 
     "have correct assistant mandatory locations" in new Setup {
       val locations = rules.map(rule => (rule.name, rule.assistantLocations.mandatory))

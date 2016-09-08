@@ -19,6 +19,7 @@ package model
 import java.net.{URI, URLEncoder}
 
 import controllers.ExternalUrls
+import play.api.Play._
 
 case class Location(name: String, url: String, queryParams: Map[String, String] = Map.empty[String, String]) {
 
@@ -41,20 +42,24 @@ case class Location(name: String, url: String, queryParams: Map[String, String] 
 
 object Locations {
   val personalTaxAccountLocationName = "personal-tax-account"
-  val businessTaxAccountLocationName = "business-tax-account"
-  val taxAccountRouterHomeLocationName = "tax-account-router"
-  val userDelegationLocationName = "user-delegation-frontend"
-  val areYouSharingLocationName = "are-you-sharing"
 
   lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
-  lazy val BusinessTaxAccount = Location(businessTaxAccountLocationName, ExternalUrls.getUrl(businessTaxAccountLocationName))
-  lazy val SetUpExtraSecurity = Location(userDelegationLocationName, s"${ExternalUrls.getUrl(userDelegationLocationName)}/set-up-extra-security")
-  lazy val AreYouSharing = Location(userDelegationLocationName, s"${ExternalUrls.getUrl(userDelegationLocationName)}/are-you-sharing")
-  lazy val TaxAccountRouterHome = Location(taxAccountRouterHomeLocationName, s"${ExternalUrls.taxAccountRouterHost}/account")
+  lazy val BusinessTaxAccount = locationFromConf("bta")
+  lazy val TaxAccountRouterHome = locationFromConf("tax-account-router")
   val twoStepVerificationLocationName = "two-step-verification"
   val twoStepVerificationRequiredLocationName = "two-step-verification-required"
 
-  def twoStepVerification(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationLocationName), queryString)
+  def locationFromConf(location: String) = configuration.getConfig(s"locations.$location").map { conf =>
+    val name = conf.getString("name").getOrElse(throw new RuntimeException(s"name not configured for location - $location"))
+    val url = conf.getString("url").getOrElse(throw new RuntimeException(s"url not configured for location - $location"))
+    val queryParams = conf.getConfig("queryparams").map { queryParamsConf =>
+      queryParamsConf.entrySet.foldLeft(Map.empty[String, String]) {
+        case (result, (key, value)) => result ++ Map(key -> value.unwrapped().asInstanceOf[String])
+      }
+    }.getOrElse(Map.empty[String, String])
+    Location(name, url, queryParams)
+  }.getOrElse(throw new RuntimeException(s"location configuration not defined for $location"))
+
 
   def twoStepVerificationRequired(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationRequiredLocationName), queryString)
 

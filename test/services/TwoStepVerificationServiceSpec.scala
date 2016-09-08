@@ -171,18 +171,17 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     val scenarios = Table(
       ("scenario", "isMandatory", "isAdmin", "enrolments", "expectedRuleName", "expectedRedirectLocation"),
       ("redirect to 2SV when admin user has only SA enrolment, throttle chooses optional ",
-        false, true, saEnrolments, "sa", () => Locations.twoStepVerification(Map("continue" -> BusinessTaxAccount.url, "failure" -> BusinessTaxAccount.url, "origin" -> "business-tax-account"))),
+        false, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
       ("redirect to 2SV when admin user has only SA enrolment,throttle chooses mandatory",
-        true, true, saEnrolments, "sa", () => Locations.twoStepVerification(Map("continue" -> BusinessTaxAccount.url, "failure" -> TaxAccountRouterHome.url, "origin" -> "business-tax-account"))),
+        true, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
       ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses optional",
-        false, false, saEnrolments, "sa", () => Locations.twoStepVerification(Map("continue" -> BusinessTaxAccount.url, "failure" -> BusinessTaxAccount.url, "origin" -> "business-tax-account"))),
+        false, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
       ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses mandatory",
-        true, false, saEnrolments, "sa", () => Locations.twoStepVerification(Map("continue" -> BusinessTaxAccount.url, "failure" -> TaxAccountRouterHome.url, "origin" -> "business-tax-account"))),
-      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses optional", false, true, saEnrolments ++ vatEnrolments, "sa_vat", () => SetUpExtraSecurity),
-      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses mandatory", true, true, saEnrolments ++ vatEnrolments, "sa_vat",
-        () => Locations.twoStepVerification(Map("continue" -> AreYouSharing.url, "failure" -> TaxAccountRouterHome.url, "origin" -> "business-tax-account"))),
-      ("redirect to set up extra security when assistant user has only SA and VAT enrolments, throttle chooses optional", false, false, saEnrolments ++ vatEnrolments, "sa_vat", () => BusinessTaxAccount),
-      ("redirect to set up extra security when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, "sa_vat", () => BusinessTaxAccount)
+        true, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses optional", false, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses mandatory", true, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses optional", false, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta"))
     )
 
     forAll(scenarios) { (scenario: String, isMandatory: Boolean, isAdmin: Boolean, enrolments: Set[String], expectedRuleName: String, expectedRedirectLocation: () => Location) =>

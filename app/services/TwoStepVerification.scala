@@ -17,11 +17,10 @@
 package services
 
 import config.AppConfigHelpers
-import controllers.ExternalUrls
 import engine.Condition
 import engine.Condition._
 import model.Locations._
-import model.{Locations, _}
+import model.{HasOnlyEnrolments, _}
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -39,16 +38,15 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  private case class ThrottleLocations(optional: Location, mandatory: Location)
+  def twoStepVerificationRuleFactory = new TwoStepVerificationRuleFactory {}
 
   private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
-  private val biz2svRules = List(
-    Biz2SVRule("sa", List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome)), ThrottleLocations(twoStepVerificationContinueBTA(BusinessTaxAccount), twoStepVerificationContinueBTA(TaxAccountRouterHome))),
-    Biz2SVRule("sa_vat", List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable, HasOnlyEnrolments(SA, VAT)), ThrottleLocations(SetUpExtraSecurity, twoStepVerification(AreYouSharing)(TaxAccountRouterHome)), ThrottleLocations(BusinessTaxAccount, BusinessTaxAccount))
-  )
+  private val commonRules = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
 
-  val continueToAccountUrl = s"${ExternalUrls.taxAccountRouterHost}/account"
+  private val biz2svRules = twoStepVerificationRuleFactory.rules.map { rule =>
+    Biz2SVRule(rule.name, commonRules ++ List(HasOnlyEnrolments(rule.enrolmentCategories)), rule.adminLocations, rule.assistantLocations)
+  }
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -77,9 +75,6 @@ trait TwoStepVerification {
     } else Future.successful(None)
   }
 
-  private def twoStepVerification(continue: Location)(failure: Location) = Locations.twoStepVerification(Map("continue" -> continue.fullUrl, "failure" -> failure.fullUrl, "origin" -> "business-tax-account"))
-
-  private def twoStepVerificationContinueBTA = twoStepVerification(BusinessTaxAccount) _
 }
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {

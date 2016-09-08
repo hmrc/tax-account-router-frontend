@@ -74,13 +74,11 @@ trait EnrolmentCategoryFromConf extends EnrolmentCategory {
   def enrolments = Play.configuration.getStringList(enrolmentCategoryName).map(_.toSet).getOrElse(Set.empty[String])
 }
 
-object SA extends EnrolmentCategoryFromConf {
-  val enrolmentCategoryName = "self-assessment-enrolments"
-}
+case class ConfiguredEnrolmentCategory(enrolmentCategoryName: String) extends EnrolmentCategoryFromConf
 
-object VAT extends EnrolmentCategoryFromConf {
-  val enrolmentCategoryName = "vat-enrolments"
-}
+object SA extends ConfiguredEnrolmentCategory("self-assessment-enrolments")
+
+object VAT extends ConfiguredEnrolmentCategory("vat-enrolments")
 
 trait HasEnrolmentsCondition extends Condition {
 
