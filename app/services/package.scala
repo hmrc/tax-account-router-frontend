@@ -22,15 +22,15 @@ package object services {
 
     def findOne(predicate: A => Future[Boolean])(implicit ec: ExecutionContext): Future[Option[A]] = as match {
       case Nil => Future.successful(None)
-      case a :: tail => predicate(a) flatMap {
-        case true => Future.successful(Some(a))
+      case head :: tail => predicate(head) flatMap {
+        case true => Future.successful(Some(head))
         case false => tail.findOne(predicate)
       }
     }
 
     def forAll(predicate: A => Future[Boolean])(implicit ec: ExecutionContext): Future[Boolean] = as match {
       case Nil => Future.successful(true)
-      case a :: tail => predicate(a) flatMap {
+      case head :: tail => predicate(head) flatMap {
         case true => tail.forAll(predicate)
         case false => Future.successful(false)
       }

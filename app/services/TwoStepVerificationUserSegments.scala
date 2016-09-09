@@ -26,14 +26,20 @@ case class ThrottleLocations(optional: Location, mandatory: Location)
 
 case class TwoStepVerificationUserSegment(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
-trait TwoStepVerificationUserSegmentFactory {
+trait TwoStepVerificationUserSegments {
+
+  private val adminConfigPath = "admin"
+  private val assistantConfigPath = "assistant"
+  private val optionalConfigPath = "optional"
+  private val mandatoryConfigPath = "mandatory"
 
   private val twoStepVerificationRulesConfigName = "two-step-verification.user-segment"
 
-  lazy val rules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationUserSegment]) { rules =>
+  lazy val segments = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationUserSegment]) { rules =>
     rules.subKeys.toList.map { ruleName =>
       val ruleLocation = location(ruleName) _
-      TwoStepVerificationUserSegment(ruleName, enrolments(ruleName), ruleLocation("admin"), ruleLocation("assistant"))
+
+      TwoStepVerificationUserSegment(ruleName, enrolments(ruleName), ruleLocation(adminConfigPath), ruleLocation(assistantConfigPath))
     }
   }
 
@@ -41,11 +47,11 @@ trait TwoStepVerificationUserSegmentFactory {
     configuration.getStringList(s"$twoStepVerificationRulesConfigName.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.toSet.map(ConfiguredEnrolmentCategory))
 
   private def location(ruleName: String)(roleIdentifier: String) = {
-    def locationConfigurationKey(throttleIdentifier: String) = configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.$roleIdentifier.$throttleIdentifier").getOrElse(throw new RuntimeException(s"location not defined for 2sv rule - $ruleName - $roleIdentifier - $throttleIdentifier"))
-    def aLocation(throttleIdentifier: String) = {
-      locationFromConf(locationConfigurationKey(throttleIdentifier).split("""\.""")(1))
+    def locationConfigurationKey(twoStepVerificationMode: String) = configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.$roleIdentifier.$twoStepVerificationMode").getOrElse(throw new RuntimeException(s"location not defined for 2sv rule - $ruleName - $roleIdentifier - $twoStepVerificationMode"))
+    def aLocation(twoStepVerificationMode: String) = {
+      locationFromConf(locationConfigurationKey(twoStepVerificationMode).split("""\.""")(1))
     }
-    ThrottleLocations(aLocation("optional"), aLocation("mandatory"))
+    ThrottleLocations(aLocation(optionalConfigPath), aLocation(mandatoryConfigPath))
   }
 
 

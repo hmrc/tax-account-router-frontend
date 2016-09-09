@@ -38,15 +38,17 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  def twoStepVerificationRuleFactory = new TwoStepVerificationUserSegmentFactory {}
+  val twoStepVerificationRuleFactory = new TwoStepVerificationUserSegments {}
 
   private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
-  private val commonRules = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
+  private object Biz2SVRule {
+    private val base2SVConditions = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
 
-  private val biz2svRules = twoStepVerificationRuleFactory.rules.map { rule =>
-    Biz2SVRule(rule.name, commonRules ++ List(HasOnlyEnrolments(rule.enrolmentCategories)), rule.adminLocations, rule.assistantLocations)
+    def apply(segment: TwoStepVerificationUserSegment) : Biz2SVRule = Biz2SVRule(segment.name, base2SVConditions ++ List(HasOnlyEnrolments(segment.enrolmentCategories)), segment.adminLocations, segment.assistantLocations)
   }
+
+  private val biz2svRules = twoStepVerificationRuleFactory.segments.map(Biz2SVRule(_))
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -58,17 +60,15 @@ trait TwoStepVerification {
 
       applicableRule.flatMap {
         case Some(biz2svRule) =>
-          twoStepVerificationThrottle.registrationMandatory(biz2svRule.name, authContext.user.oid) match {
-            case true =>
-              throttleLocation(biz2svRule).map { location =>
+          throttleLocation(biz2svRule).map { location =>
+            Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
+              case true =>
                 auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
-                Some(location.mandatory)
-              }
-            case _ =>
-              throttleLocation(biz2svRule).map { location =>
+                location.mandatory
+              case _ =>
                 auditContext.setSentToOptional2SVRegister(biz2svRule.name)
-                Some(location.optional)
-              }
+                location.optional
+            })
           }
         case _ => Future.successful(None)
       }

@@ -121,8 +121,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "has-individual-affinity-group" -> "true",
         "has-any-inactive-enrolment" -> "true",
         "affinity-group-available" -> "true",
-        "has:self-assessment-enrolments,vat-enrolments" -> "true",
-        "has-only:self-assessment-enrolments,vat-enrolments" -> "true"
+        "has-self-assessment-enrolments-vat-enrolments" -> "true",
+        "has-only-self-assessment-enrolments-vat-enrolments" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()

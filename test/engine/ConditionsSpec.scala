@@ -80,7 +80,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasEnrolments" should {
 
     "have an audit type specified" in {
-      HasEnrolments(SA, VAT).auditType.get.key shouldBe "has:self-assessment-enrolments,vat-enrolments"
+      HasEnrolments(SA, VAT).auditType.get.key shouldBe "has-self-assessment-enrolments-vat-enrolments"
     }
 
     val scenarios =
@@ -591,7 +591,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   "HasOnlyEnrolmentsCondition" should {
     "have an audit type specified" in {
-      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "has-only:self-assessment-enrolments,vat-enrolments"
+      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "has-only-self-assessment-enrolments-vat-enrolments"
     }
 
     val scenarios =

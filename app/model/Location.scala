@@ -19,6 +19,7 @@ package model
 import java.net.{URI, URLEncoder}
 
 import controllers.ExternalUrls
+import play.api.Configuration
 import play.api.Play._
 
 case class Location(name: String, url: String, queryParams: Map[String, String] = Map.empty[String, String]) {
@@ -50,8 +51,8 @@ object Locations {
   val twoStepVerificationRequiredLocationName = "two-step-verification-required"
 
   def locationFromConf(location: String) = configuration.getConfig(s"locations.$location").map { conf =>
-    val name = conf.getString("name").getOrElse(throw new RuntimeException(s"name not configured for location - $location"))
-    val url = conf.getString("url").getOrElse(throw new RuntimeException(s"url not configured for location - $location"))
+    val name = getStringConfig(conf, "name")(s"name not configured for location - $location")
+    val url = getStringConfig(conf, "url")(s"url not configured for location - $location")
     val queryParams = conf.getConfig("queryparams").map { queryParamsConf =>
       queryParamsConf.entrySet.foldLeft(Map.empty[String, String]) {
         case (result, (key, value)) => result ++ Map(key -> value.unwrapped().asInstanceOf[String])
@@ -60,6 +61,8 @@ object Locations {
     Location(name, url, queryParams)
   }.getOrElse(throw new RuntimeException(s"location configuration not defined for $location"))
 
+
+  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
 
   def twoStepVerificationRequired(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationRequiredLocationName), queryString)
 

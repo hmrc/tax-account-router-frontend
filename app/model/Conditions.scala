@@ -82,25 +82,25 @@ object VAT extends ConfiguredEnrolmentCategory("vat-enrolments")
 
 trait HasEnrolmentsCondition extends Condition {
 
-  protected def strict: Boolean
+  protected def verifyExtraEnrolments: Boolean
 
   def enrolmentCategories: Set[EnrolmentCategory]
 
   private def validateAllEnrolmentCategoriesExist(enrolments: Set[String]) = enrolmentCategories.forall(_.enrolments.intersect(enrolments).nonEmpty)
 
-  private def validateExtraEnrolments(enrolments: Set[String]) = !strict || (strict && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
+  private def validateExtraEnrolments(enrolments: Set[String]) = !verifyExtraEnrolments || (verifyExtraEnrolments && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.activeEnrolments.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
 }
 
 case class HasOnlyEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
-  protected val strict = true
+  protected override val verifyExtraEnrolments = true
   override val auditType = Some(HAS_ONLY_ENROLMENTS(enrolmentCategories))
 }
 
 case class HasEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
-  protected val strict = false
+  protected override val verifyExtraEnrolments = false
   override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories))
 }
 

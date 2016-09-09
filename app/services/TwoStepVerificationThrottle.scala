@@ -23,7 +23,7 @@ import play.api.Play.{current, _}
 trait TwoStepVerificationThrottle {
   def timeBasedLimit: TimeBasedLimit
 
-  def registrationMandatory(ruleName : String, discriminator: String) = {
+  def isRegistrationMandatory(ruleName : String, discriminator: String) = {
     val userValue = Math.abs((discriminator.hashCode % 1000).toDouble) / 10
     val threshold = timeBasedLimit.getCurrentPercentageLimit(ruleName)
     Logger.info(s"Threshold: $threshold - userValue: $userValue")

@@ -194,7 +194,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         when(ruleContext.activeEnrolments).thenReturn(Future.successful(enrolments))
         when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
         when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-        when(twoStepVerificationThrottleMock.registrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
+        when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
 
         val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -203,7 +203,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, Mockito.atMost(2)).activeEnrolments
         verify(ruleContext).isAdmin
         verify(ruleContext, Mockito.atMost(2)).enrolments
-        verify(twoStepVerificationThrottleMock).registrationMandatory(expectedRuleName, userId)
+        verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)
         verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
         if (isMandatory) {
           verify(auditContext).setSentToMandatory2SVRegister(expectedRuleName)
