@@ -20,7 +20,7 @@ import model.{Location, SA, VAT}
 import play.api.test.FakeApplication
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-class TwoStepVerificationRuleFactoryTest extends UnitSpec with WithFakeApplication {
+class TwoStepVerificationUserSegmentFactoryTest extends UnitSpec with WithFakeApplication {
 
   override lazy val fakeApplication = FakeApplication()
 
@@ -71,7 +71,7 @@ class TwoStepVerificationRuleFactoryTest extends UnitSpec with WithFakeApplicati
   trait Setup {
     val saEnrolments = Set("enr3", "enr4")
     val vatEnrolments = Set("enr5", "enr6")
-    private val factory = new TwoStepVerificationRuleFactory {}
+    private val factory = new TwoStepVerificationUserSegmentFactory {}
     lazy val rules = factory.rules
   }
 

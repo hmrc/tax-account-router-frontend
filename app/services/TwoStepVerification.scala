@@ -38,7 +38,7 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
-  def twoStepVerificationRuleFactory = new TwoStepVerificationRuleFactory {}
+  def twoStepVerificationRuleFactory = new TwoStepVerificationUserSegmentFactory {}
 
   private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 

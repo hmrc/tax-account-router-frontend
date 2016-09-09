@@ -24,16 +24,16 @@ import scala.collection.JavaConversions._
 
 case class ThrottleLocations(optional: Location, mandatory: Location)
 
-case class TwoStepVerificationRule(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
+case class TwoStepVerificationUserSegment(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
-trait TwoStepVerificationRuleFactory {
+trait TwoStepVerificationUserSegmentFactory {
 
   private val twoStepVerificationRulesConfigName = "two-step-verification.user-segment"
 
-  lazy val rules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationRule]) { rules =>
+  lazy val rules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationUserSegment]) { rules =>
     rules.subKeys.toList.map { ruleName =>
       val ruleLocation = location(ruleName) _
-      TwoStepVerificationRule(ruleName, enrolments(ruleName), ruleLocation("admin"), ruleLocation("assistant"))
+      TwoStepVerificationUserSegment(ruleName, enrolments(ruleName), ruleLocation("admin"), ruleLocation("assistant"))
     }
   }
 
