@@ -11,7 +11,6 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
     "ws.timeout.connection" -> 500,
@@ -37,13 +36,11 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("the sa is unresponsive")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -68,13 +65,11 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("gg is unresponsive")
       stubEnrolmentsToReturnAfter2Seconds()
 
-      createStubs(BtaHomeStubPage)
-
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
+      currentUrl shouldBe "http://localhost:9020/business-account"
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))

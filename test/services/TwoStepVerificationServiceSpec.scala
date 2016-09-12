@@ -16,15 +16,16 @@
 
 package services
 
-import java.net.URLEncoder
-
 import connector.GovernmentGatewayEnrolment
 import helpers.SpecHelpers
 import model.Locations._
 import model._
 import org.mockito.Matchers._
+import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
@@ -35,7 +36,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
-  override lazy val fakeApplication = new FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> "some-enrolment"))
+  val saEnrolments = Set("sa-enrolments")
+  val vatEnrolments = Set("vat-enrolment1", "vat-enrolment2")
+  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> saEnrolments, "vat-enrolments" -> vatEnrolments))
 
   sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
     implicit val request = FakeRequest()
@@ -87,14 +90,16 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set.empty[String]))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext).enrolments
-      verify(ruleContext).activeEnrolments
+      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(2)).enrolments
+      verify(ruleContext, times(2)).activeEnrolments
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyZeroInteractions(allMocks: _*)
     }
@@ -103,10 +108,12 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
+      verify(ruleContext, times(2)).currentCoAFEAuthority
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyZeroInteractions(allMocks: _*)
     }
@@ -117,13 +124,10 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
       when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA")))
-      when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).activeEnrolments
-      verify(ruleContext).enrolments
+      verify(ruleContext, times(2)).currentCoAFEAuthority
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -133,80 +137,81 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.enrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext).enrolments
+      verify(ruleContext, times(2)).enrolments
+      verify(ruleContext, times(2)).currentCoAFEAuthority
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
 
-    "not rewrite the location when continue is BTA and user is registered for 2SV with more than one enrolment" in new Setup {
+    "not rewrite the location when continue is BTA and user has more than one enrolment" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext).enrolments
-      verify(ruleContext).activeEnrolments
+      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(2)).enrolments
+      verify(ruleContext, times(2)).activeEnrolments
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
 
-    "rewrite the location to have the 2SV url and the origin when the continue url is BTA, the user is not registered for 2SV, no strong credentials, has one enrolment, has SA enrolment and throttle chooses optional registration" in new Setup {
+    val scenarios = Table(
+      ("scenario", "isMandatory", "isAdmin", "enrolments", "expectedRuleName", "expectedRedirectLocation"),
+      ("redirect to 2SV when admin user has only SA enrolment, throttle chooses optional ",
+        false, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
+      ("redirect to 2SV when admin user has only SA enrolment,throttle chooses mandatory",
+        true, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
+      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses optional",
+        false, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
+      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses mandatory",
+        true, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses optional", false, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses mandatory", true, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses optional", false, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta"))
+    )
 
-      val userid = "userId"
-      val loggedInUser = LoggedInUser(userid, None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
+    forAll(scenarios) { (scenario: String, isMandatory: Boolean, isAdmin: Boolean, enrolments: Set[String], expectedRuleName: String, expectedRedirectLocation: () => Location) =>
+      s"$scenario, continue url is BTA, the user is not registered for 2SV, no strong credentials" in new Setup {
+        val userId = "userId"
+        val loggedInUser = LoggedInUser(userId, None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
+        implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
-      when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-      when(twoStepVerificationThrottleMock.registrationMandatory(userid)).thenReturn(Future.successful(false))
+        when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
+        when(ruleContext.activeEnrolments).thenReturn(Future.successful(enrolments))
+        when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
+        when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
+        when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
 
-      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
+        val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.BusinessTaxAccount.url, "origin" -> "business-tax-account")))
-      verify(ruleContext).currentCoAFEAuthority
-      verify(ruleContext, times(2)).activeEnrolments
-      verify(ruleContext).enrolments
-      verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
-      verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
-      verify(auditContext).setSentToOptional2SVRegister("sa")
-      verifyNoMoreInteractions(allMocks: _*)
-    }
-
-    "rewrite the location to have the 2SV url and the origin when the continue url is BTA, the user is not registered for 2SV, no strong credentials, has one enrolment, has SA enrolment and throttle chooses mandatory registration" in new Setup {
-
-      val userid = "userId"
-      val loggedInUser = LoggedInUser(userid, None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("some-enrolment")))
-      when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-      when(twoStepVerificationThrottleMock.registrationMandatory(userid)).thenReturn(Future.successful(true))
-      val expectedContinueUrl = URLEncoder.encode("http://localhost:9280/account", "UTF-8")
-
-      val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
-
-      result shouldBe Some(Locations.twoStepVerification(Map("continue" -> Locations.BusinessTaxAccount.url, "failure" -> Locations.TaxAccountRouterHome.url, "origin" -> "business-tax-account")))
-      verify(ruleContext).currentCoAFEAuthority
-      verify(ruleContext, times(2)).activeEnrolments
-      verify(ruleContext).enrolments
-      verify(twoStepVerificationThrottleMock).registrationMandatory(userid)
-      verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
-      verify(auditContext).setSentToMandatory2SVRegister("sa")
-      verifyNoMoreInteractions(allMocks: _*)
+        result shouldBe Some(expectedRedirectLocation())
+        verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
+        verify(ruleContext, Mockito.atMost(2)).activeEnrolments
+        verify(ruleContext).isAdmin
+        verify(ruleContext, Mockito.atMost(2)).enrolments
+        verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)
+        verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
+        if (isMandatory) {
+          verify(auditContext).setSentToMandatory2SVRegister(expectedRuleName)
+        } else {
+          verify(auditContext).setSentToOptional2SVRegister(expectedRuleName)
+        }
+        verifyNoMoreInteractions(allMocks: _*)
+      }
     }
   }
 }

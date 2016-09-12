@@ -20,7 +20,8 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
-import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
+import org.openqa.selenium.phantomjs.PhantomJSDriver
+import org.openqa.selenium.phantomjs.PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX
 import org.openqa.selenium.remote.DesiredCapabilities
 
 object Env {
@@ -40,7 +41,7 @@ object Env {
 
   lazy val phantomJsDriver = {
     val capabilities = DesiredCapabilities.phantomjs()
-    capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", 10)
+    capabilities.setCapability(PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", 10)
     new PhantomJSDriver(capabilities)
   }
 

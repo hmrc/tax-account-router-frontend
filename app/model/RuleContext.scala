@@ -16,6 +16,7 @@
 
 package model
 
+import connector.CredentialRole.User
 import connector._
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -50,4 +51,6 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   }
 
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
+
+  lazy val isAdmin = userDetails.map(_.credentialRole == User)
 }

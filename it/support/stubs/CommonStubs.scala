@@ -1,11 +1,13 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import connector.AffinityGroupValue.ORGANISATION
+import connector.CredentialRole.{CredentialRole, User}
 import play.api.libs.json.Json
 
 trait CommonStubs {
 
-  def stubUserDetails(affinityGroup: String) = {
+  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[CredentialRole] = None) = {
     stubFor(get(urlMatching("/user-details-uri"))
       .willReturn(
         aResponse()
@@ -15,12 +17,13 @@ trait CommonStubs {
                |{
                |    "name": "test",
                |    "email": "test@test.com",
-               |    "affinityGroup": "$affinityGroup",
+               |    "affinityGroup": "${affinityGroup.getOrElse(ORGANISATION)}",
                |    "description": "description",
                |    "lastName": "test",
                |    "dateOfBirth": "1980-06-31",
                |    "postcode": "NW94HD",
                |    "authProviderId": "12345-credId",
+               |    "credentialRole": "${credentialRole.getOrElse(User).toString}",
                |    "authProviderType": "Verify"
                |}
       """.stripMargin)
@@ -73,6 +76,21 @@ trait CommonStubs {
             """
               |[
               |   {"key": "enr3", "identifiers": [{"key": "k1", "value": "5597800686"}], "state": "Activated"}
+              |]
+            """.stripMargin)
+      ))
+  }
+
+  def stubSelfAssessmentAndVatEnrolments() = {
+    stubFor(get(urlEqualTo("/enrolments-uri"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(
+            """
+              |[
+              |   {"key": "enr3", "identifiers": [{"key": "k1", "value": "5597800686"}], "state": "Activated"},
+              |   {"key": "enr5", "identifiers": [{"key": "k2", "value": "5597800687"}], "state": "Activated"}
               |]
             """.stripMargin)
       ))

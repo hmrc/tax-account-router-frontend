@@ -36,7 +36,7 @@ trait RuleEngine {
       else {
         val ruleApplyResult: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
         val ruleName = rule.name
-        ruleApplyResult.map { case result =>
+        ruleApplyResult.map { result =>
           if (result.isDefined) {
             auditContext.ruleApplied = ruleName
             Logger.debug(s"rule applied: $ruleName")

@@ -37,7 +37,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3"
+    "self-assessment-enrolments" -> Set("enr3"),
+    "vat-enrolments" -> Set("enr4", "enr5")
   )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)
@@ -76,39 +77,35 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasSelfAssessmentEnrolments" should {
+  "HasEnrolments" should {
 
     "have an audit type specified" in {
-      HasSelfAssessmentEnrolments.auditType shouldBe Some(HAS_SA_ENROLMENTS)
+      HasEnrolments(SA, VAT).auditType.get.key shouldBe "has-self-assessment-enrolments-vat-enrolments"
     }
 
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("has self assessment enrolments", Set("enr3"), true),
-        ("has no self assessment enrolments", Set.empty[String], false)
+        ("return false when user does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
+        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
+        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-      val authContext = mock[AuthContext]
-
-      s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
-
+        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
-        val hasSelfAssessmentEnrolments = new HasSelfAssessmentEnrolments {
-          override val selfAssessmentEnrolments = Set("enr3")
-        }
 
-        val result = await(hasSelfAssessmentEnrolments.isTrue(authContext, ruleContext))
+        val result = await(HasEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }
     }
+
   }
 
   "HasPreviousReturns" should {
@@ -534,36 +531,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasOnlyOneEnrolment" should {
-
-    "have an audit type specified" in {
-      HasOnlyOneEnrolment.auditType shouldBe Some(HAS_ONLY_ONE_ENROLMENT)
-    }
-
-    val scenarios =
-      Table(
-        ("scenario", "enrolments", "expectedResult"),
-        ("return true when there is 1 enrolment", Set("enr1"), true),
-        ("return false when there are no enrolments", Set.empty[String], false),
-        ("return false when there are > 1 enrolments", Set("enr1", "enr2"), false)
-      )
-
-    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
-      scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        val authContext = mock[AuthContext]
-        lazy val ruleContext = mock[RuleContext]
-        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
-
-        val result = await(HasOnlyOneEnrolment.isTrue(authContext, ruleContext))
-
-        result shouldBe expectedResult
-      }
-    }
-  }
-
   "HasIndividualAffinityGroup" should {
 
     "have an audit type specified" in {
@@ -616,6 +583,36 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(ruleContext.notActivatedEnrolments).thenReturn(Future.successful(enrolments))
 
         val result = await(HasAnyInactiveEnrolment.isTrue(authContext, ruleContext))
+
+        result shouldBe expectedResult
+      }
+    }
+  }
+
+  "HasOnlyEnrolmentsCondition" should {
+    "have an audit type specified" in {
+      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "has-only-self-assessment-enrolments-vat-enrolments"
+    }
+
+    val scenarios =
+      Table(
+        ("scenario", "enrolments", "expectedResult"),
+        ("return false when user has does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
+        ("return false when user has extra enrolments other than enrolment type", Set("enr3", "enr4", "enr99"), false),
+        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
+        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
+      )
+
+    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
+      scenario in {
+        implicit val fakeRequest = FakeRequest()
+        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+
+        val authContext = mock[AuthContext]
+        lazy val ruleContext = mock[RuleContext]
+        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+
+        val result = await(HasOnlyEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 
         result shouldBe expectedResult
       }

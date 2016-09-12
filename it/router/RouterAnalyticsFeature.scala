@@ -2,6 +2,7 @@ package router
 
 import connector.{AnalyticsData, GaEvent}
 import play.api.test.FakeApplication
+import support.page.TwoStepVerification._
 import support.page._
 import support.stubs.PlatformAnalyticsStub.verifyAnalytics
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
@@ -9,22 +10,10 @@ import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
-  val additionalConfiguration = Map[String, Any](
-    "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
-    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 10000,
-    "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
-    "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR"
-  )
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config ++ PlayConfig.additionalConfiguration +
-      ("two-step-verification.throttle.default" -> "1000")
+    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000")
   )
-
 
   feature("Router analytics feature") {
 
@@ -36,20 +25,19 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
-
-      createStubs(TwoSVMandatoryRegistrationStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      on(TwoSVMandatoryRegistrationPage)
+      currentUrl shouldBe twoStepVerificationUrl(Map(originParam,failureUrlParam(true),continueUrlParam))
 
       And("analytic details were sent to google")
       verifyAnalytics(

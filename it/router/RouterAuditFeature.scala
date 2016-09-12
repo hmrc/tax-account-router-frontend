@@ -3,8 +3,9 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import connector.AffinityGroupValue
-import model.AuditContext
+import connector.AffinityGroupValue.INDIVIDUAL
 import model.RoutingReason._
+import model.{AuditContext, SA, VAT}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
@@ -17,17 +18,7 @@ import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
-  val additionalConfiguration = Map[String, Any](
-    "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3,enr4",
-    "ws.timeout.request" -> 10000,
-    "ws.timeout.connection" -> 6000,
-    "two-step-verification.enabled" -> true,
-    "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR"
-  )
-
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
+  override lazy val app = FakeApplication(additionalConfiguration = config)
 
   feature("Router audit feature") {
 
@@ -69,14 +60,12 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -92,7 +81,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
@@ -104,18 +93,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -132,7 +118,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubNoEnrolments()
 
       And("the user has organisation affinity group")
-      stubUserDetails(affinityGroup = AffinityGroupValue.ORGANISATION)
+      stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
 
       val auditEventStub = stubAuditEvent()
 
@@ -143,17 +129,16 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "false",
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
         AFFINITY_GROUP_AVAILABLE.key -> "true",
-        HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "false"
+        HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "false",
+        HAS_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -182,7 +167,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         IS_A_VERIFY_USER.key -> "false",
@@ -190,10 +175,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -222,7 +205,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
@@ -231,10 +214,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -263,7 +244,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       Then("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         IS_A_VERIFY_USER.key -> "false",
@@ -272,12 +253,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "false",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
         HAS_NINO.key -> "false",
         HAS_SA_UTR.key -> "-",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino")
@@ -305,7 +284,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       Then("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -313,7 +292,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         IS_SELF_EMPLOYED.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
         IS_IN_A_PARTNERSHIP.key -> "false",
         HAS_NINO.key -> "true"
         ))
@@ -327,11 +306,12 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the user has previous returns")
+      And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
@@ -343,17 +323,18 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -364,6 +345,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -377,17 +359,18 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "true"
+        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
+        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -411,15 +394,16 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "true"
+        HAS_STRONG_CREDENTIALS.key -> "true",
+        HAS_REGISTERED_FOR_2SV.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -443,13 +427,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "true",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "false"
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -460,13 +446,13 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
+      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = INDIVIDUAL))
 
       And("the user has self assessment enrolments and individual affinity group")
       stubNoEnrolments()
 
       And("the user has individual affinity group")
-      stubUserDetails(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      stubUserDetails(affinityGroup = Some(INDIVIDUAL))
 
       val auditEventStub = stubAuditEvent()
 
@@ -477,15 +463,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "false",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "true",
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
-        AFFINITY_GROUP_AVAILABLE.key -> "true"
+        AFFINITY_GROUP_AVAILABLE.key -> "true",
+        HAS_ENROLMENTS(Set(SA)).key -> "false"
         ))
 
       val expectedTransactionName = "sent to personal tax account"
@@ -497,7 +483,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = AffinityGroupValue.INDIVIDUAL))
+      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = INDIVIDUAL))
 
       And("the user has no enrolments")
       stubNoEnrolments()
@@ -514,16 +500,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_SA_ENROLMENTS.key -> "false",
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
         AFFINITY_GROUP_AVAILABLE.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ONE_ENROLMENT.key -> "false"
+        HAS_ENROLMENTS(Set(SA)).key -> "false",
+        HAS_REGISTERED_FOR_2SV.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-affinity-group-unavailable")

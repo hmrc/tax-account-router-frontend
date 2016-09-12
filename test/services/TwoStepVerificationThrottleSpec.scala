@@ -38,11 +38,12 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
 
     forAll(scenarios) { (scenario: String, expectedThreshold: Double, expectedResult: Boolean) =>
       scenario in new Setup {
-        when(timeBasedLimitMock.getCurrentPercentageLimit).thenReturn(expectedThreshold)
+        val ruleName = "some rule"
+        when(timeBasedLimitMock.getCurrentPercentageLimit(ruleName)).thenReturn(expectedThreshold)
 
-        twoStepVerificationThrottle.registrationMandatory(discriminator) shouldBe expectedResult
+        twoStepVerificationThrottle.isRegistrationMandatory(ruleName,discriminator) shouldBe expectedResult
 
-        verify(timeBasedLimitMock).getCurrentPercentageLimit
+        verify(timeBasedLimitMock).getCurrentPercentageLimit(ruleName)
         verifyNoMoreInteractions(timeBasedLimitMock)
       }
     }
