@@ -57,10 +57,12 @@ object Env {
   }
 
   lazy val chromeWebDriver = {
-    val os = System.getProperty("os.name").toLowerCase.replaceAll(" ", "")
-    val chromeDriver = getClass.getResource("/chromedriver/chromedriver_" + os).getPath
-    Runtime.getRuntime.exec("chmod u+x " + chromeDriver)
-    System.setProperty("webdriver.chrome.driver", chromeDriver)
+    if(!sys.props.isDefinedAt("webdriver.chrome.driver")){
+      val os = System.getProperty("os.name").toLowerCase.replaceAll(" ", "")
+      val chromeDriver = getClass.getResource("/chromedriver/chromedriver_" + os).getPath
+      Runtime.getRuntime.exec("chmod u+x " + chromeDriver)
+      System.setProperty("webdriver.chrome.driver", chromeDriver)
+    }
     System.setProperty("browser", "chrome")
     getInstance()
   }
