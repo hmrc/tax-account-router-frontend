@@ -57,6 +57,7 @@ object Env {
   }
 
   lazy val chromeWebDriver = {
+    System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver")
     System.setProperty("browser", "chrome")
     getInstance()
   }
