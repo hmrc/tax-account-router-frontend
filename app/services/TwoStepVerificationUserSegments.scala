@@ -20,8 +20,6 @@ import model.Locations.locationFromConf
 import model.{ConfiguredEnrolmentCategory, EnrolmentCategory, Location}
 import play.api.Play.{configuration, current}
 
-import scala.collection.JavaConversions._
-
 case class ThrottleLocations(optional: Location, mandatory: Location)
 
 case class TwoStepVerificationUserSegment(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
@@ -44,7 +42,7 @@ trait TwoStepVerificationUserSegments {
   }
 
   private def enrolments(ruleName: String) =
-    configuration.getStringList(s"$twoStepVerificationRulesConfigName.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.toSet.map(ConfiguredEnrolmentCategory))
+    configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.split(",").toSet[String].map(e => ConfiguredEnrolmentCategory(e.trim)))
 
   private def location(ruleName: String)(roleIdentifier: String) = {
     def locationConfigurationKey(twoStepVerificationMode: String) = configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.$roleIdentifier.$twoStepVerificationMode").getOrElse(throw new RuntimeException(s"location not defined for 2sv rule - $ruleName - $roleIdentifier - $twoStepVerificationMode"))

@@ -42,8 +42,8 @@ trait StubApplicationConfiguration {
     "throttling.enabled" -> false,
     "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName",
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> Set("enr3","enr4"),
-    "vat-enrolments" -> Set("enr5","enr6"),
+    "self-assessment-enrolments" -> "enr3,enr4",
+    "vat-enrolments" -> "enr5,enr6",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 10000,
     "ws.timeout.connection" -> 6000,

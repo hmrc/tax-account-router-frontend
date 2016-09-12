@@ -37,8 +37,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
 
   val saEnrolments = Set("sa-enrolments")
-  val vatEnrolments = Set("vat-enrolment1", "vat-enrolment2")
-  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> saEnrolments, "vat-enrolments" -> vatEnrolments))
+  val vatEnrolments = Set("vat-enrolment1","vat-enrolment2")
+
+  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> saEnrolments.mkString(","), "vat-enrolments" -> vatEnrolments.mkString(",")))
 
   sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
     implicit val request = FakeRequest()

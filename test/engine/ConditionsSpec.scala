@@ -37,8 +37,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> Set("enr3"),
-    "vat-enrolments" -> Set("enr4", "enr5")
+    "self-assessment-enrolments" -> "enr3",
+    "vat-enrolments" -> "enr4,enr5"
   )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)

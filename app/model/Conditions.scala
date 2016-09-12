@@ -27,7 +27,6 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 object GGEnrolmentsAvailable extends Condition {
@@ -71,7 +70,7 @@ sealed trait EnrolmentCategory {
 }
 
 trait EnrolmentCategoryFromConf extends EnrolmentCategory {
-  def enrolments = Play.configuration.getStringList(enrolmentCategoryName).map(_.toSet).getOrElse(Set.empty[String])
+  def enrolments = Play.configuration.getString(enrolmentCategoryName).map(_.split(",").toSet[String].map(_.trim)).getOrElse(Set.empty[String])
 }
 
 case class ConfiguredEnrolmentCategory(enrolmentCategoryName: String) extends EnrolmentCategoryFromConf
