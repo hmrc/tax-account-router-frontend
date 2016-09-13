@@ -3,7 +3,6 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.CredentialRole.{Unknown, User}
 import play.api.test.FakeApplication
-import support.page.TwoStepVerification._
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
 import uk.gov.hmrc.domain.{Nino, SaUtr, Vrn}
@@ -25,11 +24,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has no previous returns")
     stubSaReturnWithNoPreviousReturns(saUtr)
 
+    createStubs(TwoSVOptionalRegistrationStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to 2SV Optional Registration Page with continue to BTA")
-    currentUrl shouldBe twoStepVerificationUrl(Map(originParam,continueUrlParam,failureUrlParam(false)))
+    on(TwoSVOptionalRegistrationPage)
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -58,11 +59,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has no previous returns")
     stubSaReturnWithNoPreviousReturns(saUtr)
 
+    createStubs(TwoSVOptionalRegistrationStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to 2SV Optional Registration Page with continue to BTA")
-    currentUrl shouldBe twoStepVerificationUrl(Map(originParam,continueUrlParam,failureUrlParam(false)))
+    on(TwoSVOptionalRegistrationPage)
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -94,11 +97,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has no previous returns")
     stubSaReturnWithNoPreviousReturns(saUtr)
 
+    createStubs(SetupExtraSecurityStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to Set Up Extra Security Page")
-    currentUrl shouldBe "http://localhost:9851/user-delegation/set-up-extra-security"
+    on(SetupExtraSecurityPage)
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -129,11 +134,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has no previous returns")
     stubSaReturnWithNoPreviousReturns(saUtr)
 
+    createStubs(BtaHomeStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to BTA Home Page")
-    currentUrl shouldBe "http://localhost:9020/business-account"
+    on(BtaHomePage)
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -158,11 +165,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has self assessment enrolments")
     stubSelfAssessmentEnrolments()
 
+    createStubs(TwoSVOptionalRegistrationStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to 2SV Prompt Page with continue to BTA")
-    currentUrl shouldBe twoStepVerificationUrl(Map(originParam,continueUrlParam,failureUrlParam(false)))
+    on(TwoSVOptionalRegistrationPage)
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -186,11 +195,13 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     And("the user has self assessment enrolments")
     stubSelfAssessmentEnrolments()
 
+    createStubs(BtaHomeStubPage)
+
     When("the user hits the router")
     go(RouterRootPath)
 
     Then("the user should be routed to BTA Home Page")
-    currentUrl shouldBe "http://localhost:9020/business-account"
+    on(BtaHomePage)
 
     And("the authority object should be fetched once for AuthenticatedBy")
     verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -209,7 +220,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000", "two-step-verification.user-segment.sa_vat.throttle.default" -> "1000", "user-delegation-frontend.host" -> "http://localhost:11111")
+    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000", "two-step-verification.user-segment.sa_vat.throttle.default" -> "1000")
   )
 
   feature("Router feature") {
@@ -227,11 +238,13 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
+      createStubs(TwoSVMandatoryRegistrationStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      currentUrl shouldBe twoStepVerificationUrl(Map(originParam,failureUrlParam(true),continueUrlParam))
+      on(TwoSVMandatoryRegistrationPage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -260,11 +273,13 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
+      createStubs(TwoSVMandatoryRegistrationStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      currentUrl shouldBe twoStepVerificationUrl(Map(originParam,failureUrlParam(true),continueUrlParam))
+      on(TwoSVMandatoryRegistrationPage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -295,11 +310,13 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
+      createStubs(SetupExtraSecurityStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to Set Up Extra Security Page")
-      currentUrl shouldBe "http://localhost:9851/user-delegation/set-up-extra-security"
+      on(SetupExtraSecurityPage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
@@ -330,11 +347,13 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
+      createStubs(BtaHomeStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      currentUrl shouldBe "http://localhost:9020/business-account"
+      on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))

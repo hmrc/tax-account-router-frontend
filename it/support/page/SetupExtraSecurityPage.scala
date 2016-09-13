@@ -16,15 +16,19 @@
 
 package support.page
 
-import model.Location
+import com.github.tomakehurst.wiremock.client.WireMock._
+import support.Env
+import support.stubs.{Stub, StubbedPage}
 
-object TwoStepVerification {
-  def twoStepVerificationUrl(params: Map[String, String]) = Location("", "http://localhost:9025/coafe/two-step-verification/register", params).fullUrl
+object SetupExtraSecurityStubPage extends Stub with StubbedPage {
+  override def create() = stubOut(urlEqualTo(SetupExtraSecurityPage.uri), "Set Up Extra Security Page")
+}
 
-  private val btaUrl = "http://localhost:9020/business-account"
-  private val tarUrl = "http://localhost:9280/account"
-  val originParam = "origin" -> "business-tax-account"
-  val continueUrlParam = "continue" -> btaUrl
+object SetupExtraSecurityPage extends WebPage {
+  private val hostPort = s"http://${Env.stubHost}:${Env.stubPort}"
 
-  def failureUrlParam(isMandatory: Boolean) = "failure" -> (if (isMandatory) tarUrl else btaUrl)
+  val uri = "/user-delegation/set-up-extra-security"
+  override val url = s"$hostPort$uri"
+
+  override def assertPageLoaded() = assertPageIs("Set Up Extra Security Page")
 }

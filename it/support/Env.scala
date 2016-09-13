@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
 import org.openqa.selenium.phantomjs.PhantomJSDriver
-import org.openqa.selenium.phantomjs.PhantomJSDriverService.{PHANTOMJS_CLI_ARGS, PHANTOMJS_PAGE_SETTINGS_PREFIX}
+import org.openqa.selenium.phantomjs.PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX
 import org.openqa.selenium.remote.DesiredCapabilities
 
 object Env {
@@ -42,7 +42,6 @@ object Env {
   lazy val phantomJsDriver = {
     val capabilities = DesiredCapabilities.phantomjs()
     capabilities.setJavascriptEnabled(true)
-    capabilities.setCapability(PHANTOMJS_CLI_ARGS, Array[String]("--web-security=no", "--ignore-ssl-errors=yes", "--ssl-protocol=tlsv1"))
     capabilities.setCapability(PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout", 10)
     new PhantomJSDriver(capabilities)
   }

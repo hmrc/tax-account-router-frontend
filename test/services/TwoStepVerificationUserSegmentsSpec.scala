@@ -20,7 +20,7 @@ import model.{Location, SA, VAT}
 import play.api.test.FakeApplication
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-class TwoStepVerificationUserSegmentSpec extends UnitSpec with WithFakeApplication {
+class TwoStepVerificationUserSegmentsSpec extends UnitSpec with WithFakeApplication {
 
   override lazy val fakeApplication = FakeApplication()
 

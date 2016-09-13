@@ -49,6 +49,15 @@ trait StubApplicationConfiguration {
     "ws.timeout.connection" -> 6000,
     "two-step-verification.enabled" -> true,
     "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR"
+    "logger.connector" -> "ERROR",
+    "locations.two-step-verification-optional.url" -> "http://localhost:11111/coafe/two-step-verification/register",
+    "locations.two-step-verification-optional.queryparams.continue" -> "http://localhost:11111/business-account",
+    "locations.two-step-verification-optional.queryparams.failure" -> "http://localhost:11111/business-account",
+    "locations.two-step-verification-mandatory.url" -> "http://localhost:11111/coafe/two-step-verification/register",
+    "locations.two-step-verification-mandatory.queryparams.continue" -> "http://localhost:11111/business-account",
+    "locations.two-step-verification-mandatory.queryparams.failure" -> "/account",
+    "locations.set-up-extra-security.url" -> "http://localhost:11111/user-delegation/set-up-extra-security",
+    "locations.bta.url" -> "http://localhost:11111/business-account"
+
   ) ++ stubbedMicroServices
 }

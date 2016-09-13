@@ -2,7 +2,6 @@ package router
 
 import connector.{AnalyticsData, GaEvent}
 import play.api.test.FakeApplication
-import support.page.TwoStepVerification._
 import support.page._
 import support.stubs.PlatformAnalyticsStub.verifyAnalytics
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
@@ -33,11 +32,13 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
+      createStubs(TwoSVMandatoryRegistrationStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      currentUrl shouldBe twoStepVerificationUrl(Map(originParam,failureUrlParam(true),continueUrlParam))
+      on(TwoSVMandatoryRegistrationPage)
 
       And("analytic details were sent to google")
       verifyAnalytics(

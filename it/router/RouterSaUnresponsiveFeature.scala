@@ -36,11 +36,13 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("the sa is unresponsive")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
+      createStubs(BtaHomeStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      currentUrl shouldBe "http://localhost:9020/business-account"
+      on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
@@ -65,11 +67,13 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("gg is unresponsive")
       stubEnrolmentsToReturnAfter2Seconds()
 
+      createStubs(BtaHomeStubPage)
+
       When("the user hits the router")
       go(RouterRootPath)
 
       Then("the user should be routed to BTA Home Page")
-      currentUrl shouldBe "http://localhost:9020/business-account"
+      on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo("/auth/authority")))
