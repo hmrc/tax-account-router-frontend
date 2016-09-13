@@ -30,6 +30,6 @@ object ExternalUrls extends AppConfigHelpers {
   lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
   lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
 
-  lazy val signIn = s"$companyAuthHost/account/sign-in?continue=$taxAccountRouterHost/account"
+  lazy val signIn = s"$companyAuthHost/gg/sign-in?continue=$taxAccountRouterHost/account"
 
 }

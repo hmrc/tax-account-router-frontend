@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
   override def create = stubOut(
-    urlEqualTo("/account/sign-in?continue=/account"), "Login Page", Some( """<button class="button" type="submit">Sign in</button>"""))
+    urlEqualTo("/gg/sign-in?continue=/account"), "Login Page", Some( """<button class="button" type="submit">Sign in</button>"""))
 }
 
 trait SessionCookieBaker {
@@ -76,7 +76,7 @@ class LoggedInSessionUser(tokenPresent: Boolean,
     ) ++ token
 
 
-    stubFor(get(urlEqualTo("/account/sign-in?continue=/account"))
+    stubFor(get(urlEqualTo("/gg/sign-in?continue=/account"))
       .willReturn(aResponse()
         .withStatus(303)
         .withHeader(HeaderNames.SET_COOKIE, cookieValue(data))
