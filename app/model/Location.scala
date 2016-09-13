@@ -18,7 +18,6 @@ package model
 
 import java.net.{URI, URLEncoder}
 
-import controllers.ExternalUrls
 import play.api.Configuration
 import play.api.Play._
 
@@ -42,13 +41,10 @@ case class Location(name: String, url: String, queryParams: Map[String, String] 
 }
 
 object Locations {
-  val personalTaxAccountLocationName = "personal-tax-account"
 
-  lazy val PersonalTaxAccount = Location(personalTaxAccountLocationName, ExternalUrls.getUrl(personalTaxAccountLocationName))
+  lazy val PersonalTaxAccount = locationFromConf("pta")
   lazy val BusinessTaxAccount = locationFromConf("bta")
   lazy val TaxAccountRouterHome = locationFromConf("tax-account-router")
-  val twoStepVerificationLocationName = "two-step-verification"
-  val twoStepVerificationRequiredLocationName = "two-step-verification-required"
 
   def locationFromConf(location: String) = configuration.getConfig(s"locations.$location").map { conf =>
     val name = getStringConfig(conf, "name")(s"name not configured for location - $location")
@@ -62,9 +58,9 @@ object Locations {
   }.getOrElse(throw new RuntimeException(s"location configuration not defined for $location"))
 
 
-  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
+  def twoStepVerificationRequired(queryString: Map[String, String]) = locationFromConf("two-step-verification-required").copy(queryParams = queryString)
 
-  def twoStepVerificationRequired(queryString: Map[String, String]) = Location(twoStepVerificationLocationName, ExternalUrls.getUrl(twoStepVerificationRequiredLocationName), queryString)
+  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
 
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
 

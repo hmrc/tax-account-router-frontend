@@ -57,6 +57,7 @@ trait StubApplicationConfiguration {
     "locations.two-step-verification-mandatory.queryparams.continue" -> "http://localhost:11111/business-account",
     "locations.two-step-verification-mandatory.queryparams.failure" -> "/account",
     "locations.set-up-extra-security.url" -> "http://localhost:11111/user-delegation/set-up-extra-security",
+    "locations.pta.url" -> "http://localhost:11111/personal-account",
     "locations.bta.url" -> "http://localhost:11111/business-account"
 
   ) ++ stubbedMicroServices
