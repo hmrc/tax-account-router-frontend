@@ -20,7 +20,7 @@ import config.AppConfigHelpers
 import engine.Condition
 import engine.Condition._
 import model.Locations._
-import model.{HasOnlyEnrolments, _}
+import model._
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -38,6 +38,10 @@ trait TwoStepVerification {
 
   def twoStepVerificationThrottle: TwoStepVerificationThrottle
 
+  def upliftLocationsConfiguration: Option[String]
+
+  lazy val upliftLocations = upliftLocationsConfiguration.map(s => s.split(",").map(_.trim).map(Locations.locationFromConf).toSet).getOrElse(Set.empty)
+
   val twoStepVerificationRuleFactory = new TwoStepVerificationUserSegments {}
 
   private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
@@ -45,10 +49,12 @@ trait TwoStepVerification {
   private object Biz2SVRule {
     private val base2SVConditions = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
 
-    def apply(segment: TwoStepVerificationUserSegment) : Biz2SVRule = Biz2SVRule(segment.name, base2SVConditions ++ List(HasOnlyEnrolments(segment.enrolmentCategories)), segment.adminLocations, segment.assistantLocations)
+    def apply(segment: TwoStepVerificationUserSegment): Biz2SVRule = Biz2SVRule(segment.name, base2SVConditions ++ List(HasOnlyEnrolments(segment.enrolmentCategories)), segment.adminLocations, segment.assistantLocations)
   }
 
   private val biz2svRules = twoStepVerificationRuleFactory.segments.map(Biz2SVRule(_))
+
+  def isUplifted(location: Location) = upliftLocations.contains(location)
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -63,10 +69,10 @@ trait TwoStepVerification {
           throttleLocation(biz2svRule).map { location =>
             Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
               case true =>
-                auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
+                if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
                 location.mandatory
               case _ =>
-                auditContext.setSentToOptional2SVRegister(biz2svRule.name)
+                if(isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
                 location.optional
             })
           }
@@ -86,4 +92,6 @@ object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
   override lazy val twoStepVerificationEnabled = getConfigurationBoolean("two-step-verification.enabled")
 
   override lazy val twoStepVerificationThrottle = TwoStepVerificationThrottle
+
+  override lazy val upliftLocationsConfiguration = getConfigurationStringOption("two-step-verification.uplift-locations")
 }
