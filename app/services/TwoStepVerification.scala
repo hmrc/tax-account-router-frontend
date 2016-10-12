@@ -40,19 +40,11 @@ trait TwoStepVerification {
 
   def upliftLocationsConfiguration: Option[String]
 
-  lazy val upliftLocations = upliftLocationsConfiguration.map(s => s.split(",").map(_.trim).map(Locations.locationFromConf).toSet).getOrElse(Set.empty)
+  def stringToLocation: String => Location
 
-  val twoStepVerificationRuleFactory = new TwoStepVerificationUserSegments {}
+  def biz2svRules: List[Biz2SVRule]
 
-  private case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
-
-  private object Biz2SVRule {
-    private val base2SVConditions = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
-
-    def apply(segment: TwoStepVerificationUserSegment): Biz2SVRule = Biz2SVRule(segment.name, base2SVConditions ++ List(HasOnlyEnrolments(segment.enrolmentCategories)), segment.adminLocations, segment.assistantLocations)
-  }
-
-  private val biz2svRules = twoStepVerificationRuleFactory.segments.map(Biz2SVRule(_))
+  lazy val upliftLocations = upliftLocationsConfiguration.map(s => s.split(",").map(_.trim).map(stringToLocation).toSet).getOrElse(Set.empty)
 
   def isUplifted(location: Location) = upliftLocations.contains(location)
 
@@ -85,6 +77,8 @@ trait TwoStepVerification {
 
 object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
 
+  import play.api.Play.current
+
   override lazy val twoStepVerificationHost = getConfigurationString("two-step-verification.host")
 
   override lazy val twoStepVerificationPath = getConfigurationString("two-step-verification.path")
@@ -94,4 +88,8 @@ object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
   override lazy val twoStepVerificationThrottle = TwoStepVerificationThrottle
 
   override lazy val upliftLocationsConfiguration = getConfigurationStringOption("two-step-verification.uplift-locations")
+
+  override lazy val stringToLocation = Locations.locationFromConf _
+
+  override lazy val biz2svRules = TwoStepVerificationUserSegments.biz2svRules
 }

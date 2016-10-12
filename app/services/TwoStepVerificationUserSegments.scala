@@ -16,13 +16,23 @@
 
 package services
 
+import engine.Condition
+import engine.Condition._
 import model.Locations.locationFromConf
-import model.{ConfiguredEnrolmentCategory, EnrolmentCategory, Location}
+import model._
 import play.api.Play.{configuration, current}
+
+private case class TwoStepVerificationUserSegment(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
 
 case class ThrottleLocations(optional: Location, mandatory: Location)
 
-case class TwoStepVerificationUserSegment(name: String, enrolmentCategories: Set[EnrolmentCategory], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
+case class Biz2SVRule(name: String, conditions: List[Condition], adminLocations: ThrottleLocations, assistantLocations: ThrottleLocations)
+
+object Biz2SVRule {
+  private val base2SVConditions = List(not(HasRegisteredFor2SV), not(HasStrongCredentials), GGEnrolmentsAvailable)
+
+  def apply(segment: TwoStepVerificationUserSegment): Biz2SVRule = Biz2SVRule(segment.name, base2SVConditions ++ List(HasOnlyEnrolments(segment.enrolmentCategories)), segment.adminLocations, segment.assistantLocations)
+}
 
 trait TwoStepVerificationUserSegments {
 
@@ -33,13 +43,13 @@ trait TwoStepVerificationUserSegments {
 
   private val twoStepVerificationRulesConfigName = "two-step-verification.user-segment"
 
-  lazy val segments = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationUserSegment]) { rules =>
+  lazy val biz2svRules = configuration.getConfig(twoStepVerificationRulesConfigName).fold(List.empty[TwoStepVerificationUserSegment]) { rules =>
     rules.subKeys.toList.map { ruleName =>
       val ruleLocation = location(ruleName) _
 
       TwoStepVerificationUserSegment(ruleName, enrolments(ruleName), ruleLocation(adminConfigPath), ruleLocation(assistantConfigPath))
     }
-  }
+  }.map(Biz2SVRule(_))
 
   private def enrolments(ruleName: String) =
     configuration.getString(s"$twoStepVerificationRulesConfigName.$ruleName.enrolments").fold(Set.empty[EnrolmentCategory])(_.split(",").toSet[String].map(e => ConfiguredEnrolmentCategory(e.trim)))
@@ -52,5 +62,6 @@ trait TwoStepVerificationUserSegments {
     ThrottleLocations(aLocation(optionalConfigPath), aLocation(mandatoryConfigPath))
   }
 
-
 }
+
+object TwoStepVerificationUserSegments extends TwoStepVerificationUserSegments

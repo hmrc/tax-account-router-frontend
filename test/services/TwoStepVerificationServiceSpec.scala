@@ -43,7 +43,9 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     "self-assessment-enrolments" -> saEnrolments.mkString(","), "vat-enrolments" -> vatEnrolments.mkString(",")
   ))
 
-  sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
+  implicit val application = fakeApplication
+
+  class Setup(twoStepVerificationSwitch: Boolean = true, stringToLocationFun: String => Location = Locations.locationFromConf) {
     implicit val request = FakeRequest()
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
@@ -63,6 +65,10 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       override val twoStepVerificationThrottle = twoStepVerificationThrottleMock
 
       override val upliftLocationsConfiguration = Some("set-up-extra-security, two-step-verification-mandatory")
+
+      override val stringToLocation = stringToLocationFun
+
+      override val biz2svRules = new TwoStepVerificationUserSegments {}.biz2svRules
     }
   }
 
@@ -80,7 +86,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verifyZeroInteractions(allMocks: _*)
     }
 
-    "not rewrite the location when continue is PTA" in new Setup {
+    "not rewrite the location when continue is not BTA" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
