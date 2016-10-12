@@ -19,7 +19,6 @@ package model
 import java.net.{URI, URLEncoder}
 
 import play.api.Configuration
-import play.api.Play._
 
 case class Location(name: String, url: String, queryParams: Map[String, String] = Map.empty[String, String]) {
 
@@ -40,13 +39,9 @@ case class Location(name: String, url: String, queryParams: Map[String, String] 
   }
 }
 
-object Locations {
+trait Locations {
 
-  lazy val PersonalTaxAccount = locationFromConf("pta")
-  lazy val BusinessTaxAccount = locationFromConf("bta")
-  lazy val TaxAccountRouterHome = locationFromConf("tax-account-router")
-
-  def locationFromConf(location: String) = configuration.getConfig(s"locations.$location").map { conf =>
+  def locationFromConf(location: String)(implicit app : play.api.Application) = app.configuration.getConfig(s"locations.$location").map { conf =>
     val name = getStringConfig(conf, "name")(s"name not configured for location - $location")
     val url = getStringConfig(conf, "url")(s"url not configured for location - $location")
     val queryParams = conf.getConfig("queryparams").map { queryParamsConf =>
@@ -57,12 +52,21 @@ object Locations {
     Location(name, url, queryParams)
   }.getOrElse(throw new RuntimeException(s"location configuration not defined for $location"))
 
+  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
+}
+
+object Locations extends Locations {
+
+  import play.api.Play._
+
+  lazy val PersonalTaxAccount = locationFromConf("pta")
+  lazy val BusinessTaxAccount = locationFromConf("bta")
+  lazy val TaxAccountRouterHome = locationFromConf("tax-account-router")
 
   def twoStepVerificationRequired(queryString: Map[String, String]) = locationFromConf("two-step-verification-required").copy(queryParams = queryString)
-
-  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
 
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
 
   def find(name: String) = all.find(_.name == name)
+
 }

@@ -39,9 +39,13 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
   val saEnrolments = Set("sa-enrolments")
   val vatEnrolments = Set("vat-enrolment1","vat-enrolment2")
 
-  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("self-assessment-enrolments" -> saEnrolments.mkString(","), "vat-enrolments" -> vatEnrolments.mkString(",")))
+  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map(
+    "self-assessment-enrolments" -> saEnrolments.mkString(","), "vat-enrolments" -> vatEnrolments.mkString(",")
+  ))
 
-  sealed class Setup(twoStepVerificationSwitch: Boolean = true) {
+  implicit val application = fakeApplication
+
+  class Setup(twoStepVerificationSwitch: Boolean = true, stringToLocationFun: String => Location = Locations.locationFromConf) {
     implicit val request = FakeRequest()
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
@@ -59,6 +63,12 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       override val twoStepVerificationEnabled = twoStepVerificationSwitch
 
       override val twoStepVerificationThrottle = twoStepVerificationThrottleMock
+
+      override val upliftLocationsConfiguration = Some("set-up-extra-security, two-step-verification-mandatory")
+
+      override val stringToLocation = stringToLocationFun
+
+      override val biz2svRules = new TwoStepVerificationUserSegments {}.biz2svRules
     }
   }
 
@@ -76,7 +86,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       verifyZeroInteractions(allMocks: _*)
     }
 
-    "not rewrite the location when continue is PTA" in new Setup {
+    "not rewrite the location when continue is not BTA" in new Setup {
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
@@ -170,22 +180,18 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     }
 
     val scenarios = Table(
-      ("scenario", "isMandatory", "isAdmin", "enrolments", "expectedRuleName", "expectedRedirectLocation"),
-      ("redirect to 2SV when admin user has only SA enrolment, throttle chooses optional ",
-        false, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
-      ("redirect to 2SV when admin user has only SA enrolment,throttle chooses mandatory",
-        true, true, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
-      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses optional",
-        false, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-optional")),
-      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses mandatory",
-        true, false, saEnrolments, "sa", () => locationFromConf("two-step-verification-mandatory")),
-      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses optional", false, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
-      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses mandatory", true, true, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("set-up-extra-security")),
-      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses optional", false, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta")),
-      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, "sa_vat", () => locationFromConf("bta"))
+      ("scenario", "isMandatory", "isAdmin", "enrolments", "destinationIsUplifted","expectedRuleName", "expectedRedirectLocation"),
+      ("redirect to 2SV when admin user has only SA enrolment, throttle chooses optional ", false, true, saEnrolments, false, "sa", () => locationFromConf("two-step-verification-optional")),
+      ("redirect to 2SV when admin user has only SA enrolment,throttle chooses mandatory", true, true, saEnrolments, true, "sa", () => locationFromConf("two-step-verification-mandatory")),
+      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses optional", false, false, saEnrolments, false, "sa", () => locationFromConf("two-step-verification-optional")),
+      ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses mandatory", true, false, saEnrolments, true, "sa", () => locationFromConf("two-step-verification-mandatory")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses optional", false, true, saEnrolments ++ vatEnrolments, true, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to set up extra security when admin user has only SA and VAT enrolments, throttle chooses mandatory", true, true, saEnrolments ++ vatEnrolments, true, "sa_vat", () => locationFromConf("set-up-extra-security")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses optional", false, false, saEnrolments ++ vatEnrolments, false, "sa_vat", () => locationFromConf("bta")),
+      ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, false, "sa_vat", () => locationFromConf("bta"))
     )
 
-    forAll(scenarios) { (scenario: String, isMandatory: Boolean, isAdmin: Boolean, enrolments: Set[String], expectedRuleName: String, expectedRedirectLocation: () => Location) =>
+    forAll(scenarios) { (scenario: String, isMandatory: Boolean, isAdmin: Boolean, enrolments: Set[String], destinationIsUplifted: Boolean, expectedRuleName: String, expectedRedirectLocation: () => Location) =>
       s"$scenario, continue url is BTA, the user is not registered for 2SV, no strong credentials" in new Setup {
         val userId = "userId"
         val loggedInUser = LoggedInUser(userId, None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
@@ -206,10 +212,12 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)
         verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
-        if (isMandatory) {
-          verify(auditContext).setSentToMandatory2SVRegister(expectedRuleName)
-        } else {
-          verify(auditContext).setSentToOptional2SVRegister(expectedRuleName)
+        if (destinationIsUplifted) {
+          if (isMandatory) {
+            verify(auditContext).setSentToMandatory2SVRegister(expectedRuleName)
+          } else {
+            verify(auditContext).setSentToOptional2SVRegister(expectedRuleName)
+          }
         }
         verifyNoMoreInteractions(allMocks: _*)
       }
