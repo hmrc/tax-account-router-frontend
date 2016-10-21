@@ -14,7 +14,7 @@ sbt 'run 9280'
 
 ## Test the application
 
-To test the application execute
+To test the application execute:
 
 ```
 sbt test it:test 
