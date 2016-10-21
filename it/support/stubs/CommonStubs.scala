@@ -2,12 +2,15 @@ package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue.ORGANISATION
+import connector.CredentialRole
 import connector.CredentialRole.{CredentialRole, User}
 import play.api.libs.json.Json
 
+import scala.util.Random
+
 trait CommonStubs {
 
-  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[CredentialRole] = None) = {
+  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[CredentialRole.CredentialRole] = None) = {
     stubFor(get(urlMatching("/user-details-uri"))
       .willReturn(
         aResponse()
@@ -50,6 +53,21 @@ trait CommonStubs {
               |]
             """.stripMargin)
       ))
+  }
+
+  def stubActiveEnrolments(enrolmentKeys: String*) = {
+    val enrolmentsAsJson = enrolmentKeys
+      .map(key => s"""{"key": "$key", "identifiers": [{"key": "$key-id", "value": "${(Random.nextFloat() * 100000).toInt}"}], "state": "Activated"}""")
+      .mkString(",")
+
+    stubFor(get(urlEqualTo("/enrolments-uri"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(s"[$enrolmentsAsJson]")
+      ))
+
+    enrolmentsAsJson
   }
 
   def stubInactiveEnrolments() = {
