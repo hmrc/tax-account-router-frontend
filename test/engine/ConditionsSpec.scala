@@ -65,7 +65,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val authContext = mock[AuthContext]
 
         val ruleContext = mock[RuleContext]
-        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+        when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
         val hasAnyBusinessEnrolment = new HasAnyBusinessEnrolment {
           override val businessEnrolments = Set("enr1", "enr2")
         }
@@ -98,7 +98,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
-        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+        when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
         val result = await(HasEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 
@@ -580,7 +580,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
-        when(ruleContext.notActivatedEnrolments).thenReturn(Future.successful(enrolments))
+        when(ruleContext.notActivatedEnrolmentKeys).thenReturn(Future.successful(enrolments))
 
         val result = await(HasAnyInactiveEnrolment.isTrue(authContext, ruleContext))
 
@@ -610,7 +610,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
-        when(ruleContext.activeEnrolments).thenReturn(Future(enrolments))
+        when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
         val result = await(HasOnlyEnrolments(SA, VAT).isTrue(authContext, ruleContext))
 

@@ -73,8 +73,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
       stubUserDetails(credentialRole = Some(CredentialRole.User))
 
       And("the user has some active enrolments")
-      val userEnrolments = Array("enr3", "enr4")
-      stubActiveEnrolments(userEnrolments: _*)
+      val userEnrolments = stubActiveEnrolments("enr3", "enr4")
 
       val auditEventStub = stubAuditEvent()
 
@@ -86,9 +85,10 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
       And("the audit event raised should be the expected one")
       val expectedDetail = Json.obj(
-        "userEnrolments" -> Json.toJson(userEnrolments),
-        "credentialRole" -> CredentialRole.User.toString,
-        "ruleApplied" -> "rule_sa"
+        "userEnrolments" -> Json.parse(s"[$userEnrolments]"),
+        "credentialRole" -> "User",
+        "ruleApplied" -> "rule_sa",
+        "mandatory" -> "false"
       )
       val expectedTransactionName = "no two step verification"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
@@ -105,8 +105,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
       stubUserDetails(credentialRole = Some(CredentialRole.User))
 
       And("the user has some active enrolments")
-      val userEnrolments = Array("enr3", "enr4")
-      stubActiveEnrolments(userEnrolments: _*)
+      val userEnrolments = stubActiveEnrolments("enr3", "enr4")
 
       val auditEventStub = stubAuditEvent()
 
@@ -118,47 +117,15 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
       And("the audit event raised should be the expected one")
       val expectedDetail = Json.obj(
-        "userEnrolments" -> Json.toJson(userEnrolments),
-        "credentialRole" -> CredentialRole.User.toString,
-        "ruleApplied" -> "rule_sa"
+        "userEnrolments" -> Json.parse(s"[$userEnrolments]"),
+        "credentialRole" -> "User",
+        "ruleApplied" -> "rule_sa",
+        "mandatory" -> "true"
       )
       val expectedTransactionName = "no two step verification"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
     }
   }
-
-  feature("Router audit two step verification") {
-    scenario("when there is no applicable rule") {
-
-      Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = mandatoryOid))
-
-      And("user is admin")
-      stubUserDetails(credentialRole = Some(CredentialRole.User))
-
-      And("the user has some active enrolments")
-      val userEnrolments = Array.empty[String]
-      stubActiveEnrolments(userEnrolments: _*)
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedDetail = Json.obj(
-        "userEnrolments" -> Json.toJson(userEnrolments),
-        "credentialRole" -> CredentialRole.User.toString,
-        "ruleApplied" -> "none"
-      )
-      val expectedTransactionName = "no two step verification"
-      verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
-    }
-  }
-
 
   def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
@@ -167,20 +134,6 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
     def allEventsWithType(auditType: String) = loggedRequests
       .filter(s => s.getBodyAsString.matches("""^.*"auditType"[\s]*\:[\s]*"""" + auditType + """".*$"""))
-
-    /*"
-    {
-        "auditSource": "tax-account-router-frontend",
-        "auditType": "TwoStepVerificationOutcome",
-        "authId": "/auth/oid/5731aeb3140000e026a0d1c1", //- we can include more information from auth if we think its important and useful
-        "detail": {
-            "ruleApplied": "rule_sa",
-            "userEnrolments": "\"[{\"key\":\"IR-SA\",\"identifiers\":[{\"key\":\"UTR\",\"value\":\"999902737\"}],\"state\":\"Activated\"},{\"key\":\"HMCE-VATDEC-ORG\",\"identifiers\":[{\"key\":\"VATRegNo\",\"value\":\"999902737\"}],\"state\":\"Activated\"}]\"",
-            "credentialRole": "admin",
-            "mandatory": true
-        }
-    }
-     */
 
     val twoStepVerificationEvents = allEventsWithType("TwoStepVerificationOutcome")
     withClue("There is no event with type TwoStepVerificationOutcome") {

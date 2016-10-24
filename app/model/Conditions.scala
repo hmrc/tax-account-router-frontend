@@ -47,7 +47,7 @@ trait HasAnyBusinessEnrolment extends Condition {
   def businessEnrolments: Set[String]
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolments.map(_.intersect(businessEnrolments).nonEmpty)
+    ruleContext.activeEnrolmentKeys.map(_.intersect(businessEnrolments).nonEmpty)
 
   override val auditType = Some(HAS_BUSINESS_ENROLMENTS)
 }
@@ -90,7 +90,7 @@ trait HasEnrolmentsCondition extends Condition {
   private def validateExtraEnrolments(enrolments: Set[String]) = !verifyExtraEnrolments || (verifyExtraEnrolments && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolments.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
+    ruleContext.activeEnrolmentKeys.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
 }
 
 case class HasOnlyEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
@@ -193,7 +193,7 @@ object HasIndividualAffinityGroup extends Condition {
 object HasAnyInactiveEnrolment extends Condition {
 
   override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.notActivatedEnrolments.map(_.nonEmpty)
+    ruleContext.notActivatedEnrolmentKeys.map(_.nonEmpty)
 
   override val auditType = Some(HAS_ANY_INACTIVE_ENROLMENT)
 }

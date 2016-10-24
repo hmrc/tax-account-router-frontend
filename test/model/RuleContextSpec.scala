@@ -73,7 +73,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.activeEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.activeEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
@@ -91,7 +91,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-other-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments

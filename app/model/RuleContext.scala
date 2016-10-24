@@ -33,11 +33,15 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
     userDetailsConnector.getUserDetails(authority.userDetailsLink)
   }
 
-  lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
+  lazy val activeEnrolmentKeys = enrolments.map { enrolmentSeq =>
     enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
-  lazy val notActivatedEnrolments = enrolments.map { enrolmentSeq =>
+  lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED)
+  }
+
+  lazy val notActivatedEnrolmentKeys = enrolments.map { enrolmentSeq =>
     enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 

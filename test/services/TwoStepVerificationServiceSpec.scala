@@ -105,14 +105,14 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set.empty[String]))
+      when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set.empty[String]))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
       verify(ruleContext, times(2)).currentCoAFEAuthority
       verify(ruleContext, times(2)).enrolments
-      verify(ruleContext, times(2)).activeEnrolments
+      verify(ruleContext, times(2)).activeEnrolmentKeys
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyZeroInteractions(allMocks: _*)
     }
@@ -169,14 +169,14 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-      when(ruleContext.activeEnrolments).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
+      when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
       verify(ruleContext, times(2)).currentCoAFEAuthority
       verify(ruleContext, times(2)).enrolments
-      verify(ruleContext, times(2)).activeEnrolments
+      verify(ruleContext, times(2)).activeEnrolmentKeys
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -200,7 +200,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         implicit val authContext = AuthContext(loggedInUser, principal, None)
 
         when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
-        when(ruleContext.activeEnrolments).thenReturn(Future.successful(enrolments))
+        when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(enrolments))
         when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
         when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
         when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
@@ -209,7 +209,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
         result shouldBe Some(expectedRedirectLocation())
         verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
-        verify(ruleContext, Mockito.atMost(2)).activeEnrolments
+        verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)

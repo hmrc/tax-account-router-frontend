@@ -54,7 +54,7 @@ trait TwoStepVerification {
   def isUplifted(location: Location) = upliftLocations.contains(location)
 
 
-  private def sendAuditEvent(biz2SVRule: Option[Biz2SVRule], ruleContext: RuleContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+  private def sendAuditEvent(biz2SVRule: Option[Biz2SVRule], ruleContext: RuleContext, mandatory: Boolean)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     val ruleName = biz2SVRule match {
       case Some(rule) => s"rule_${rule.name}"
@@ -68,8 +68,9 @@ trait TwoStepVerification {
         tags = hc.toAuditTags("no two step verification", request.path),
         detail = Json.obj(
           "ruleApplied" -> ruleName,
-          "credentialRole" -> "User",
-          "userEnrolments" -> enrolments
+          "credentialRole" -> "User", /* Admin / Assistant? */
+          "userEnrolments" -> Json.toJson(enrolments),
+          "mandatory" -> mandatory.toString()
         )
       )
       auditConnector.sendEvent(auditEvent)
@@ -92,17 +93,15 @@ trait TwoStepVerification {
             Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
               case true =>
                 if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
-                sendAuditEvent(Some(biz2svRule), ruleContext)
+                sendAuditEvent(Some(biz2svRule), ruleContext, mandatory = true)
                 location.mandatory
               case _ =>
                 if (isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
-                sendAuditEvent(Some(biz2svRule), ruleContext)
+                sendAuditEvent(Some(biz2svRule), ruleContext, mandatory = false)
                 location.optional
             })
           }
-        case _ =>
-          sendAuditEvent(None, ruleContext)
-          Future.successful(None)
+        case _ => Future.successful(None)
 
       }
     } else Future.successful(None)
