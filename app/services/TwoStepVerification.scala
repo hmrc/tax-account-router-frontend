@@ -16,12 +16,15 @@
 
 package services
 
-import config.AppConfigHelpers
-import engine.Condition
-import engine.Condition._
+import config.{AppConfigHelpers, FrontendAuditConnector}
 import model.Locations._
 import model._
+import play.api.libs.json.Json
 import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -44,9 +47,31 @@ trait TwoStepVerification {
 
   def biz2svRules: List[Biz2SVRule]
 
+  def auditConnector: AuditConnector
+
   lazy val upliftLocations = upliftLocationsConfiguration.map(s => s.split(",").map(_.trim).map(stringToLocation).toSet).getOrElse(Set.empty)
 
   def isUplifted(location: Location) = upliftLocations.contains(location)
+
+
+  private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+
+    ruleContext.activeEnrolments.map { enrolments =>
+      val auditEvent = ExtendedDataEvent(
+        auditSource = AppName.appName,
+        auditType = "TwoStepVerificationOutcome",
+        tags = hc.toAuditTags("no two step verification", request.path),
+        detail = Json.obj(
+          "ruleApplied" -> s"rule_${biz2SVRule.name}",
+          "credentialRole" -> "User",
+          "userEnrolments" -> enrolments
+        )
+      )
+      auditConnector.sendEvent(auditEvent)
+    }
+  }
+
+  // "credentialRole":"User"}
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
@@ -62,15 +87,19 @@ trait TwoStepVerification {
             Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
               case true =>
                 if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
+                sendAuditEvent(biz2svRule, ruleContext)
                 location.mandatory
               case _ =>
-                if(isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
+                if (isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
+                sendAuditEvent(biz2svRule, ruleContext)
                 location.optional
             })
           }
         case _ => Future.successful(None)
+
       }
     } else Future.successful(None)
+
   }
 
 }
@@ -92,4 +121,6 @@ object TwoStepVerification extends TwoStepVerification with AppConfigHelpers {
   override lazy val stringToLocation = Locations.locationFromConf _
 
   override lazy val biz2svRules = TwoStepVerificationUserSegments.biz2svRules
+
+  override val auditConnector = FrontendAuditConnector
 }

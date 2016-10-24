@@ -24,6 +24,13 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "location-2.url" -> "/some-location-2"
   )
 
+
+  val optionalOid = "bbbb"
+  // 83.2 (percentage calculated from hashcode)
+  val mandatoryOid = "aaaa"
+  // 4.8  (percentage calculated from hashcode)
+  val throttle = 50 // registration is mandatory if percentage is smaller than throttle
+
   val additionalConfiguration = Map[String, Any](
     "auditing.consumer.baseUri.host" -> stubHost,
     "auditing.consumer.baseUri.port" -> stubPort,
@@ -44,6 +51,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "logger.application" -> "ERROR",
     "logger.connector" -> "ERROR",
     "some-enrolment-category" -> "enr3,enr4",
+    "two-step-verification.user-segment.sa.throttle.default" -> throttle,
     "some-rule" -> rule,
     "two-step-verification.uplift-locations" -> "location-1",
     "locations" -> locations
@@ -56,16 +64,17 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
   override lazy val app = FakeApplication(additionalConfiguration = additionalConfiguration)
 
   feature("Router audit two step verification") {
-    scenario("still don't know") {
+    scenario("when there is an applicable rule and registration is optional") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false))
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = optionalOid))
 
       And("user is admin")
       stubUserDetails(credentialRole = Some(CredentialRole.User))
 
       And("the user has some active enrolments")
-      val userEnrolments = stubActiveEnrolments("enr3", "enr4")
+      val userEnrolments = Array("enr3", "enr4")
+      stubActiveEnrolments(userEnrolments: _*)
 
       val auditEventStub = stubAuditEvent()
 
@@ -77,8 +86,41 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
       And("the audit event raised should be the expected one")
       val expectedDetail = Json.obj(
-        "userEnrolments" -> userEnrolments,
-        "credentialRole" -> CredentialRole.User.toString
+        "userEnrolments" -> Json.toJson(userEnrolments),
+        "credentialRole" -> CredentialRole.User.toString,
+        "ruleApplied" -> "rule_sa"
+      )
+      val expectedTransactionName = "no two step verification"
+      verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
+    }
+  }
+
+  feature("Router audit two step verification") {
+    scenario("when there is an applicable rule and registration is mandatory") {
+
+      Given("a user logged in through Government Gateway not registered for 2SV")
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = mandatoryOid))
+
+      And("user is admin")
+      stubUserDetails(credentialRole = Some(CredentialRole.User))
+
+      And("the user has some active enrolments")
+      val userEnrolments = Array("enr3", "enr4")
+      stubActiveEnrolments(userEnrolments: _*)
+
+      val auditEventStub = stubAuditEvent()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      And("the audit event raised should be the expected one")
+      val expectedDetail = Json.obj(
+        "userEnrolments" -> Json.toJson(userEnrolments),
+        "credentialRole" -> CredentialRole.User.toString,
+        "ruleApplied" -> "rule_sa"
       )
       val expectedTransactionName = "no two step verification"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
@@ -86,12 +128,16 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
   }
 
+
   def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedDetail: JsValue, expectedTransactionName: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
 
-    /*
+    def allEventsWithType(auditType: String) = loggedRequests
+      .filter(s => s.getBodyAsString.matches("""^.*"auditType"[\s]*\:[\s]*"""" + auditType + """".*$"""))
+
+    /*"
     {
         "auditSource": "tax-account-router-frontend",
         "auditType": "TwoStepVerificationOutcome",
@@ -105,9 +151,12 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     }
      */
 
+    val twoStepVerificationEvents = allEventsWithType("TwoStepVerificationOutcome")
+    withClue("There is no event with type TwoStepVerificationOutcome") {
+      twoStepVerificationEvents should not be empty
+    }
 
-    val event = Json.parse(loggedRequests
-      .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"TwoStepVerificationOutcome".*$""")).head.getBodyAsString)
+    val event = Json.parse(twoStepVerificationEvents.head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
     (event \ "detail") shouldBe expectedDetail
   }

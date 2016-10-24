@@ -69,6 +69,8 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       override val stringToLocation = stringToLocationFun
 
       override val biz2svRules = new TwoStepVerificationUserSegments {}.biz2svRules
+
+      override val auditConnector = ???
     }
   }
 
