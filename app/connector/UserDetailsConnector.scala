@@ -17,11 +17,9 @@
 package connector
 
 import config.WSHttp
-import connector.CredentialRole.CredentialRole
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json._
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
-import utils.EnumJson.enumReads
 
 trait UserDetailsConnector {
 
@@ -32,20 +30,22 @@ trait UserDetailsConnector {
   def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](userDetailsUri)
 }
 
-object CredentialRole extends Enumeration {
-  type CredentialRole = Value
-  val User, Unknown = Value
+case class CredentialRole(value: String) extends AnyVal {
+  def isAdmin() = value == "User"
 }
-
 
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
   override lazy val serviceUrl = baseUrl("user-details")
   override lazy val http = WSHttp
 }
 
-case class UserDetails(credentialRole: CredentialRole, affinityGroup: String)
+case class UserDetails(credentialRole: Option[CredentialRole], affinityGroup: String) {
+  def isAdmin() = credentialRole.fold(false)(_.isAdmin())
+}
 
 object UserDetails {
-  implicit val credentialRoleReads: Reads[CredentialRole] = enumReads(CredentialRole).orElse(Reads.pure(CredentialRole.Unknown))
+  implicit val credentialRoleReads: Reads[CredentialRole] = new Reads[CredentialRole] {
+    override def reads(json: JsValue): JsResult[CredentialRole] = JsSuccess(CredentialRole(json.as[String]))
+  }
   implicit val reads: Reads[UserDetails] = Json.reads[UserDetails]
 }

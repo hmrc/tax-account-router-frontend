@@ -1,7 +1,6 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.CredentialRole.{Unknown, User}
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
@@ -16,7 +15,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     val saUtr = "12345"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
     createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-    stubUserDetails(credentialRole = Some(User))
+    stubUserDetails(credentialRole = user)
 
     And("the user has self assessment enrolments")
     stubSelfAssessmentEnrolments()
@@ -51,7 +50,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     val saUtr = "12345"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
     createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-    stubUserDetails(credentialRole = Some(Unknown))
+    stubUserDetails(credentialRole = assistant)
 
     And("the user has self assessment enrolments")
     stubSelfAssessmentEnrolments()
@@ -89,7 +88,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
     And("the user is an admin")
-    stubUserDetails(credentialRole = Some(User))
+    stubUserDetails(credentialRole = user)
 
     And("the user has self assessment and vat enrolments")
     stubSelfAssessmentAndVatEnrolments()
@@ -126,7 +125,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
     And("the user is an assistant")
-    stubUserDetails(credentialRole = Some(Unknown))
+    stubUserDetails(credentialRole = assistant)
 
     And("the user has self assessment and vat enrolments")
     stubSelfAssessmentAndVatEnrolments()
@@ -230,7 +229,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-      stubUserDetails(credentialRole = Some(User))
+      stubUserDetails(credentialRole = user)
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -265,7 +264,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
-      stubUserDetails(credentialRole = Some(User))
+      stubUserDetails(credentialRole = user)
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -302,7 +301,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user is an assistant")
-      stubUserDetails(credentialRole = Some(User))
+      stubUserDetails(credentialRole = user)
 
       And("the user has self assessment and vat enrolments")
       stubSelfAssessmentAndVatEnrolments()
@@ -339,7 +338,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
 
       And("the user is an assistant")
-      stubUserDetails(credentialRole = Some(Unknown))
+      stubUserDetails(credentialRole = assistant)
 
       And("the user has self assessment and vat enrolments")
       stubSelfAssessmentAndVatEnrolments()

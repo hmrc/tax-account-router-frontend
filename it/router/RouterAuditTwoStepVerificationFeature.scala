@@ -70,7 +70,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
       createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = optionalOid))
 
       And("user is admin")
-      stubUserDetails(credentialRole = Some(CredentialRole.User))
+      stubUserDetails(credentialRole = user)
 
       And("the user has some active enrolments")
       val userEnrolments = stubActiveEnrolments("enr3", "enr4")
@@ -102,7 +102,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
       createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = mandatoryOid))
 
       And("user is admin")
-      stubUserDetails(credentialRole = Some(CredentialRole.User))
+      stubUserDetails(credentialRole = user)
 
       And("the user has some active enrolments")
       val userEnrolments = stubActiveEnrolments("enr3", "enr4")

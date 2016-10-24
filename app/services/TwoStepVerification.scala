@@ -77,8 +77,6 @@ trait TwoStepVerification {
     }
   }
 
-  // "credentialRole":"User"}
-
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
     def throttleLocation(rule: Biz2SVRule) = ruleContext.isAdmin.map(if (_) rule.adminLocations else rule.assistantLocations)

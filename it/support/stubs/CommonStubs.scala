@@ -3,14 +3,17 @@ package support.stubs
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue.ORGANISATION
 import connector.CredentialRole
-import connector.CredentialRole.{CredentialRole, User}
+
 import play.api.libs.json.Json
 
 import scala.util.Random
 
 trait CommonStubs {
 
-  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: Option[CredentialRole.CredentialRole] = None) = {
+  val user = CredentialRole("User")
+  val assistant = CredentialRole("Assistant")
+
+  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: CredentialRole = CredentialRole("User")) = {
     stubFor(get(urlMatching("/user-details-uri"))
       .willReturn(
         aResponse()
@@ -26,7 +29,7 @@ trait CommonStubs {
                |    "dateOfBirth": "1980-06-31",
                |    "postcode": "NW94HD",
                |    "authProviderId": "12345-credId",
-               |    "credentialRole": "${credentialRole.getOrElse(User).toString}",
+               |    "credentialRole": "${credentialRole.toString}",
                |    "authProviderType": "Verify"
                |}
       """.stripMargin)
