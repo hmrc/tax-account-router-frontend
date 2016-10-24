@@ -125,7 +125,38 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
       val expectedTransactionName = "no two step verification"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
     }
+  }
 
+  feature("Router audit two step verification") {
+    scenario("when there is no applicable rule") {
+
+      Given("a user logged in through Government Gateway not registered for 2SV")
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = mandatoryOid))
+
+      And("user is admin")
+      stubUserDetails(credentialRole = Some(CredentialRole.User))
+
+      And("the user has some active enrolments")
+      val userEnrolments = Array.empty[String]
+      stubActiveEnrolments(userEnrolments: _*)
+
+      val auditEventStub = stubAuditEvent()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      And("the audit event raised should be the expected one")
+      val expectedDetail = Json.obj(
+        "userEnrolments" -> Json.toJson(userEnrolments),
+        "credentialRole" -> CredentialRole.User.toString,
+        "ruleApplied" -> "none"
+      )
+      val expectedTransactionName = "no two step verification"
+      verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
+    }
   }
 
 

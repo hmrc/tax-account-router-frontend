@@ -54,7 +54,12 @@ trait TwoStepVerification {
   def isUplifted(location: Location) = upliftLocations.contains(location)
 
 
-  private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+  private def sendAuditEvent(biz2SVRule: Option[Biz2SVRule], ruleContext: RuleContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+
+    val ruleName = biz2SVRule match {
+      case Some(rule) => s"rule_${rule.name}"
+      case None => "none"
+    }
 
     ruleContext.activeEnrolments.map { enrolments =>
       val auditEvent = ExtendedDataEvent(
@@ -62,7 +67,7 @@ trait TwoStepVerification {
         auditType = "TwoStepVerificationOutcome",
         tags = hc.toAuditTags("no two step verification", request.path),
         detail = Json.obj(
-          "ruleApplied" -> s"rule_${biz2SVRule.name}",
+          "ruleApplied" -> ruleName,
           "credentialRole" -> "User",
           "userEnrolments" -> enrolments
         )
@@ -87,15 +92,17 @@ trait TwoStepVerification {
             Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
               case true =>
                 if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
-                sendAuditEvent(biz2svRule, ruleContext)
+                sendAuditEvent(Some(biz2svRule), ruleContext)
                 location.mandatory
               case _ =>
                 if (isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
-                sendAuditEvent(biz2svRule, ruleContext)
+                sendAuditEvent(Some(biz2svRule), ruleContext)
                 location.optional
             })
           }
-        case _ => Future.successful(None)
+        case _ =>
+          sendAuditEvent(None, ruleContext)
+          Future.successful(None)
 
       }
     } else Future.successful(None)
