@@ -23,10 +23,13 @@ import model._
 import org.mockito.Matchers._
 import org.mockito.Mockito
 import org.mockito.Mockito._
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
+import uk.gov.hmrc.play.audit.model.AuditEvent
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
@@ -34,10 +37,10 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
+class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with Eventually with IntegrationPatience {
 
   val saEnrolments = Set("sa-enrolments")
-  val vatEnrolments = Set("vat-enrolment1","vat-enrolment2")
+  val vatEnrolments = Set("vat-enrolment1", "vat-enrolment2")
 
   override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map(
     "self-assessment-enrolments" -> saEnrolments.mkString(","), "vat-enrolments" -> vatEnrolments.mkString(",")
@@ -50,6 +53,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
     val principal = Principal(None, Accounts())
+    val auditConnectorMock = mock[AuditConnector]
     val ruleContext = mock[RuleContext]
     val twoStepVerificationThrottleMock = mock[TwoStepVerificationThrottle]
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
@@ -70,7 +74,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       override val biz2svRules = new TwoStepVerificationUserSegments {}.biz2svRules
 
-      override val auditConnector = ???
+      override val auditConnector = auditConnectorMock
     }
   }
 
@@ -182,7 +186,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     }
 
     val scenarios = Table(
-      ("scenario", "isMandatory", "isAdmin", "enrolments", "destinationIsUplifted","expectedRuleName", "expectedRedirectLocation"),
+      ("scenario", "isMandatory", "isAdmin", "enrolments", "destinationIsUplifted", "expectedRuleName", "expectedRedirectLocation"),
       ("redirect to 2SV when admin user has only SA enrolment, throttle chooses optional ", false, true, saEnrolments, false, "sa", () => locationFromConf("two-step-verification-optional")),
       ("redirect to 2SV when admin user has only SA enrolment,throttle chooses mandatory", true, true, saEnrolments, true, "sa", () => locationFromConf("two-step-verification-mandatory")),
       ("redirect to 2SV when assistant user has only SA enrolment, throttle chooses optional", false, false, saEnrolments, false, "sa", () => locationFromConf("two-step-verification-optional")),
@@ -202,8 +206,12 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "")))
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(enrolments))
         when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
+        val activeGGEnrolments = enrolments.map(GovernmentGatewayEnrolment(_, Seq(), "Activated")).toSeq
+        when(ruleContext.activeEnrolments).thenReturn(Future.successful(activeGGEnrolments))
+
         when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
         when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
+        when(auditConnectorMock.sendEvent(any[AuditEvent])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(mock[AuditResult]))
 
         val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -211,6 +219,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
         verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
+        verify(ruleContext, Mockito.atMost(2)).activeEnrolments
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)
         verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
@@ -221,6 +230,11 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
             verify(auditContext).setSentToOptional2SVRegister(expectedRuleName)
           }
         }
+
+        eventually {
+          verify(auditConnectorMock).sendEvent(any[AuditEvent])(any[HeaderCarrier], any[ExecutionContext])
+        }
+
         verifyNoMoreInteractions(allMocks: _*)
       }
     }

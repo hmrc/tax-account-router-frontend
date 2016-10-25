@@ -73,7 +73,7 @@ class UserDetailsDeserializationSpec extends UnitSpec {
     }
 
     "read credentialRole as None if not available" in {
-      Json.parse("""{affinityGroup":"Baz"}""").as[UserDetails] shouldBe UserDetails(None, "Baz")
+      Json.parse("""{"affinityGroup":"Baz"}""").as[UserDetails] shouldBe UserDetails(None, "Baz")
     }
   }
 }
@@ -84,7 +84,7 @@ class CredentialRoleSpec extends UnitSpec {
     val scenarios = Table(
       ("role", "result"),
       (CredentialRole("User"), true),
-      (CredentialRole("Assistant"), true)
+      (CredentialRole("Assistant"), false)
     )
 
     forAll(scenarios) {
