@@ -21,15 +21,16 @@ import helpers.SpecHelpers
 import model.Locations._
 import model._
 import org.mockito.Matchers._
-import org.mockito.Mockito
 import org.mockito.Mockito._
+import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
+import play.api.libs.json.Json
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
-import uk.gov.hmrc.play.audit.model.AuditEvent
+import uk.gov.hmrc.play.audit.model.{AuditEvent, ExtendedDataEvent}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
@@ -236,7 +237,11 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         }
 
         eventually {
-          verify(auditConnectorMock).sendEvent(any[AuditEvent])(any[HeaderCarrier], any[ExecutionContext])
+          val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+          verify(auditConnectorMock).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+          (auditEventCaptor.getValue.detail \ "ruleApplied").as[String] shouldBe s"rule_$expectedRuleName"
+          (auditEventCaptor.getValue.detail \ "credentialRole").as[String]  shouldBe credentialRole
+          (auditEventCaptor.getValue.detail \ "userEnrolments") shouldBe Json.toJson(activeGGEnrolments)
         }
 
         verifyNoMoreInteractions(allMocks: _*)
