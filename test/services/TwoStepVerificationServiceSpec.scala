@@ -16,7 +16,7 @@
 
 package services
 
-import connector.GovernmentGatewayEnrolment
+import connector.{CredentialRole, GovernmentGatewayEnrolment, UserDetails}
 import helpers.SpecHelpers
 import model.Locations._
 import model._
@@ -208,6 +208,9 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
         val activeGGEnrolments = enrolments.map(GovernmentGatewayEnrolment(_, Seq(), "Activated")).toSeq
         when(ruleContext.activeEnrolments).thenReturn(Future.successful(activeGGEnrolments))
+        val credentialRole = if (isAdmin) "User" else "Assistant"
+
+        when(ruleContext.userDetails).thenReturn(Future.successful(UserDetails(Some(CredentialRole(credentialRole)), "affinityGroup")))
 
         when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
         when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, userId)).thenReturn(Future.successful(isMandatory))
@@ -219,6 +222,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
         verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
+        verify(ruleContext).userDetails
         verify(ruleContext, Mockito.atMost(2)).activeEnrolments
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)

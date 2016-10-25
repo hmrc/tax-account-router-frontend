@@ -53,22 +53,20 @@ trait TwoStepVerification {
 
   def isUplifted(location: Location) = upliftLocations.contains(location)
 
-
-  private def sendAuditEvent(biz2SVRule: Option[Biz2SVRule], ruleContext: RuleContext, mandatory: Boolean)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
-
-    val ruleName = biz2SVRule match {
-      case Some(rule) => s"rule_${rule.name}"
-      case None => "none"
-    }
-
-    ruleContext.activeEnrolments.map { enrolments =>
+  private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext, mandatory: Boolean)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+    val enrolmentsFut = ruleContext.activeEnrolments
+    val userDetailsFut = ruleContext.userDetails
+    for {
+      enrolments <- enrolmentsFut
+      userDetails <- userDetailsFut
+    } yield {
       val auditEvent = ExtendedDataEvent(
         auditSource = AppName.appName,
         auditType = "TwoStepVerificationOutcome",
         tags = hc.toAuditTags("no two step verification", request.path),
         detail = Json.obj(
-          "ruleApplied" -> ruleName,
-          "credentialRole" -> "User", /* Admin / Assistant? */
+          "ruleApplied" -> s"rule_${biz2SVRule.name}",
+          "credentialRole" -> userDetails.credentialRole.map(_.value),
           "userEnrolments" -> Json.toJson(enrolments),
           "mandatory" -> mandatory.toString()
         )
@@ -91,11 +89,11 @@ trait TwoStepVerification {
             Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
               case true =>
                 if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
-                sendAuditEvent(Some(biz2svRule), ruleContext, mandatory = true)
+                sendAuditEvent(biz2svRule, ruleContext, mandatory = true)
                 location.mandatory
               case _ =>
                 if (isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
-                sendAuditEvent(Some(biz2svRule), ruleContext, mandatory = false)
+                sendAuditEvent(biz2svRule, ruleContext, mandatory = false)
                 location.optional
             })
           }
