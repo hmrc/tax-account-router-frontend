@@ -3,7 +3,6 @@ package support.stubs
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue.ORGANISATION
 import connector.CredentialRole
-
 import play.api.libs.json.Json
 
 import scala.util.Random
@@ -29,7 +28,7 @@ trait CommonStubs {
                |    "dateOfBirth": "1980-06-31",
                |    "postcode": "NW94HD",
                |    "authProviderId": "12345-credId",
-               |    "credentialRole": "${credentialRole.toString}",
+               |    "credentialRole": "${credentialRole.value}",
                |    "authProviderType": "Verify"
                |}
       """.stripMargin)
@@ -131,11 +130,11 @@ trait CommonStubs {
           .withStatus(200)
           .withFixedDelay(2000) // For the tests to correctly fail this value must be greater than the ws.timeout.request used by the test.
           .withBody(
-            """
-              |[
-              |   {"key": "enr3", "identifiers": [{"key": "k1", "value": "5597800686"}], "state": "Activated"}
-              |]
-            """.stripMargin)
+          """
+            |[
+            |   {"key": "enr3", "identifiers": [{"key": "k1", "value": "5597800686"}], "state": "Activated"}
+            |]
+          """.stripMargin)
       ))
   }
 
@@ -170,12 +169,12 @@ trait CommonStubs {
         .withStatus(200)
         .withFixedDelay(2000) // For the tests to correctly fail this value must be greater than the ws.timeout.request used by the test.
         .withBody(
-          s"""
-             |{
-             | "previousReturns":true,
-             | "supplementarySchedules":${Json.toJson(List.empty[String])}
-             |}
-             | """.stripMargin)))
+        s"""
+           |{
+           | "previousReturns":true,
+           | "supplementarySchedules":${Json.toJson(List.empty[String])}
+           |}
+           | """.stripMargin)))
   }
 
   def stubSaReturn(saUtr: String, previousReturns: Boolean = false, supplementarySchedules: List[String] = List.empty) = {
