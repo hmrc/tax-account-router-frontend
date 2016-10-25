@@ -21,10 +21,13 @@ import play.api.Logger
 import play.api.Play.{current, _}
 
 trait TwoStepVerificationThrottle {
+  private val bucketSize = 100
+  private val decimalPointFactor = 10
+
   def timeBasedLimit: TimeBasedLimit
 
   def isRegistrationMandatory(ruleName: String, discriminator: String) = {
-    val userValue = Math.abs((discriminator.hashCode % 1000).toDouble) / 10
+    val userValue = Math.abs((discriminator.hashCode % (bucketSize * decimalPointFactor)).toDouble) / decimalPointFactor
     val threshold = timeBasedLimit.getCurrentPercentageLimit(ruleName)
     Logger.info(s"Threshold: $threshold - userValue: $userValue")
     userValue <= threshold

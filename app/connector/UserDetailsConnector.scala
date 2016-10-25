@@ -31,7 +31,7 @@ trait UserDetailsConnector {
 }
 
 case class CredentialRole(value: String) extends AnyVal {
-  def isAdmin() = value == "User"
+  def isAdmin = value == "User"
 }
 
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
@@ -40,7 +40,7 @@ object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
 }
 
 case class UserDetails(credentialRole: Option[CredentialRole], affinityGroup: String) {
-  def isAdmin() = credentialRole.fold(false)(_.isAdmin())
+  def isAdmin = credentialRole.fold(false)(_.isAdmin)
 }
 
 object UserDetails {

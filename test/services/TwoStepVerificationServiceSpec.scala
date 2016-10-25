@@ -224,7 +224,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
         verify(ruleContext).userDetails
-        verify(ruleContext, Mockito.atMost(2)).activeEnrolments
+        verify(ruleContext, times(1)).activeEnrolments
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, userId)
         verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])

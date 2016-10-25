@@ -18,7 +18,7 @@ package connector
 
 import config.WSHttp
 import model.CoAFEAuthority
-import play.api.libs.json.{Format, Json, Reads}
+import play.api.libs.json.Json
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier

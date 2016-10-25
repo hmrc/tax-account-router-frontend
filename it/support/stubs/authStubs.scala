@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStr
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
-  override def create = stubOut(
+  override def create() = stubOut(
     urlEqualTo("/gg/sign-in?continue=/account"), "Login Page", Some( """<button class="button" type="submit">Sign in</button>"""))
 }
 

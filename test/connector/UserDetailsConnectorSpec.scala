@@ -53,13 +53,13 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
       val userDetailsUri = "userDetailsUri"
 
       val expected = UserDetails(Some(CredentialRole("User")), affinityGroup = "Individual")
-      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))).thenReturn(Future.successful(expected))
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))).thenReturn(Future.successful(expected))
 
       val result = await(connectorUnderTest.getUserDetails(userDetailsUri)(hc))
 
       result shouldBe expected
 
-      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))
+      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))
       verifyNoMoreInteractions(mockHttp)
     }
   }
@@ -90,7 +90,7 @@ class CredentialRoleSpec extends UnitSpec {
     forAll(scenarios) {
       (role: CredentialRole, expectedResult: Boolean) =>
         s"return $expectedResult if user has credential role $role" in {
-          role.isAdmin() shouldBe expectedResult
+          role.isAdmin shouldBe expectedResult
         }
     }
   }

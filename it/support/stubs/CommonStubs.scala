@@ -59,7 +59,7 @@ trait CommonStubs {
 
   def stubActiveEnrolments(enrolmentKeys: String*) = {
     val enrolmentsAsJson = enrolmentKeys
-      .map(key => s"""{"key": "$key", "identifiers": [{"key": "$key-id", "value": "${(Random.nextFloat() * 100000).toInt}"}], "state": "Activated"}""")
+      .map(key => s"""{"key": "$key", "identifiers": [{"key": "$key-id", "value": "${Random.nextInt(100000)}"}], "state": "Activated"}""")
       .mkString(",")
 
     stubFor(get(urlEqualTo("/enrolments-uri"))
