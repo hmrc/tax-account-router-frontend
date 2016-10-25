@@ -2,7 +2,6 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
-import connector.CredentialRole
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
@@ -24,7 +23,6 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "location-2.url" -> "/some-location-2"
   )
 
-
   val optionalOid = "bbbb"  // 83.2 (percentage calculated from hashcode)
   val mandatoryOid = "aaaa" // 4.8  (percentage calculated from hashcode)
   val throttle = 50 // registration is mandatory if the percentage is smaller than throttle value
@@ -32,32 +30,13 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
   val additionalConfiguration = Map[String, Any](
     "auditing.consumer.baseUri.host" -> stubHost,
     "auditing.consumer.baseUri.port" -> stubPort,
-    "business-tax-account.host" -> s"http://$stubHost:$stubPort",
+    "microservice.services.auth.host" -> stubHost,
+    "microservice.services.auth.port" -> stubPort,
     "company-auth.host" -> s"http://$stubHost:$stubPort",
-    "contact-frontend.host" -> s"http://$stubHost:$stubPort",
-    "personal-tax-account.host" -> s"http://$stubHost:$stubPort",
-    "two-step-verification.host" -> s"http://$stubHost:$stubPort",
-    "two-step-verification-required.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> "",
-    "throttling.enabled" -> false,
-    "mongodb.uri" -> s"mongodb://localhost:27017/$databaseName",
-    "business-enrolments" -> "enr1,enr2",
-    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 1000,
-    "ws.timeout.connection" -> 500,
     "two-step-verification.enabled" -> true,
-    "logger.application" -> "ERROR",
-    "logger.connector" -> "ERROR",
-    "some-enrolment-category" -> "enr3,enr4",
-    "two-step-verification.user-segment.sa.throttle.default" -> throttle,
-    "some-rule" -> rule,
-    "two-step-verification.uplift-locations" -> "location-1",
-    "locations" -> locations
-  ) ++ Seq("auth", "cachable.short-lived-cache", "government-gateway", "sa", "user-details", "platform-analytics")
-    .map(service => Map(
-      s"microservice.services.$service.host" -> stubHost,
-      s"microservice.services.$service.port" -> stubPort
-    )).reduce(_ ++ _)
+    "two-step-verification.user-segment.sa.throttle.default" -> throttle
+  )
 
   override lazy val app = FakeApplication(additionalConfiguration = additionalConfiguration)
 
