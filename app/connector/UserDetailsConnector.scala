@@ -30,7 +30,7 @@ trait UserDetailsConnector {
   def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](userDetailsUri)
 }
 
-case class CredentialRole(value: String) extends AnyVal {
+case class CredentialRole(val value: String) extends AnyVal {
   def isAdmin = value == "User"
 }
 
