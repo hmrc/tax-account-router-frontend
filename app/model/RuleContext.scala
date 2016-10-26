@@ -16,7 +16,6 @@
 
 package model
 
-import connector.CredentialRole.User
 import connector._
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -33,11 +32,13 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
     userDetailsConnector.getUserDetails(authority.userDetailsLink)
   }
 
+  lazy val activeEnrolmentKeys = activeEnrolments.map(enrList => enrList.map(_.key).toSet[String])
+
   lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
-    enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+    enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED)
   }
 
-  lazy val notActivatedEnrolments = enrolments.map { enrolmentSeq =>
+  lazy val notActivatedEnrolmentKeys = enrolments.map { enrolmentSeq =>
     enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
@@ -52,5 +53,5 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
 
-  lazy val isAdmin = userDetails.map(_.credentialRole == User)
+  lazy val isAdmin = userDetails.map(_.isAdmin)
 }

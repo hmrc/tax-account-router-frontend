@@ -16,13 +16,9 @@
 
 package model
 
-import connector.CredentialRole.{CredentialRole, Unknown, User}
 import connector._
-import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.Tables.Table
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
@@ -54,8 +50,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = enrolmentsUri, userDetailsLink = userDetailsLink)
 
     val expectedAffinityGroup = "some-affinity-group"
-    val expectedCredentialRole = User
-    val expectedUserDetails = UserDetails(expectedCredentialRole, expectedAffinityGroup)
+    val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
 
     val expectedActiveEnrolmentsSeq = Seq(
       GovernmentGatewayEnrolment("some-key", Seq(EnrolmentIdentifier("key-1", "value-1")), EnrolmentState.ACTIVATED),
@@ -73,7 +68,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.activeEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.activeEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
@@ -91,7 +86,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-other-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolments)
+      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
@@ -163,29 +158,6 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       verify(mockFrontendAuthConnector).currentCoAFEAuthority()
       verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
       verifyNoMoreInteractions(allMocks: _*)
-    }
-  }
-
-  "isAdmin" should {
-
-    val scenarios = Table(
-      ("role", "result"),
-      (CredentialRole.User, true), (Unknown, false)
-    )
-
-    forAll(scenarios) { (role: CredentialRole, expectedResult: Boolean) =>
-      s"return $expectedResult if user has credential role $role" in new Setup {
-        val userDetails = UserDetails(role, expectedAffinityGroup)
-        when(mockUserDetailsConnector.getUserDetails(userDetailsLink)).thenReturn(Future.successful(userDetails))
-        val result = await(ruleContext.isAdmin)
-
-        result shouldBe expectedResult
-
-        verify(mockFrontendAuthConnector).currentCoAFEAuthority()
-        verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
-        verifyNoMoreInteractions(allMocks: _*)
-      }
-
     }
   }
 }

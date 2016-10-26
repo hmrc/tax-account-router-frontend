@@ -16,10 +16,11 @@
 
 package connector
 
-import connector.CredentialRole.{Unknown, User}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.Tables.Table
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost, HttpReads}
@@ -51,14 +52,14 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
 
       val userDetailsUri = "userDetailsUri"
 
-      val expected = UserDetails(User, affinityGroup = "Individual")
-      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))).thenReturn(Future.successful(expected))
+      val expected = UserDetails(Some(CredentialRole("User")), affinityGroup = "Individual")
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))).thenReturn(Future.successful(expected))
 
       val result = await(connectorUnderTest.getUserDetails(userDetailsUri)(hc))
 
       result shouldBe expected
 
-      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]], eqTo(hc))
+      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))
       verifyNoMoreInteractions(mockHttp)
     }
   }
@@ -68,11 +69,29 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
 class UserDetailsDeserializationSpec extends UnitSpec {
   "reads of user details" should {
     "read credentialRole if available" in {
-      Json.parse("""{"credentialRole":"User","affinityGroup":"Organisation"}""").as[UserDetails] shouldBe UserDetails(User, "Organisation")
+      Json.parse("""{"credentialRole":"User","affinityGroup":"Organisation"}""").as[UserDetails] shouldBe UserDetails(Some(CredentialRole("User")), "Organisation")
     }
 
-    "read any other role as unknown" in {
-      Json.parse("""{"credentialRole":"FooBar","affinityGroup":"Baz"}""").as[UserDetails] shouldBe UserDetails(Unknown, "Baz")
+    "read credentialRole as None if not available" in {
+      Json.parse("""{"affinityGroup":"Baz"}""").as[UserDetails] shouldBe UserDetails(None, "Baz")
+    }
+  }
+}
+
+class CredentialRoleSpec extends UnitSpec {
+  "isAdmin" should {
+    val expectedAffinityGroup = "affinityGroup"
+    val scenarios = Table(
+      ("role", "result"),
+      (CredentialRole("User"), true),
+      (CredentialRole("Assistant"), false)
+    )
+
+    forAll(scenarios) {
+      (role: CredentialRole, expectedResult: Boolean) =>
+        s"return $expectedResult if user has credential role $role" in {
+          role.isAdmin shouldBe expectedResult
+        }
     }
   }
 }

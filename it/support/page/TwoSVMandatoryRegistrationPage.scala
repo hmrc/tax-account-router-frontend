@@ -23,7 +23,7 @@ import support.Env
 import support.stubs.{Stub, StubbedPage}
 
 object TwoSVMandatoryRegistrationStubPage extends Stub with StubbedPage {
-  override def create = stubOut(urlEqualTo(TwoSVMandatoryRegistrationPage.uri), "2SV Mandatory Registration Page")
+  override def create() = stubOut(urlEqualTo(TwoSVMandatoryRegistrationPage.uri), "2SV Mandatory Registration Page")
 }
 
 object TwoSVMandatoryRegistrationPage extends WebPage {
