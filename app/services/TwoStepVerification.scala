@@ -56,6 +56,7 @@ trait TwoStepVerification {
   private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext, mandatory: Boolean)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
     val enrolmentsFut = ruleContext.activeEnrolments
     val userDetailsFut = ruleContext.userDetails
+    val transactionName = if (mandatory) "two step verification mandatory" else "two step verification optional"
     for {
       enrolments <- enrolmentsFut
       userDetails <- userDetailsFut
@@ -63,7 +64,7 @@ trait TwoStepVerification {
       val auditEvent = ExtendedDataEvent(
         auditSource = AppName.appName,
         auditType = "TwoStepVerificationOutcome",
-        tags = hc.toAuditTags("no two step verification", request.path),
+        tags = hc.toAuditTags(transactionName, request.path),
         detail = Json.obj(
           "ruleApplied" -> s"rule_${biz2SVRule.name}",
           "credentialRole" -> userDetails.credentialRole.map(_.value),

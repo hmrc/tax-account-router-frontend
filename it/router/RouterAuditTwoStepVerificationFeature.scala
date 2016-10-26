@@ -67,7 +67,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
         "ruleApplied" -> "rule_sa",
         "mandatory" -> "false"
       )
-      val expectedTransactionName = "no two step verification"
+      val expectedTransactionName = "two step verification optional"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
     }
   }
@@ -99,7 +99,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
         "ruleApplied" -> "rule_sa",
         "mandatory" -> "true"
       )
-      val expectedTransactionName = "no two step verification"
+      val expectedTransactionName = "two step verification mandatory"
       verifyAuditEvent(auditEventStub, expectedDetail, expectedTransactionName)
     }
   }
