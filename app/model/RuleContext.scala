@@ -47,6 +47,8 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
+  lazy val credentialId = currentCoAFEAuthority.map(_.credentialId)
+
   lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
     frontendAuthConnector.getEnrolments(authority.enrolmentsUri)
   }

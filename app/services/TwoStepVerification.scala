@@ -78,31 +78,35 @@ trait TwoStepVerification {
 
   def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
 
-    def throttleLocation(rule: Biz2SVRule) = ruleContext.isAdmin.map(if (_) rule.adminLocations else rule.assistantLocations)
+    def throttleLocations(biz2SVRule: Option[Biz2SVRule]) = biz2SVRule match {
+      case Some(rule) => ruleContext.isAdmin.map(if (_) rule.adminLocations else rule.assistantLocations).map(Some(_))
+      case None => Future.successful(None)
+    }
+
+    def throttleLocation(rule: Biz2SVRule, locations: ThrottleLocations, credId: String) = twoStepVerificationThrottle.isRegistrationMandatory(rule.name, credId) match {
+      case true =>
+        if (isUplifted(locations.mandatory)) auditContext.setSentToMandatory2SVRegister(rule.name)
+        sendAuditEvent(rule, ruleContext, mandatory = true)
+        locations.mandatory
+      case _ =>
+        if (isUplifted(locations.optional)) auditContext.setSentToOptional2SVRegister(rule.name)
+        sendAuditEvent(rule, ruleContext, mandatory = false)
+        locations.optional
+    }
 
     if (twoStepVerificationEnabled && continue == BusinessTaxAccount) {
-
-      val applicableRule = biz2svRules.findOne(_.conditions.forAll(_.evaluate(authContext, ruleContext, auditContext)))
-
-      applicableRule.flatMap {
-        case Some(biz2svRule) =>
-          throttleLocation(biz2svRule).map { location =>
-            Some(twoStepVerificationThrottle.isRegistrationMandatory(biz2svRule.name, authContext.user.oid) match {
-              case true =>
-                if (isUplifted(location.mandatory)) auditContext.setSentToMandatory2SVRegister(biz2svRule.name)
-                sendAuditEvent(biz2svRule, ruleContext, mandatory = true)
-                location.mandatory
-              case _ =>
-                if (isUplifted(location.optional)) auditContext.setSentToOptional2SVRegister(biz2svRule.name)
-                sendAuditEvent(biz2svRule, ruleContext, mandatory = false)
-                location.optional
-            })
-          }
-        case _ => Future.successful(None)
-
+      for {
+        applicableRule <- biz2svRules.findOne(_.conditions.forAll(_.evaluate(authContext, ruleContext, auditContext)))
+        throttleLocations <- throttleLocations(applicableRule)
+        credId <- ruleContext.credentialId
+      } yield {
+        (applicableRule, throttleLocations) match {
+          case (Some(rule), Some(locations)) => Some(throttleLocation(rule, locations, credId))
+          case _ => None
+        }
       }
-    } else Future.successful(None)
-
+    }
+    else Future.successful(None)
   }
 
 }

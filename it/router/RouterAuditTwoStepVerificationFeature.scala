@@ -23,8 +23,8 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "location-2.url" -> "/some-location-2"
   )
 
-  val optionalOid = "bbbb"  // 83.2 (percentage calculated from hashcode)
-  val mandatoryOid = "aaaa" // 4.8  (percentage calculated from hashcode)
+  val optionalCredId = "bbbb"  // 83.2 (percentage calculated from hashcode)
+  val mandatoryCredId = "aaaa" // 4.8  (percentage calculated from hashcode)
   val throttle = 50 // registration is mandatory if the percentage is smaller than throttle value
 
   val additionalConfiguration = Map[String, Any](
@@ -44,7 +44,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is optional for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = optionalOid))
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, credId = optionalCredId))
 
       And("user is admin")
       stubUserDetails(credentialRole = user)
@@ -76,7 +76,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is mandatory for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, oid = mandatoryOid))
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, credId = mandatoryCredId))
 
       And("user is admin")
       stubUserDetails(credentialRole = user)
