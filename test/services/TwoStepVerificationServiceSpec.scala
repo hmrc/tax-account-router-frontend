@@ -60,6 +60,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
     val signOutUrl = "http://localhost:9025/sign-out"
     val credentialId = "cred id"
+    val coAFEAuthorityWithOtpDisabled = CoAFEAuthority(None, "", "", "")
 
 
     val twoStepVerification = new TwoStepVerification {
@@ -110,7 +111,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set.empty[String]))
       when(ruleContext.credentialId).thenReturn(Future.successful(credentialId))
@@ -131,7 +132,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
       when(ruleContext.credentialId).thenReturn(Future.successful(credentialId))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
@@ -165,7 +166,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
       when(ruleContext.credentialId).thenReturn(Future.successful(credentialId))
 
@@ -185,7 +186,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
       implicit val authContext = AuthContext(loggedInUser, principal, None)
 
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, "", "", "")))
+      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
       when(ruleContext.credentialId).thenReturn(Future.successful(credentialId))
