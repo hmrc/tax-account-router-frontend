@@ -54,12 +54,13 @@ class LoggedInSessionUser(tokenPresent: Boolean,
                           accounts: Accounts,
                           credentialStrength: CredentialStrength,
                           affinityGroup: String,
-                          oid: String,
+                          credId: String,
                           userDetailsLink: String) extends Stub with SessionCookieBaker {
 
   private val twoFactorAuthOtpId = if (isRegisteredFor2SV) """"twoFactorAuthOtpId": "1234",""" else ""
   private val credentialStrengthField = s""""credentialStrength": "${credentialStrength.name.toLowerCase}","""
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
+  private val oid = "oid-1234567890"
 
   override def create() = {
     val token =
@@ -92,7 +93,7 @@ class LoggedInSessionUser(tokenPresent: Boolean,
             s"""
                |{
                |    s"authId": "/auth/oid/$oid",
-               |    "credId": "cred-id-12345",
+               |    "credId": "$credId",
                |    "name": "JOHN THE SAINSBURY",
                |    $affinityGroupField
                |    "encodedGovernmentGatewayToken": "PGdhdGV3YXk6R2F0ZXdheVRva2VuIHhtbG5zOndzdD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNC8wNC90cnVzdCIgeG1sbnM6d3NhPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzAzL2FkZHJlc3NpbmciIHhtbG5zOndzc2U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS1zZWNleHQtMS4wLnhzZCIgeG1sbnM6d3N1PSJodHRwOi8vZG9jcy5vYXNpcy1vcGVuLm9yZy93c3MvMjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXdzc2VjdXJpdHktdXRpbGl0eS0xLjAueHNkIiB4bWxuczpzb2FwPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VudmVsb3BlLyI+PGdhdGV3YXk6Q3JlYXRlZD4yMDE0LTA2LTA5VDA5OjM5OjA2WjwvZ2F0ZXdheTpDcmVhdGVkPjxnYXRld2F5OkV4cGlyZXM+MjAxNC0wNi0wOVQxMzozOTowNlo8L2dhdGV3YXk6RXhwaXJlcz48Z2F0ZXdheTpVc2FnZT5TdGFuZGFyZDwvZ2F0ZXdheTpVc2FnZT48Z2F0ZXdheTpPcGFxdWU+ZXlKamNtVmtTV1FpT2lKamNtVmtMV2xrTFRVME16SXhNak13TURBeE9TSXNJbU55WldGMGFXOXVWR2x0WlNJNklqSXdNVFF0TURZdE1EbFVNRGs2TXprNk1EWXVNREF3V2lJc0ltVjRjR2x5ZVZScGJXVWlPaUl5TURFMExUQTJMVEE1VkRFek9qTTVPakEyTGpBd01Gb2lmUT09PC9nYXRld2F5Ok9wYXF1ZT48L2dhdGV3YXk6R2F0ZXdheVRva2VuPg=="
@@ -115,7 +116,8 @@ class LoggedInSessionUser(tokenPresent: Boolean,
                |    $credentialStrengthField
                |    "confidenceLevel": 500,
                |    "enrolments": "/enrolments-uri",
-               |    "userDetailsLink": "$userDetailsLink"
+               |    "userDetailsLink": "$userDetailsLink",
+               |    "credentials" : {"gatewayId" : "$credId"}
                |}
                |"""
               .stripMargin
@@ -129,7 +131,7 @@ object LoggedInSessionUser {
             accounts: Accounts,
             credentialStrength: CredentialStrength,
             affinityGroup: String,
-            oid: String,
+            credId : String,
             userDetailsLink: String) =
-    new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, oid, userDetailsLink)
+    new LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, credId, userDetailsLink)
 }

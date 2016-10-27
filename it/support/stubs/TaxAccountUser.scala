@@ -26,16 +26,16 @@ case class TaxAccountUser(loggedIn: Boolean = true,
                           accounts: Accounts = Accounts(),
                           credentialStrength: CredentialStrength = CredentialStrength.None,
                           affinityGroup: String = AffinityGroupValue.ORGANISATION,
-                          oid: String = "1234567890",
+                          credId : String = "credid-1234567890",
                           userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri")
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, oid, userDetailsLink).create()
+      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, credId, userDetailsLink).create()
 
     } else {
-      LoggedOutSessionUser.create
+      LoggedOutSessionUser.create()
     }
   }
 }

@@ -47,7 +47,8 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
     val enrolmentsUri = "/enrolments"
     val userDetailsLink = "/userDetailsLink"
-    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = enrolmentsUri, userDetailsLink = userDetailsLink)
+    val credentialId = "cred id"
+    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = enrolmentsUri, userDetailsLink = userDetailsLink, credentialId = credentialId)
 
     val expectedAffinityGroup = "some-affinity-group"
     val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)

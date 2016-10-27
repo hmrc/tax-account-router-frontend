@@ -20,11 +20,12 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
-case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: String, userDetailsLink: String)
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: String, userDetailsLink: String, credentialId: String)
 
 object CoAFEAuthority {
   implicit val reads =
     ((JsPath \ "twoFactorAuthOtpId").readNullable[String] and
       (JsPath \ "enrolments").read[String] and
-      (JsPath \ "userDetailsLink").read[String]).apply(CoAFEAuthority.apply _)
+      (JsPath \ "userDetailsLink").read[String] and
+      (JsPath \ "credentials" \ "gatewayId").read[String]).apply(CoAFEAuthority.apply _)
 }
