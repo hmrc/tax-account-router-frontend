@@ -229,6 +229,8 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
           (auditEventCaptor.getValue.detail \ "userEnrolments") shouldBe Json.toJson(activeGGEnrolments)
         }
 
+        def verifyNoAuditWasSent() = verifyNoMoreInteractions(auditConnectorMock)
+
         val loggedInUser = LoggedInUser("", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
         implicit val authContext = AuthContext(loggedInUser, principal, None)
 
@@ -266,7 +268,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         }
 
         eventually {
-          if (!destinationIsUplifted) verifyAuditWasSent else verifyNoMoreInteractions(auditConnectorMock)
+          if (destinationIsUplifted) verifyNoAuditWasSent() else verifyAuditWasSent()
         }
 
         verifyNoMoreInteractions(allMocks: _*)
