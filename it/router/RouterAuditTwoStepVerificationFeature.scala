@@ -35,6 +35,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "company-auth.host" -> s"http://$stubHost:$stubPort",
     "tax-account-router.host" -> "",
     "two-step-verification.enabled" -> true,
+    "two-step-verification.uplift-locations" -> "set-up-extra-security", /* remove the other lcoations so audit event is fired */
     "two-step-verification.user-segment.sa.throttle.default" -> throttle
   )
 
