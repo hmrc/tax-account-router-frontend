@@ -85,12 +85,18 @@ trait TwoStepVerification {
 
     def throttleLocation(rule: Biz2SVRule, locations: ThrottleLocations, credId: String) = twoStepVerificationThrottle.isRegistrationMandatory(rule.name, credId) match {
       case true =>
-        if (isUplifted(locations.mandatory)) auditContext.setSentToMandatory2SVRegister(rule.name)
-        sendAuditEvent(rule, ruleContext, mandatory = true)
+        if (isUplifted(locations.mandatory)) {
+          auditContext.setSentToMandatory2SVRegister(rule.name)
+        } else {
+          sendAuditEvent(rule, ruleContext, mandatory = true)
+        }
         locations.mandatory
       case _ =>
-        if (isUplifted(locations.optional)) auditContext.setSentToOptional2SVRegister(rule.name)
-        sendAuditEvent(rule, ruleContext, mandatory = false)
+        if (isUplifted(locations.optional)) {
+          auditContext.setSentToOptional2SVRegister(rule.name)
+        } else {
+          sendAuditEvent(rule, ruleContext, mandatory = false)
+        }
         locations.optional
     }
 

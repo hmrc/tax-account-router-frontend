@@ -214,8 +214,21 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       ("redirect to bta when assistant user has only SA and VAT enrolments, throttle chooses mandatory", true, false, saEnrolments ++ vatEnrolments, false, "sa_vat", () => locationFromConf("bta"))
     )
 
+
     forAll(scenarios) { (scenario: String, isMandatory: Boolean, isAdmin: Boolean, enrolments: Set[String], destinationIsUplifted: Boolean, expectedRuleName: String, expectedRedirectLocation: () => Location) =>
       s"$scenario, continue url is BTA, the user is not registered for 2SV, no strong credentials" in new Setup {
+
+        def verifyAuditWasSent() = {
+          verify(ruleContext).userDetails
+          verify(ruleContext, times(1)).activeEnrolments
+
+          val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
+          verify(auditConnectorMock).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+          (auditEventCaptor.getValue.detail \ "ruleApplied").as[String] shouldBe s"rule_$expectedRuleName"
+          (auditEventCaptor.getValue.detail \ "credentialRole").as[String] shouldBe credentialRole
+          (auditEventCaptor.getValue.detail \ "userEnrolments") shouldBe Json.toJson(activeGGEnrolments)
+        }
+
         val loggedInUser = LoggedInUser("", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
         implicit val authContext = AuthContext(loggedInUser, principal, None)
 
@@ -239,8 +252,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
         verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
-        verify(ruleContext).userDetails
-        verify(ruleContext, times(1)).activeEnrolments
+
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(ruleContext).credentialId
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, credentialId)
@@ -254,11 +266,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         }
 
         eventually {
-          val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
-          verify(auditConnectorMock).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
-          (auditEventCaptor.getValue.detail \ "ruleApplied").as[String] shouldBe s"rule_$expectedRuleName"
-          (auditEventCaptor.getValue.detail \ "credentialRole").as[String]  shouldBe credentialRole
-          (auditEventCaptor.getValue.detail \ "userEnrolments") shouldBe Json.toJson(activeGGEnrolments)
+          if (!destinationIsUplifted) verifyAuditWasSent else verifyNoMoreInteractions(auditConnectorMock)
         }
 
         verifyNoMoreInteractions(allMocks: _*)
