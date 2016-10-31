@@ -87,14 +87,12 @@ trait TwoStepVerification {
       case true =>
         if (isUplifted(locations.mandatory)) {
           auditContext.setSentToMandatory2SVRegister(rule.name)
-        } else {
           sendAuditEvent(rule, ruleContext, mandatory = true)
         }
         locations.mandatory
       case _ =>
         if (isUplifted(locations.optional)) {
           auditContext.setSentToOptional2SVRegister(rule.name)
-        } else {
           sendAuditEvent(rule, ruleContext, mandatory = false)
         }
         locations.optional
