@@ -268,7 +268,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         }
 
         eventually {
-          if (destinationIsUplifted) verifyNoAuditWasSent() else verifyAuditWasSent()
+          if (destinationIsUplifted) verifyAuditWasSent() else verifyNoAuditWasSent()
         }
 
         verifyNoMoreInteractions(allMocks: _*)
