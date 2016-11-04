@@ -138,7 +138,6 @@ trait TAuditContext {
         auditType = "Routing",
         tags = hc.toAuditTags(transactionNames.getOrElse(location, "unknown transaction"), request.path),
         detail = Json.obj(
-          "authId" -> authContext.user.userId,
           "destination" -> location.url,
           "reasons" -> routingReasons.toMap[String, String],
           "throttling" -> throttlingDetails.toMap[String, String],

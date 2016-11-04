@@ -53,7 +53,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   "router controller" should {
 
     "return location when location is provided by rules and there is an origin for this location" in new Setup {
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(location1)
+      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(location1)
       val origin = "some-origin"
       val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService, twoStepVerification = mockTwoStepVerification)
 
@@ -64,12 +64,12 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val locationWithOrigin = Location(location1.name, location1.url)
       checkResult(route, locationWithOrigin, "none")
 
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
       verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return location without origin when location is provided by rules and there is not an origin for this location" in new Setup {
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(location1)
+      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(location1)
 
       val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService, twoStepVerification = mockTwoStepVerification)
 
@@ -79,7 +79,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //then
       checkResult(route, location1, "none")
 
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
       verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
     }
 
@@ -88,7 +88,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val expectedLocation = BusinessTaxAccount
 
       //and
-      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedLocation)
+      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
       val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
 
@@ -98,7 +98,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //then
       checkResult(route, BusinessTaxAccount, "")
 
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
     }
 
     "send events to graphite and GA" in new Setup {
@@ -107,7 +107,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       val expectedLocation = BusinessTaxAccount
 
       //and
-      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedLocation)
+      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
       val ruleApplied = "some-rule"
       auditContext.ruleApplied = ruleApplied
@@ -127,7 +127,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //then
       checkResult(route, BusinessTaxAccount, ruleApplied)
 
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
 
       verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
 
@@ -149,7 +149,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       when(auditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
 
       val expectedThrottledLocation: Location = PersonalTaxAccount
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])).thenReturn(expectedThrottledLocation)
+      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedThrottledLocation)
 
       val mockAuditConnector = mock[AuditConnector]
       val controller = new TestRouterController(
@@ -174,7 +174,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
         auditEventCaptor.getValue shouldBe mockAuditEvent
       }
 
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext))(eqTo(fakeRequest), eqTo(authContext), any[ExecutionContext])
+      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
     }
   }
 
@@ -211,6 +211,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       Helpers.redirectLocation(route) should contain(location.fullUrl)
     }
   }
+
 }
 
 object Mocks extends MockitoSugar {

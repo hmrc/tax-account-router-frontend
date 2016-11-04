@@ -142,7 +142,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditEvent.tags("transactionName") shouldBe "unknown transaction"
 
       auditEvent.detail shouldBe Json.obj(
-        "authId" -> authId,
         "destination" -> destination.url,
         "reasons" -> reasonsMap,
         "throttling" -> throttlingMap,
@@ -171,7 +170,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
 
         val path = "/some/path"
         val destination = Location("/some/destination", "location-name")
-        val authId: String = "authId"
 
         val accounts: Accounts = Accounts(
           epaye = epaye,
@@ -180,7 +178,7 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
           vat = vat
         )
 
-        implicit val authContext = AuthContext(LoggedInUser(authId, None, None, None, CredentialStrength.None, ConfidenceLevel.L0), Principal(None, accounts), None)
+        implicit val authContext = AuthContext(LoggedInUser("", None, None, None, CredentialStrength.None, ConfidenceLevel.L0), Principal(None, accounts), None)
         implicit val fakeRequest = FakeRequest(method = "GET", uri = path, headers = FakeHeaders(), remoteAddress = "127.0.0.1", body = null)
         implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
