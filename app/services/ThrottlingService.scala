@@ -16,7 +16,7 @@
 
 package services
 
-import cryptography.Encryption
+import cryptography.Cryptography
 import model.Locations._
 import model.{Location, _}
 import org.joda.time.DateTime
@@ -35,7 +35,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
   def random: Random
 
-  def encryption: Encryption
+  def cryptography: Cryptography
 
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
   val stickyRoutingEnabled = Play.configuration.getBoolean("sticky-routing.enabled").getOrElse(false)
@@ -80,11 +80,11 @@ trait ThrottlingService extends BSONBuilderHelpers {
 
     def location(credId: String) = {
 
-      val userId = encryption.getSha256(credId)
+      val shadCredId = cryptography.getSha256(credId)
 
       stickyRoutingEnabled match {
         case true =>
-          routingCacheRepository.findById(Id(userId)).flatMap { optionalCache =>
+          routingCacheRepository.findById(Id(shadCredId)).flatMap { optionalCache =>
 
             optionalCache.flatMap { cache =>
 
@@ -99,11 +99,11 @@ trait ThrottlingService extends BSONBuilderHelpers {
                         auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, initialLocation != finalLocation, initialLocation, throttlingEnabled, stickyRoutingApplied))
                         Future(finalLocation)
                       case false =>
-                        doThrottling(initialLocation, auditContext, userId)
+                        doThrottling(initialLocation, auditContext, shadCredId)
                     }
 
                     throttledLocation.andThen {
-                      case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+                      case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, shadCredId)
                     }
                   case JsError(e) =>
                     Logger.error(s"Error reading document $e")
@@ -112,23 +112,23 @@ trait ThrottlingService extends BSONBuilderHelpers {
               }
 
             }.getOrElse {
-              val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+              val throttledLocation = doThrottling(initialLocation, auditContext, shadCredId)
               throttledLocation.andThen {
-                case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+                case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, shadCredId)
               }
             }
           }
         case false =>
-          val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+          val throttledLocation = doThrottling(initialLocation, auditContext, shadCredId)
           throttledLocation.andThen {
-            case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+            case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, shadCredId)
           }
       }
     }
     ruleContext.credentialId.flatMap(location)
   }
 
-  def doThrottling(location: Location, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {
+  def doThrottling(location: Location, auditContext: TAuditContext, credId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {
     throttlingEnabled match {
       case false =>
         auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, throttled = false, location, throttlingEnabled, stickyRoutingApplied = false))
@@ -142,7 +142,7 @@ trait ThrottlingService extends BSONBuilderHelpers {
           case x if x <= throttlingChance => Future(Locations.find(findFallbackFor(configurationForLocation, location)).getOrElse(location))
           case _ =>
             val fallbackLocation = Locations.find(findFallbackFor(configurationForLocation, location)).getOrElse(location)
-            hourlyLimitService.applyHourlyLimit(location, fallbackLocation, userId, findConfigurationFor(location))
+            hourlyLimitService.applyHourlyLimit(location, fallbackLocation, credId, findConfigurationFor(location))
         }
 
         finalLocation.andThen {
@@ -151,11 +151,11 @@ trait ThrottlingService extends BSONBuilderHelpers {
     }
   }
 
-  def createOrUpdateRoutingCache(location: Location, throttledLocation: Location, utr: String) = {
+  def createOrUpdateRoutingCache(location: Location, throttledLocation: Location, credId: String) = {
     if (stickyRoutingEnabled) {
-      documentExpirationTime.get((location, throttledLocation)).flatMap(identity).map { documentExpirationTime =>
+      documentExpirationTime.get((location, throttledLocation)).flatten.map { documentExpirationTime =>
         val expirationTime: DateTime = documentExpirationTime.getExpirationTime
-        routingCacheRepository.createOrUpdate(utr, "routingInfo", Json.toJson(RoutingInfo(location.name, throttledLocation.name, expirationTime)))
+        routingCacheRepository.createOrUpdate(credId, "routingInfo", Json.toJson(RoutingInfo(location.name, throttledLocation.name, expirationTime)))
         throttledLocation
       }
     }
@@ -168,7 +168,7 @@ object ThrottlingService extends ThrottlingService {
 
   override val routingCacheRepository: RoutingCacheRepository = RoutingCacheRepository()
 
-  override def encryption: Encryption = Encryption
+  override def cryptography: Cryptography = Cryptography
 
   override def hourlyLimitService: HourlyLimitService = HourlyLimitService
 }

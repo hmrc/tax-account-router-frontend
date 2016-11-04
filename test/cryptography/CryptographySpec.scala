@@ -16,15 +16,13 @@
 
 package cryptography
 
-import java.security.MessageDigest
+import uk.gov.hmrc.play.test.UnitSpec
 
-trait Encryption {
+class CryptographySpec extends UnitSpec {
 
-  def messageDigest: MessageDigest
-
-  def getSha256(string: String): String = messageDigest.digest(string.getBytes).map("%02x".format(_)).mkString
-}
-
-object Encryption extends Encryption {
-  override def messageDigest: MessageDigest = MessageDigest.getInstance("SHA-256")
+  "Cryptography" should {
+    "return the SHA-256 digest value for a given string" in {
+      Cryptography.getSha256("test") shouldBe "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    }
+  }
 }
