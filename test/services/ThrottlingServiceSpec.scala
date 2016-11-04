@@ -39,8 +39,6 @@ import reactivemongo.api.ReadPreference
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.{Cache, Id}
 import uk.gov.hmrc.mongo.DatabaseUpdate
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{ConfidenceLevel, CredentialStrength}
-import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,7 +62,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     DateTimeUtils.setCurrentMillisSystem()
   }
 
-  val userId = "user-id"
+  val credId = "credid"
   val encryptedUserId = "encrypted-user-id"
 
   def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageBeToThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false) = {
@@ -78,8 +76,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     )
   }
 
-  def authContextStub(userId: String): AuthContext = AuthContext(LoggedInUser(userId, None, None, None, CredentialStrength.None, ConfidenceLevel.L0), mock[Principal], None)
-
   "ThrottlingService" should {
 
     "not throttle if throttling disabled and sticky routing disabled" in {
@@ -87,15 +83,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //given
         val initialLocation = BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
-        implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
 
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-        val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+        val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+        val mockRuleContext = mock[RuleContext]
+        when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
 
         //when
-        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(initialLocation, mockAuditContext)
+        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(initialLocation, mockAuditContext, mockRuleContext)
 
         //then
         await(returnedLocation) shouldBe initialLocation
@@ -115,12 +112,11 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //given
         val initialLocation = BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
-        implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
 
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-        val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+        val mockEncryption = Mocks.encryption(credId, encryptedUserId)
 
         val mockHourlyLimitService = Mocks.mockHourlyLimitService()
         val configurationForLocation = Configuration.empty
@@ -129,9 +125,11 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             eqTo(initialLocation), eqTo(initialLocation), eqTo(encryptedUserId), eqTo(configurationForLocation)
           )(any[ExecutionContext])
         ).thenReturn(Future(initialLocation))
+        val mockRuleContext = mock[RuleContext]
+        when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
 
         //when
-        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(initialLocation, mockAuditContext)
+        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(initialLocation, mockAuditContext,mockRuleContext)
 
         //then
         await(returnedLocation) shouldBe initialLocation
@@ -154,15 +152,17 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //given
         val initialLocation = BusinessTaxAccount
         implicit val mockRequest = FakeRequest()
-        implicit val authContext = authContextStub(userId)
         val mockAuditContext: AuditContext = mock[AuditContext]
 
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-        val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+        val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+        val mockRuleContext = mock[RuleContext]
+        when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
+
 
         //when
-        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(initialLocation, mockAuditContext)
+        val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(initialLocation, mockAuditContext, mockRuleContext)
 
         //then
         await(returnedLocation) shouldBe initialLocation
@@ -197,7 +197,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val randomMock = mock[Random]
           when(randomMock.nextInt(100)) thenReturn randomNumber
           implicit val mockRequest = FakeRequest()
-          implicit val authContext = authContextStub(userId)
 
           //and
           val auditContextMock = mock[AuditContext]
@@ -216,13 +215,16 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
-          val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+          val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+          val mockRuleContext = mock[RuleContext]
+          when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
+
 
           //and
           val throttlingServiceTest = new ThrottlingServiceTest(random = randomMock, routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService)
 
           //when
-          val returnedLocation: Future[Location] = throttlingServiceTest.throttle(initialLocation, auditContextMock)
+          val returnedLocation: Future[Location] = throttlingServiceTest.throttle(initialLocation, auditContextMock, mockRuleContext)
 
           //then
           await(returnedLocation) shouldBe expectedLocation
@@ -272,7 +274,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             case false => FakeRequest()
             case true => FakeRequest().withSession(("token", "token"))
           }
-          implicit val authContext = authContextStub(userId)
           val id = Id(encryptedUserId)
           val mockAuditContext = mock[AuditContext]
 
@@ -285,10 +286,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val expectedExpirationTime: DateTime = DateTime.now(DateTimeZone.UTC).plusSeconds(shortLiveDocumentExpirationSeconds)
           when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, expectedLocation, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
-          val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+          val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+          val mockRuleContext = mock[RuleContext]
+          when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
+
 
           //when
-          val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(PersonalTaxAccount, mockAuditContext)
+          val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(PersonalTaxAccount, mockAuditContext, mockRuleContext)
 
           //then
           await(returnedLocation).name shouldBe expectedLocation
@@ -322,7 +326,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       running(FakeApplication(additionalConfiguration = configuration)) {
         //given
         implicit val fakeRequest = FakeRequest().withSession(("token", "token"))
-        implicit val authContext = authContextStub(userId)
         val id = Id(encryptedUserId)
         val mockAuditContext = mock[AuditContext]
 
@@ -335,10 +338,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val expectedExpirationTime = fixedDateTime.plusSeconds(shortLiveDocumentExpirationSeconds)
         when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
-        val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+        val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+        val mockRuleContext = mock[RuleContext]
+        when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
+
 
         //when
-        val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(PersonalTaxAccount, mockAuditContext)
+        val returnedLocation = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption).throttle(PersonalTaxAccount, mockAuditContext, mockRuleContext)
 
         //then
         await(returnedLocation).name shouldBe BusinessTaxAccount.name
@@ -371,7 +377,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
           //given
           implicit lazy val fakeRequest = FakeRequest()
-          implicit val authContext = authContextStub(userId)
           val id = Id(encryptedUserId)
           val mockAuditContext = mock[AuditContext]
 
@@ -386,10 +391,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           //and
           val mockHourlyLimitService = Mocks.mockHourlyLimitService()
 
-          val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+          val mockEncryption = Mocks.encryption(credId, encryptedUserId)
+          val mockRuleContext = mock[RuleContext]
+          when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
+
 
           //when
-          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext)
+          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext,mockRuleContext)
 
           //then
           await(returnedLocation) shouldBe throttledLocation
@@ -425,7 +433,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
           //given
           implicit lazy val fakeRequest = FakeRequest()
-          implicit val authContext = authContextStub(userId)
           val id = Id(encryptedUserId)
           val mockAuditContext = mock[AuditContext]
 
@@ -437,7 +444,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val mockDatabaseUpdateResult = mock[Future[DatabaseUpdate[Cache]]]
           when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(routedLocation.name, routedLocation.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
-          val mockEncryption = Mocks.encryption(userId, encryptedUserId)
+          val mockEncryption = Mocks.encryption(credId, encryptedUserId)
 
           //and
           val mockHourlyLimitService = Mocks.mockHourlyLimitService()
@@ -450,9 +457,11 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
               eqTo(routedLocation), eqTo(routedLocation), eqTo(encryptedUserId), eqTo(configurationForLocation)
             )(any[ExecutionContext])
           ).thenReturn(Future(routedLocation))
+          val mockRuleContext = mock[RuleContext]
+          when(mockRuleContext.credentialId).thenReturn(Future.successful(credId))
 
           //when
-          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext)
+          val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, encryption = mockEncryption, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext, mockRuleContext)
 
           //then
           await(returnedLocation) shouldBe routedLocation

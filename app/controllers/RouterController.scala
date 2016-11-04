@@ -82,7 +82,7 @@ trait RouterController extends FrontendController with Actions {
 
     for {
       destinationAfterRulesApplied <- ruleEngineResult
-      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext)
+      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
       sendAuditEvent(auditContext, destinationAfterThrottleApplied)

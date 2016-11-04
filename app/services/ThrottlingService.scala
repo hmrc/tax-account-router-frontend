@@ -27,7 +27,6 @@ import play.api.{Configuration, Logger, Play}
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.Id
 import uk.gov.hmrc.mongo.BSONBuilderHelpers
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Random, Success}
@@ -77,52 +76,56 @@ trait ThrottlingService extends BSONBuilderHelpers {
     configurationForLocation.getString("percentageBeToThrottled").map(_.toInt)
   }
 
-  def throttle(initialLocation: Location, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext, ex: ExecutionContext): Future[Location] = {
+  def throttle(initialLocation: Location, auditContext: TAuditContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {
 
-    val userId = encryption.getSha256(authContext.user.userId)
+    def location(credId: String) = {
 
-    stickyRoutingEnabled match {
-      case true =>
-        routingCacheRepository.findById(Id(userId)).flatMap { optionalCache =>
+      val userId = encryption.getSha256(credId)
 
-          optionalCache.flatMap { cache =>
+      stickyRoutingEnabled match {
+        case true =>
+          routingCacheRepository.findById(Id(userId)).flatMap { optionalCache =>
 
-            cache.data.map { data =>
-              val jsResult = Json.fromJson[RoutingInfo](data)
-              jsResult match {
-                case JsSuccess(routingInfo, _) =>
-                  val stickyRoutingApplied = Locations.find(routingInfo.routedDestination).contains(initialLocation) && routingInfo.expirationTime.isAfterNow
-                  val throttledLocation = stickyRoutingApplied match {
-                    case true =>
-                      val finalLocation = Locations.find(routingInfo.throttledDestination).get
-                      auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, initialLocation != finalLocation, initialLocation, throttlingEnabled, stickyRoutingApplied))
-                      Future(finalLocation)
-                    case false =>
-                      doThrottling(initialLocation, auditContext, userId)
-                  }
+            optionalCache.flatMap { cache =>
 
-                  throttledLocation.andThen {
-                    case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
-                  }
-                case JsError(e) =>
-                  Logger.error(s"Error reading document $e")
-                  Future(initialLocation)
+              cache.data.map { data =>
+                val jsResult = Json.fromJson[RoutingInfo](data)
+                jsResult match {
+                  case JsSuccess(routingInfo, _) =>
+                    val stickyRoutingApplied = Locations.find(routingInfo.routedDestination).contains(initialLocation) && routingInfo.expirationTime.isAfterNow
+                    val throttledLocation = stickyRoutingApplied match {
+                      case true =>
+                        val finalLocation = Locations.find(routingInfo.throttledDestination).get
+                        auditContext.setThrottlingDetails(ThrottlingAuditContext(throttlingPercentage = None, initialLocation != finalLocation, initialLocation, throttlingEnabled, stickyRoutingApplied))
+                        Future(finalLocation)
+                      case false =>
+                        doThrottling(initialLocation, auditContext, userId)
+                    }
+
+                    throttledLocation.andThen {
+                      case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+                    }
+                  case JsError(e) =>
+                    Logger.error(s"Error reading document $e")
+                    Future(initialLocation)
+                }
+              }
+
+            }.getOrElse {
+              val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+              throttledLocation.andThen {
+                case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
               }
             }
-
-          }.getOrElse {
-            val throttledLocation = doThrottling(initialLocation, auditContext, userId)
-            throttledLocation.andThen {
-              case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
-            }
           }
-        }
-      case false =>
-        val throttledLocation = doThrottling(initialLocation, auditContext, userId)
-        throttledLocation.andThen {
-          case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
-        }
+        case false =>
+          val throttledLocation = doThrottling(initialLocation, auditContext, userId)
+          throttledLocation.andThen {
+            case Success(tLocation) => createOrUpdateRoutingCache(initialLocation, tLocation, userId)
+          }
+      }
     }
+    ruleContext.credentialId.flatMap(location)
   }
 
   def doThrottling(location: Location, auditContext: TAuditContext, userId: String)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {
