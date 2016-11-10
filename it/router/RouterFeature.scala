@@ -17,7 +17,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected to PTA") {
 
       Given("a user logged in through Verify")
-      createStubs(TaxAccountUser(tokenPresent = false))
+      createStubs(TaxAccountUser(loggedInViaGateway = false))
 
       createStubs(PtaHomeStubPage)
 
@@ -28,10 +28,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should not be fetched from Auth")
-      verify(0, getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(0, getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -57,10 +57,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -91,10 +91,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -125,10 +125,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -156,10 +156,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -190,10 +190,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -224,10 +224,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -258,10 +258,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -292,7 +292,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -319,10 +319,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -349,10 +349,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -379,10 +379,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -390,5 +390,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
+  }
+
+  private def verifyAuthorityObjectIsFetched = {
+    verify(getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
   }
 }

@@ -27,7 +27,7 @@ trait HourlyLimitService {
 
   def hourlyLimitsCacheRepository: HourlyLimitsCacheRepository
 
-  def applyHourlyLimit(location: Location, fallbackLocation: Location, credId: String, configurationForLocation: Configuration)(implicit ec: ExecutionContext): Future[Location] = {
+  def applyHourlyLimit(location: Location, fallbackLocation: Location, userIdentifier: String, configurationForLocation: Configuration)(implicit ec: ExecutionContext): Future[Location] = {
     val hourOfDay = DateTime.now().getHourOfDay
     val hourlyLimit = configurationForLocation.getInt(s"hourlyLimit.$hourOfDay").fold(configurationForLocation.getInt("hourlyLimit.other")) {
       Some(_)
@@ -36,14 +36,14 @@ trait HourlyLimitService {
     hourlyLimit match {
       case Some(limit) =>
         val id = HourlyLimitId(location, hourOfDay)
-        val updateResult = hourlyLimitsCacheRepository.createOrUpdate(id, limit, credId)
+        val updateResult = hourlyLimitsCacheRepository.createOrUpdate(id, limit, userIdentifier)
 
         updateResult.flatMap {
           resultOption =>
             resultOption.map { databaseUpdate =>
               Future(location)
             }.getOrElse {
-              val hourlyLimitAlreadyExists = hourlyLimitsCacheRepository.exists(id, credId)
+              val hourlyLimitAlreadyExists = hourlyLimitsCacheRepository.exists(id, userIdentifier)
               hourlyLimitAlreadyExists.map {
                 case true => location
                 case false => fallbackLocation

@@ -25,7 +25,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Verify")
-      createStubs(TaxAccountUser(tokenPresent = false))
+      createStubs(TaxAccountUser(loggedInViaGateway = false))
 
       val auditEventStub = stubAuditEvent()
 

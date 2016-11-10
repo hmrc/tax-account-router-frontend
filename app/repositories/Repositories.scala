@@ -49,11 +49,11 @@ class HourlyLimitsCacheRepository(implicit mongo: () => DB) extends CacheMongoRe
 
   implicit val myCacheFormat = CacheFormat.format
 
-  def createOrUpdate(id: HourlyLimitId, hourlyLimit: Int, credId: String)(implicit ec: ExecutionContext): Future[Option[DatabaseUpdate[Cache]]] = {
+  def createOrUpdate(id: HourlyLimitId, hourlyLimit: Int, userIdentifier: String)(implicit ec: ExecutionContext): Future[Option[DatabaseUpdate[Cache]]] = {
 
     val selector = BSONDocument(
       "_id" -> BSONString(id.value),
-      "data.users" -> BSONDocument("$not" -> BSONDocument("$in" -> BSONArray(BSONString(credId)))),
+      "data.users" -> BSONDocument("$not" -> BSONDocument("$in" -> BSONArray(BSONString(userIdentifier)))),
       "$where" -> BSONString(s"this.data.users.length < $hourlyLimit")
     )
 
@@ -62,7 +62,7 @@ class HourlyLimitsCacheRepository(implicit mongo: () => DB) extends CacheMongoRe
       val now = time.getMillis
 
       List(
-        BSONDocument("$addToSet" -> BSONDocument("data.users" -> BSONString(credId))),
+        BSONDocument("$addToSet" -> BSONDocument("data.users" -> BSONString(userIdentifier))),
         BSONDocument(
           "$set" -> BSONDocument("modifiedDetails.lastUpdated" -> BSONDateTime(now)),
           "$setOnInsert" -> BSONDocument("modifiedDetails.createdAt" -> BSONDateTime(now))

@@ -16,7 +16,7 @@
 
 package engine
 
-import connector.{AffinityGroupValue, GovernmentGatewayEnrolment, SaReturn}
+import connector._
 import model.RoutingReason._
 import model._
 import org.mockito.Mockito._
@@ -353,7 +353,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
         val ruleContext = mock[RuleContext]
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, "", "", "")))
+        when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, None, "", InternalUserIdentifier(""))))
 
         val result = await(HasRegisteredFor2SV.isTrue(authContext, ruleContext))
 

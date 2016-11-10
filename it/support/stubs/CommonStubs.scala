@@ -44,7 +44,7 @@ trait CommonStubs {
   }
 
   def stubBusinessEnrolments() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -62,7 +62,7 @@ trait CommonStubs {
       .map(key => s"""{"key": "$key", "identifiers": [{"key": "$key-id", "value": "${Random.nextInt(100000)}"}], "state": "Activated"}""")
       .mkString(",")
 
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -73,7 +73,7 @@ trait CommonStubs {
   }
 
   def stubInactiveEnrolments() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -88,7 +88,7 @@ trait CommonStubs {
   }
 
   def stubSelfAssessmentEnrolments() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -102,7 +102,7 @@ trait CommonStubs {
   }
 
   def stubSelfAssessmentAndVatEnrolments() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -117,14 +117,14 @@ trait CommonStubs {
   }
 
   def stubNoEnrolments() = {
-    stubFor(get(urlMatching("/enrolments-uri"))
+    stubFor(get(urlMatching("/auth/enrolments-uri"))
       .willReturn(aResponse()
         .withStatus(200)
         .withBody("[]")))
   }
 
   def stubEnrolmentsToReturnAfter2Seconds() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)
@@ -139,7 +139,7 @@ trait CommonStubs {
   }
 
   def stubEnrolmentsToReturn500() = {
-    stubFor(get(urlMatching("/enrolments-uri"))
+    stubFor(get(urlMatching("/auth/enrolments-uri"))
       .willReturn(aResponse()
         .withStatus(500)))
   }
@@ -193,7 +193,7 @@ trait CommonStubs {
   def stubAuditEvent() = postRequestedFor(urlMatching("/write/audit.*"))
 
   def stubMoreThanOneSAEnrolment() = {
-    stubFor(get(urlEqualTo("/enrolments-uri"))
+    stubFor(get(urlEqualTo("/auth/enrolments-uri"))
       .willReturn(
         aResponse()
           .withStatus(200)

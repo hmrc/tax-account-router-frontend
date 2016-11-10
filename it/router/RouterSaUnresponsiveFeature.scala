@@ -45,10 +45,10 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -76,10 +76,10 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verify(getRequestedFor(urlEqualTo("/auth/authority")))
+      verifyAuthorityObjectIsFetched
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -87,5 +87,10 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
+  }
+
+  private def verifyAuthorityObjectIsFetched = {
+    verify(getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
   }
 }
