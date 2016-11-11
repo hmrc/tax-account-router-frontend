@@ -16,6 +16,8 @@
 
 package services
 
+import java.security.MessageDigest
+
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.{current, _}
@@ -27,17 +29,23 @@ trait TwoStepVerificationThrottle {
   def timeBasedLimit: TimeBasedLimit
 
   def isRegistrationMandatory(ruleName: String, discriminator: String) = {
-    val userValue = Math.abs((discriminator.hashCode % (bucketSize * decimalPointFactor)).toDouble) / decimalPointFactor
+    val userValue = Math.abs((discriminator.toMD5.hashCode % (bucketSize * decimalPointFactor)).toDouble) / decimalPointFactor
     val threshold = timeBasedLimit.getCurrentPercentageLimit(ruleName)
     Logger.info(s"Threshold: $threshold - userValue: $userValue")
     userValue <= threshold
+  }
+
+  implicit class MD5(value: String) {
+    def toMD5 = {
+      val md5 = MessageDigest.getInstance("MD5")
+      md5.digest(value.getBytes).map("%02x".format(_)).mkString
+    }
   }
 }
 
 object TwoStepVerificationThrottle extends TwoStepVerificationThrottle {
   override lazy val timeBasedLimit = TimeBasedLimit
 }
-
 
 trait TimeBasedLimit {
   def dateTimeProvider: () => DateTime

@@ -26,8 +26,8 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
 
   "registrationMandatory" should {
 
-    // expected user modulus is always -500
-    val discriminator = "74165acd-8edd-4768-83a8-848f3bbadc19" // Math.abs("74165acd-8edd-4768-83a8-848f3bbadc19".hashCode % 1000) = 500
+    // expected user modulus is always 500
+    val discriminator = "6e60e239-16e9-4bef-93d6-319b18d23587" // expected hashCode of MD5 value is 500
 
     val scenarios = Table(
       ("scenario", "expectedThreshold", "expectedResult"),
