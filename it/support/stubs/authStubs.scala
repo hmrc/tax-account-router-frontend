@@ -111,8 +111,7 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
       "ids" -> "/auth/ids-uri"
     ) ++
       (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
-      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri") else Json.obj()) ++
-      (if (loggedInViaGateway) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj())
+      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj())
 
     stubFor(get(urlEqualTo("/auth/authority"))
       .willReturn(

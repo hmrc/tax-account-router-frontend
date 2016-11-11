@@ -25,8 +25,6 @@ import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.util.Try
-
 case class EnrolmentIdentifier(key: String, value: String)
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
@@ -38,14 +36,9 @@ object GovernmentGatewayEnrolment {
 case class InternalUserIdentifier(value: String) extends AnyVal
 
 object InternalUserIdentifier {
-  implicit val reads: Reads[InternalUserIdentifier] = new Reads[InternalUserIdentifier] {
-    override def reads(json: JsValue): JsResult[InternalUserIdentifier] =
-      Try((json \ "internalId").as[String])
-        .map(id => JsSuccess(InternalUserIdentifier(id)))
-        .getOrElse(JsError("Error parsing internal user identifier"))
-  }
+  implicit val reads: Reads[InternalUserIdentifier] = (__ \ "internalId").read[String].map(InternalUserIdentifier(_))
 
-  implicit def toString(id: InternalUserIdentifier): String = id.value
+  implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
 case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: String, internalUserIdentifier: InternalUserIdentifier)
@@ -61,17 +54,21 @@ trait FrontendAuthConnector extends AuthConnector {
 
   private object Authority {
     implicit val reads: Reads[Authority] =
-      ((JsPath \ "twoFactorAuthOtpId").readNullable[String] and
-        (JsPath \ "enrolments").readNullable[String] and
-        (JsPath \ "userDetailsLink").read[String] and
-        (JsPath \ "ids").read[String]).apply(Authority.apply _)
+      ((__ \ "twoFactorAuthOtpId").readNullable[String] and
+        (__ \ "enrolments").readNullable[String] and
+        (__ \ "userDetailsLink").read[String] and
+        (__ \ "ids").read[String]).apply(Authority.apply _)
   }
 
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) =
+  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = {
+
+    def getIds(idsUri: String) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+
     http.GET[Authority](s"$serviceUrl/auth/authority")
-      .flatMap(authority => http.GET[InternalUserIdentifier](s"$serviceUrl${authority.idsUri}").map(internalUserIdentifier =>
+      .flatMap(authority => getIds(authority.idsUri).map(internalUserIdentifier =>
         CoAFEAuthority(authority.twoFactorAuthOtpId, authority.enrolmentsUri, authority.userDetailsLink, internalUserIdentifier)
       ))
+  }
 
   def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }

@@ -17,6 +17,7 @@
 package services
 
 import config.{AppConfigHelpers, FrontendAuditConnector}
+import connector.InternalUserIdentifier
 import model.Locations._
 import model._
 import play.api.libs.json.Json
@@ -83,7 +84,7 @@ trait TwoStepVerification {
       case None => Future.successful(None)
     }
 
-    def throttleLocation(rule: Biz2SVRule, locations: ThrottleLocations, userIdentifier: String) = twoStepVerificationThrottle.isRegistrationMandatory(rule.name, userIdentifier) match {
+    def throttleLocation(rule: Biz2SVRule, locations: ThrottleLocations, userIdentifier: InternalUserIdentifier) = twoStepVerificationThrottle.isRegistrationMandatory(rule.name, userIdentifier) match {
       case true =>
         if (isUplifted(locations.mandatory)) {
           auditContext.setSentToMandatory2SVRegister(rule.name)

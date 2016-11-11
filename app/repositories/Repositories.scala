@@ -16,6 +16,7 @@
 
 package repositories
 
+import connector.InternalUserIdentifier
 import model.Location
 import play.api.libs.json.{JsArray, JsString, Json}
 import play.modules.reactivemongo.MongoDbConnection
@@ -49,7 +50,7 @@ class HourlyLimitsCacheRepository(implicit mongo: () => DB) extends CacheMongoRe
 
   implicit val myCacheFormat = CacheFormat.format
 
-  def createOrUpdate(id: HourlyLimitId, hourlyLimit: Int, userIdentifier: String)(implicit ec: ExecutionContext): Future[Option[DatabaseUpdate[Cache]]] = {
+  def createOrUpdate(id: HourlyLimitId, hourlyLimit: Int, userIdentifier: InternalUserIdentifier)(implicit ec: ExecutionContext): Future[Option[DatabaseUpdate[Cache]]] = {
 
     val selector = BSONDocument(
       "_id" -> BSONString(id.value),
