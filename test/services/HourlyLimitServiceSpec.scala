@@ -16,6 +16,7 @@
 
 package services
 
+import connector.InternalUserIdentifier
 import helpers.SpecHelpers
 import model.Location
 import org.joda.time.{DateTime, DateTimeUtils}
@@ -49,6 +50,9 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
     DateTimeUtils.setCurrentMillisSystem()
   }
 
+  val userIdAsString = "userId"
+  val userId = InternalUserIdentifier(userIdAsString)
+
   "HourlyLimitServiceSpec" should {
 
     "return location when empty config" in {
@@ -56,7 +60,7 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
       val mockHourlyLimitsCacheRepository = mock[HourlyLimitsCacheRepository]
 
       //when
-      val futureLocation: Future[Location] = new HourlyLimitServiceTest(mockHourlyLimitsCacheRepository).applyHourlyLimit(location, fallback, "userId", Configuration.empty)
+      val futureLocation: Future[Location] = new HourlyLimitServiceTest(mockHourlyLimitsCacheRepository).applyHourlyLimit(location, fallback, userId, Configuration.empty)
 
       //then
       await(futureLocation) shouldBe location
@@ -74,7 +78,7 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
       val mockHourlyLimitsCacheRepository = mock[HourlyLimitsCacheRepository]
 
       //when
-      val futureLocation: Future[Location] = new HourlyLimitServiceTest(mockHourlyLimitsCacheRepository).applyHourlyLimit(location, fallback, "userId", configuration)
+      val futureLocation: Future[Location] = new HourlyLimitServiceTest(mockHourlyLimitsCacheRepository).applyHourlyLimit(location, fallback, userId, configuration)
 
       //then
       await(futureLocation) shouldBe location
@@ -106,9 +110,6 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
     forAll(scenarios) { (scenario: String, configuration: Configuration) =>
       s"return location when $scenario and repository returns update operation" in {
         //given
-        val userId = "userId"
-
-        //and
         val hourlyLimitId: HourlyLimitId = HourlyLimitId(location, fixedDateTime.getHourOfDay)
         val mockHourlyLimitsCacheRepository = mock[HourlyLimitsCacheRepository]
         when(mockHourlyLimitsCacheRepository.createOrUpdate(hourlyLimitId, limit, userId)).thenReturn(Future(Some(mock[DatabaseUpdate[Cache]])))
@@ -120,7 +121,7 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
         await(futureLocation) shouldBe location
 
         //and
-        verify(mockHourlyLimitsCacheRepository).createOrUpdate(eqTo(hourlyLimitId), eqTo(limit), eqTo(userId))(any[ExecutionContext])
+        verify(mockHourlyLimitsCacheRepository).createOrUpdate(eqTo(hourlyLimitId), eqTo(limit), InternalUserIdentifier(eqTo(userIdAsString)))(any[ExecutionContext])
         verifyNoMoreInteractions(mockHourlyLimitsCacheRepository)
       }
     }
@@ -143,7 +144,6 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
         val configuration = Configuration.from(Map(
           s"hourlyLimit.${fixedDateTime.getHourOfDay}" -> limit
         ))
-        val userId = "userId"
 
         //and
         val hourlyLimitId: HourlyLimitId = HourlyLimitId(location, fixedDateTime.getHourOfDay)
@@ -158,7 +158,7 @@ class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApp
         await(futureLocation) shouldBe expectedLocation
 
         //and
-        verify(mockHourlyLimitsCacheRepository).createOrUpdate(eqTo(hourlyLimitId), eqTo(limit), eqTo(userId))(any[ExecutionContext])
+        verify(mockHourlyLimitsCacheRepository).createOrUpdate(eqTo(hourlyLimitId), eqTo(limit), InternalUserIdentifier(eqTo(userIdAsString)))(any[ExecutionContext])
         verify(mockHourlyLimitsCacheRepository).exists(eqTo(hourlyLimitId), eqTo(userId))(any[ExecutionContext])
         verifyNoMoreInteractions(mockHourlyLimitsCacheRepository)
       }

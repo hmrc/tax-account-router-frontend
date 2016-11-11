@@ -21,18 +21,18 @@ import support.Env
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 
 case class TaxAccountUser(loggedIn: Boolean = true,
-                          tokenPresent: Boolean = true,
+                          loggedInViaGateway: Boolean = true,
                           isRegisteredFor2SV: Boolean = true,
                           accounts: Accounts = Accounts(),
                           credentialStrength: CredentialStrength = CredentialStrength.None,
                           affinityGroup: String = AffinityGroupValue.ORGANISATION,
-                          credId : String = "credid-1234567890",
+                          internalUserIdentifier : String = "id1234567890",
                           userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri")
   extends Stub {
 
   def create() = {
     if (loggedIn) {
-      LoggedInSessionUser(tokenPresent, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, credId, userDetailsLink).create()
+      LoggedInSessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink).create()
 
     } else {
       LoggedOutSessionUser.create()

@@ -17,11 +17,13 @@
 package connector
 
 import config.WSHttp
-import model.CoAFEAuthority
-import play.api.libs.json.Json
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 case class EnrolmentIdentifier(key: String, value: String)
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
@@ -31,14 +33,42 @@ object GovernmentGatewayEnrolment {
   implicit val fmt = Json.format[GovernmentGatewayEnrolment]
 }
 
+case class InternalUserIdentifier(value: String) extends AnyVal
+
+object InternalUserIdentifier {
+  implicit val reads: Reads[InternalUserIdentifier] = (__ \ "internalId").read[String].map(InternalUserIdentifier(_))
+
+  implicit def convertToString(id: InternalUserIdentifier): String = id.value
+}
+
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: String, internalUserIdentifier: InternalUserIdentifier)
+
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
   lazy val http = WSHttp
 }
 
-trait FrontendAuthConnector extends AuthConnector  {
+trait FrontendAuthConnector extends AuthConnector {
 
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = http.GET[CoAFEAuthority](s"$serviceUrl/auth/authority")
+  private case class Authority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: String, idsUri: String)
+
+  private object Authority {
+    implicit val reads: Reads[Authority] =
+      ((__ \ "twoFactorAuthOtpId").readNullable[String] and
+        (__ \ "enrolments").readNullable[String] and
+        (__ \ "userDetailsLink").read[String] and
+        (__ \ "ids").read[String]).apply(Authority.apply _)
+  }
+
+  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = {
+
+    def getIds(idsUri: String) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+
+    http.GET[Authority](s"$serviceUrl/auth/authority")
+      .flatMap(authority => getIds(authority.idsUri).map(internalUserIdentifier =>
+        CoAFEAuthority(authority.twoFactorAuthOtpId, authority.enrolmentsUri, authority.userDetailsLink, internalUserIdentifier)
+      ))
+  }
 
   def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }

@@ -33,9 +33,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should be fetched from User Details")
     verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -68,9 +69,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should be fetched from User Details")
     verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -106,9 +108,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should be fetched from User Details")
     verify(getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -143,9 +146,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should be fetched from User Details")
     verify(getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -174,9 +178,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
     verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should be fetched from User Details")
     verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -204,9 +209,10 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     And("the authority object should be fetched once for AuthenticatedBy")
     verify(getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
     And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
     And("user's details should not be fetched from User Details")
     verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -219,7 +225,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(
-    additionalConfiguration = config + ("two-step-verification.user-segment.sa.throttle.default" -> "1000", "two-step-verification.user-segment.sa_vat.throttle.default" -> "1000")
+    additionalConfiguration = config +("two-step-verification.user-segment.sa.throttle.default" -> "1000", "two-step-verification.user-segment.sa_vat.throttle.default" -> "1000")
   )
 
   feature("Router feature") {
@@ -247,9 +253,10 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+      verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched once from User Details")
       verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -282,9 +289,10 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+      verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched once from User Details")
       verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -319,9 +327,10 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+      verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -356,9 +365,10 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
 
       And("the authority object should be fetched once for AuthenticatedBy and once by 2SV")
       verify(2, getRequestedFor(urlEqualTo("/auth/authority")))
+      verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
 
       And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/enrolments-uri")))
+      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))

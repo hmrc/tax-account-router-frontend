@@ -1,5 +1,6 @@
 package repositories
 
+import connector.InternalUserIdentifier
 import model.Locations
 import org.joda.time.{DateTime, DateTimeUtils}
 import org.scalatest.{BeforeAndAfter, GivenWhenThen}
@@ -26,7 +27,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
     await(mongo().collection[JSONCollection]("hourlyLimits").drop())
   }
 
-  val dataReads = (JsPath \ "users").read[Array[String]]
+  val dataReads = (JsPath \ "users").read[Array[String]].map(users => users.map(InternalUserIdentifier(_)))
 
   "HourlyLimitsCacheRepository" should {
     "create or update cache documents - no update with same user" in {
@@ -39,7 +40,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
-      val userId = "user-id"
+      val userId = InternalUserIdentifier("user-id")
       val hourlyLimit = 100
 
       When("createOrUpdate is invoked")
@@ -83,7 +84,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
-      val user1Id = "user-1-id"
+      val user1Id = InternalUserIdentifier("user-1-id")
       val hourlyLimit = 100
 
       When("createOrUpdate is invoked")
@@ -99,7 +100,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       usersAfterCreation.get shouldBe Array(user1Id)
 
       When("createOrUpdate is invoked with another user in the same hour and the hourly limit has not been reached")
-      val user2Id = "user-2-id"
+      val user2Id = InternalUserIdentifier("user-2-id")
       val fixedTime2 = fixedTime1.plusHours(1)
       DateTimeUtils.setCurrentMillisFixed(fixedTime2.getMillis)
       await(repository.createOrUpdate(documentId, hourlyLimit, user2Id))
@@ -124,7 +125,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
-      val user1Id = "user-1-id"
+      val user1Id = InternalUserIdentifier("user-1-id")
 
       And("a hourly limit of 1")
       val hourlyLimit = 1
@@ -133,7 +134,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       await(repository.createOrUpdate(documentId, hourlyLimit, user1Id))
 
       When("createOrUpdate is invoked with an another user")
-      val user2Id = "user-2-id"
+      val user2Id = InternalUserIdentifier("user-2-id")
       await(repository.createOrUpdate(documentId, hourlyLimit, user2Id))
 
       Then("the document should contain only the first user")
@@ -153,7 +154,7 @@ class HourlyLimitsCacheRepositoryISpec extends UnitSpec with MongoSpecSupport wi
       val location = Locations.BusinessTaxAccount
       val documentId = HourlyLimitId(location, hour)
 
-      val userId = "user-id"
+      val userId = InternalUserIdentifier("user-id")
       val hourlyLimit = 100
 
       And("a user existing in a given cache document")
