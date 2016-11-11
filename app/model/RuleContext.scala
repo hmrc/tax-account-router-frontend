@@ -50,7 +50,8 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   lazy val internalUserIdentifier = currentCoAFEAuthority.map(_.internalUserIdentifier)
 
   lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
-    authority.enrolmentsUri.fold(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))(uri => frontendAuthConnector.getEnrolments(uri))
+    lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
+    authority.enrolmentsUri.fold(noEnrolments)(uri => frontendAuthConnector.getEnrolments(uri))
   }
 
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
