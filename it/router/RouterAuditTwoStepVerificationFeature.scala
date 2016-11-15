@@ -23,8 +23,8 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     "location-2.url" -> "/some-location-2"
   )
 
-  val optionalUserId = "bbbb"  // 83.2 (percentage calculated from hashcode)
-  val mandatoryUserId = "aaaa" // 4.8  (percentage calculated from hashcode)
+  val optionalUserId = "bbb"  // 81.6 (percentage calculated from hashcode)
+  val mandatoryUserId = "aaa" // 49.6 (percentage calculated from hashcode)
   val throttle = 50 // registration is mandatory if the percentage is smaller than throttle value
 
   val additionalConfiguration = Map[String, Any](
