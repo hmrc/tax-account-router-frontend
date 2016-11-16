@@ -24,7 +24,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-json-logger" % "2.1.0",
     "uk.gov.hmrc" %% "play-health" % "1.1.0",
     "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
-    "uk.gov.hmrc" %% "play-ui" % "4.1.0",
+    "uk.gov.hmrc" %% "play-ui" % "4.17.2",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "4.5.0",
     "uk.gov.hmrc" %% "http-caching-client" % "5.3.0",
     "uk.gov.hmrc" %% "mongo-caching" % "3.2.0"

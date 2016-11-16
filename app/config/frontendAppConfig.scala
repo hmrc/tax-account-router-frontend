@@ -28,7 +28,6 @@ trait AppConfigHelpers {
 }
 
 trait AppConfig extends AppConfigHelpers {
-  val assetsPrefix: String
   val analyticsToken: String
   val analyticsHost: String
   val reportAProblemPartialUrl: String
@@ -40,7 +39,6 @@ object FrontendAppConfig extends AppConfig with ServicesConfig {
   private val contactHost = configuration.getString("contact-frontend.host").getOrElse("")
   private val contactFormServiceIdentifier = "MyService"
 
-  override lazy val assetsPrefix = getConfigurationString("assets.url") + getConfigurationString("assets.version")
   override lazy val analyticsToken = getConfigurationString("google-analytics.token")
   override lazy val analyticsHost = getConfigurationString("google-analytics.host")
   override lazy val reportAProblemPartialUrl = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
