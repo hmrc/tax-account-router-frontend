@@ -101,7 +101,7 @@ trait TwoStepVerification {
 
     if (twoStepVerificationEnabled && continue == BusinessTaxAccount) {
       for {
-        applicableRule <- biz2svRules.findOne(_.conditions.forAll(_.evaluate(authContext, ruleContext, auditContext)))
+        applicableRule <- biz2svRules.findOne(_.conditions.forAll(_.evaluate(ruleContext, auditContext)))
         throttleLocations <- throttleLocations(applicableRule)
         internalUserIdentifier <- ruleContext.internalUserIdentifier
       } yield {

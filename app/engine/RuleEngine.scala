@@ -34,7 +34,7 @@ trait RuleEngine {
     rules.foldLeft(Future[Option[Location]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
       else {
-        val ruleApplyResult: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
+        val ruleApplyResult: Future[Option[Location]] = rule.apply(ruleContext, auditContext)
         val ruleName = rule.name
         ruleApplyResult.map { result =>
           if (result.isDefined) {

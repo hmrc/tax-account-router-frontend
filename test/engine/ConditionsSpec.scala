@@ -70,7 +70,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
           override val businessEnrolments = Set("enr1", "enr2")
         }
 
-        val result = await(hasAnyBusinessEnrolment.isTrue(authContext, ruleContext))
+        val result = await(hasAnyBusinessEnrolment.isTrue(ruleContext))
 
         result shouldBe expectedResult
       }
@@ -100,7 +100,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
-        val result = await(HasEnrolments(SA, VAT).isTrue(authContext, ruleContext))
+        val result = await(HasEnrolments(SA, VAT).isTrue(ruleContext))
 
         result shouldBe expectedResult
       }
@@ -133,7 +133,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(HasPreviousReturns.isTrue(authContext, ruleContext))
+        val result = await(HasPreviousReturns.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }
@@ -164,7 +164,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(IsInAPartnership.isTrue(authContext, ruleContext))
+        val result = await(IsInAPartnership.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }
@@ -195,7 +195,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(IsSelfEmployed.isTrue(authContext, ruleContext))
+        val result = await(IsSelfEmployed.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }
@@ -229,7 +229,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val ruleContext = mock[RuleContext]
 
-        val result = await(LoggedInViaVerify.isTrue(authContext, ruleContext))
+        val result = await(LoggedInViaVerify.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }
@@ -263,7 +263,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val ruleContext = mock[RuleContext]
 
-        val result = await(LoggedInViaGovernmentGateway.isTrue(authContext, ruleContext))
+        val result = await(LoggedInViaGovernmentGateway.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }
@@ -293,7 +293,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val result = await(HasNino.isTrue(authContext, mock[RuleContext]))
+        val result = await(HasNino.isTrue(mock[RuleContext]))
         result shouldBe expectedResult
       }
     }
@@ -323,7 +323,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val result = await(HasSaUtr.isTrue(authContext, mock[RuleContext]))
+        val result = await(HasSaUtr.isTrue(mock[RuleContext]))
         result shouldBe expectedResult
       }
     }
@@ -355,7 +355,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, None, "", InternalUserIdentifier(""))))
 
-        val result = await(HasRegisteredFor2SV.isTrue(authContext, ruleContext))
+        val result = await(HasRegisteredFor2SV.isTrue(ruleContext))
 
         result shouldBe isRegistered
         verify(ruleContext).currentCoAFEAuthority
@@ -390,7 +390,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(authContext.user).thenReturn(loggedInUser)
         val ruleContext = mock[RuleContext]
 
-        val result = await(HasStrongCredentials.isTrue(authContext, ruleContext))
+        val result = await(HasStrongCredentials.isTrue(ruleContext))
 
         result shouldBe expected
         verify(authContext).user
@@ -428,7 +428,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         }
         when(ruleContext.enrolments).thenReturn(expectedResult)
 
-        val result = await(GGEnrolmentsAvailable.isTrue(authContext, ruleContext))
+        val result = await(GGEnrolmentsAvailable.isTrue(ruleContext))
 
         result shouldBe ggEnrolmentsAvailable
         verify(ruleContext).enrolments
@@ -465,7 +465,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         }
         when(ruleContext.affinityGroup).thenReturn(expectedResult)
 
-        val result = await(AffinityGroupAvailable.isTrue(authContext, ruleContext))
+        val result = await(AffinityGroupAvailable.isTrue(ruleContext))
 
         result shouldBe affinityGroupAvailable
         verify(ruleContext).affinityGroup
@@ -502,7 +502,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         }
         when(ruleContext.lastSaReturn).thenReturn(expectedResult)
 
-        val result = await(SAReturnAvailable.isTrue(authContext, ruleContext))
+        val result = await(SAReturnAvailable.isTrue(ruleContext))
 
         result shouldBe saReturnAvailable
         verify(ruleContext).lastSaReturn
@@ -526,7 +526,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       val ruleContext = mock[RuleContext]
 
-      val result = await(AnyOtherRuleApplied.isTrue(authContext, ruleContext))
+      val result = await(AnyOtherRuleApplied.isTrue(ruleContext))
       result shouldBe true
     }
   }
@@ -553,7 +553,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.affinityGroup).thenReturn(Future(affinityGroup))
 
-        val result = await(HasIndividualAffinityGroup.isTrue(authContext, ruleContext))
+        val result = await(HasIndividualAffinityGroup.isTrue(ruleContext))
 
         result shouldBe expectedResult
       }
@@ -582,7 +582,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.notActivatedEnrolmentKeys).thenReturn(Future.successful(enrolments))
 
-        val result = await(HasAnyInactiveEnrolment.isTrue(authContext, ruleContext))
+        val result = await(HasAnyInactiveEnrolment.isTrue(ruleContext))
 
         result shouldBe expectedResult
       }
@@ -612,7 +612,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
-        val result = await(HasOnlyEnrolments(SA, VAT).isTrue(authContext, ruleContext))
+        val result = await(HasOnlyEnrolments(SA, VAT).isTrue(ruleContext))
 
         result shouldBe expectedResult
       }

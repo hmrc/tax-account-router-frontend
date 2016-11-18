@@ -28,7 +28,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should not be fetched from Auth")
       verify(0, getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -57,7 +57,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -91,7 +91,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -125,7 +125,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -156,7 +156,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -190,7 +190,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -224,7 +224,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -258,7 +258,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -319,7 +319,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -349,7 +349,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -379,7 +379,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched
+      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -392,7 +392,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     }
   }
 
-  private def verifyAuthorityObjectIsFetched = {
+  private def verifyAuthorityObjectIsFetched() = {
     verify(getRequestedFor(urlEqualTo("/auth/authority")))
     verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
   }

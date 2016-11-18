@@ -30,14 +30,14 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 object GGEnrolmentsAvailable extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.enrolments.map(_ => true).recover { case _ => false }
 
   override val auditType = Some(GG_ENROLMENTS_AVAILABLE)
 }
 
 object AffinityGroupAvailable extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.affinityGroup.map(_ => true).recover { case _ => false }
 
   override val auditType = Some(AFFINITY_GROUP_AVAILABLE)
@@ -46,7 +46,7 @@ object AffinityGroupAvailable extends Condition {
 trait HasAnyBusinessEnrolment extends Condition {
   def businessEnrolments: Set[String]
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.activeEnrolmentKeys.map(_.intersect(businessEnrolments).nonEmpty)
 
   override val auditType = Some(HAS_BUSINESS_ENROLMENTS)
@@ -57,7 +57,7 @@ object HasAnyBusinessEnrolment extends HasAnyBusinessEnrolment {
 }
 
 object SAReturnAvailable extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.lastSaReturn.map(_ => true).recover { case _ => false }
 
   override val auditType = Some(SA_RETURN_AVAILABLE)
@@ -89,7 +89,7 @@ trait HasEnrolmentsCondition extends Condition {
 
   private def validateExtraEnrolments(enrolments: Set[String]) = !verifyExtraEnrolments || (verifyExtraEnrolments && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.activeEnrolmentKeys.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
 }
 
@@ -113,7 +113,7 @@ object HasEnrolments {
 
 object HasPreviousReturns extends Condition {
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.lastSaReturn.map(_.previousReturns)
 
   override val auditType = Some(HAS_PREVIOUS_RETURNS)
@@ -122,34 +122,35 @@ object HasPreviousReturns extends Condition {
 object IsInAPartnership extends Condition {
   override val auditType = Some(IS_IN_A_PARTNERSHIP)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.lastSaReturn.map(_.partnership)
 }
 
 object IsSelfEmployed extends Condition {
   override val auditType = Some(IS_SELF_EMPLOYED)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.lastSaReturn.map(_.selfEmployment)
 }
 
 object LoggedInViaVerify extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     Future.successful(!request.session.data.contains("token"))
 
   override val auditType = Some(IS_A_VERIFY_USER)
 }
 
 object LoggedInViaGovernmentGateway extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     Future.successful(request.session.data.contains("token"))
 
   override val auditType = Some(IS_A_GOVERNMENT_GATEWAY_USER)
 }
 
 object HasNino extends Condition {
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(authContext.principal.accounts.paye.isDefined)
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  // TODO:  fixme! Future.successful(authContext.principal.accounts.paye.isDefined)
+    Future.successful(true)
 
   override val auditType = Some(HAS_NINO)
 }
@@ -157,33 +158,35 @@ object HasNino extends Condition {
 object AnyOtherRuleApplied extends Condition {
   override val auditType = None
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future.successful(true)
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future.successful(true)
 }
 
 object HasSaUtr extends Condition {
   override val auditType = Some(HAS_SA_UTR)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(authContext.principal.accounts.sa.isDefined)
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    // TODO fixme: Future.successful(authContext.principal.accounts.sa.isDefined)
+    Future.successful(true)
 }
 
 object HasRegisteredFor2SV extends Condition {
   override val auditType = Some(HAS_REGISTERED_FOR_2SV)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.currentCoAFEAuthority.map(_.twoFactorAuthOtpId.isDefined)
 }
 
 object HasStrongCredentials extends Condition {
   override val auditType = Some(HAS_STRONG_CREDENTIALS)
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(authContext.user.credentialStrength == CredentialStrength.Strong)
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+    // TODO: fixme Future.successful(authContext.user.credentialStrength == CredentialStrength.Strong)
+    Future.successful(true)
 }
 
 object HasIndividualAffinityGroup extends Condition {
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.affinityGroup.map(_ == AffinityGroupValue.INDIVIDUAL)
 
   override val auditType = Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
@@ -192,7 +195,7 @@ object HasIndividualAffinityGroup extends Condition {
 
 object HasAnyInactiveEnrolment extends Condition {
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
     ruleContext.notActivatedEnrolmentKeys.map(_.nonEmpty)
 
   override val auditType = Some(HAS_ANY_INACTIVE_ENROLMENT)

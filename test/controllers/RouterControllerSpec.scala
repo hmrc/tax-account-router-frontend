@@ -181,7 +181,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   case class TestCondition(truth: Boolean) extends Condition {
     override val auditType = None
 
-    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
+    override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
   }
 
   trait Setup {

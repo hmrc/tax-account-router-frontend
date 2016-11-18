@@ -38,7 +38,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[RoutingReason] = None
 
-    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+    override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
       Future(b)
   }
 
@@ -73,10 +73,10 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       //given
       val firstRule = mock[Rule]
       val expectedLocation: Location = BusinessTaxAccount
-      when(firstRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
+      when(firstRule.apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
       when(firstRule.name) thenReturn "first-rule"
       val secondRule = mock[Rule]
-      when(secondRule.apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
+      when(secondRule.apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
 
       //and
       implicit lazy val request = FakeRequest()
@@ -94,8 +94,8 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       location shouldBe Some(expectedLocation)
 
       //then
-      verify(firstRule).apply(any[AuthContext], any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
-      verify(secondRule, never()).apply(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+      verify(firstRule).apply( any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
+      verify(secondRule, never()).apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
 
       auditContext.ruleApplied shouldBe "first-rule"
     }
@@ -113,7 +113,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val mockRuleContext = mock[RuleContext]
       val mockAuditContext = mock[TAuditContext]
 
-      val location: Option[Location] = await(lastRule.apply(mockAuthContext, mockRuleContext, mockAuditContext))
+      val location: Option[Location] = await(lastRule.apply(mockRuleContext, mockAuditContext))
 
       location shouldBe Some(BusinessTaxAccount)
     }

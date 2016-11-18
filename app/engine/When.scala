@@ -27,8 +27,8 @@ import scala.concurrent.Future
 case class When(condition: Condition) {
 
   def thenGoTo(location: Location): Rule = new Rule {
-    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] =
-      condition.evaluate(authContext, ruleContext, auditContext) map {
+    override def apply(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] =
+      condition.evaluate(ruleContext, auditContext) map {
         case true => Some(location)
         case false => None
       }
