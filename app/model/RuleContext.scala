@@ -18,6 +18,7 @@ package model
 
 import connector._
 import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -57,4 +58,10 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
 
   lazy val isAdmin = userDetails.map(_.isAdmin)
+
+  lazy val hasNino: Future[Boolean] = ???
+
+  lazy val hasSaUtr: Future[Boolean] = ???
+
+  lazy val credentialStrength:Future[CredentialStrength] = ???
 }

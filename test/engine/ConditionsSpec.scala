@@ -285,16 +285,17 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, ninoPresent: Boolean, expectedResult: Boolean) =>
 
       s"be true whether the user has a NINO - scenario: $scenario" in {
-
-        val paye = if (ninoPresent) Some(PayeAccount("link", mock[Nino])) else None
-        val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(paye = paye)), None)
+        val ruleContext = mock[RuleContext]
+        when(ruleContext.hasNino).thenReturn(Future.successful(ninoPresent))
 
         implicit val fakeRequest = FakeRequest()
-
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val result = await(HasNino.isTrue(mock[RuleContext]))
+        val result = await(HasNino.isTrue(ruleContext))
         result shouldBe expectedResult
+
+        verify(ruleContext).hasNino
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
@@ -315,16 +316,17 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, saUtrPresent: Boolean, expectedResult: Boolean) =>
 
       s"be true whether the user has SAUTR - scenario: $scenario" in {
-
-        val sa = if (saUtrPresent) Some(SaAccount("", mock[SaUtr])) else None
-        val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = sa)), None)
+        val ruleContext = mock[RuleContext]
+        when(ruleContext.hasSaUtr).thenReturn(Future.successful(saUtrPresent))
 
         implicit val fakeRequest = FakeRequest()
-
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val result = await(HasSaUtr.isTrue(mock[RuleContext]))
+        val result = await(HasSaUtr.isTrue(ruleContext))
         result shouldBe expectedResult
+
+        verify(ruleContext).hasSaUtr
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
@@ -356,8 +358,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, None, "", InternalUserIdentifier(""))))
 
         val result = await(HasRegisteredFor2SV.isTrue(ruleContext))
-
         result shouldBe isRegistered
+
         verify(ruleContext).currentCoAFEAuthority
         verifyNoMoreInteractions(ruleContext)
       }
@@ -381,21 +383,17 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, credentialStrength: CredentialStrength, expected: Boolean) =>
 
       scenario in {
+        val ruleContext = mock[RuleContext]
+        when(ruleContext.credentialStrength).thenReturn(credentialStrength)
+
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val loggedInUser = mock[LoggedInUser]
-        when(loggedInUser.credentialStrength).thenReturn(credentialStrength)
-        val authContext = mock[AuthContext]
-        when(authContext.user).thenReturn(loggedInUser)
-        val ruleContext = mock[RuleContext]
-
         val result = await(HasStrongCredentials.isTrue(ruleContext))
-
         result shouldBe expected
-        verify(authContext).user
-        verify(loggedInUser).credentialStrength
-        verifyNoMoreInteractions(ruleContext, authContext, loggedInUser)
+
+        verify(ruleContext).credentialStrength
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }

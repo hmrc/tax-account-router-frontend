@@ -22,7 +22,6 @@ import model.RoutingReason._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -149,8 +148,8 @@ object LoggedInViaGovernmentGateway extends Condition {
 
 object HasNino extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-  // TODO:  fixme! Future.successful(authContext.principal.accounts.paye.isDefined)
-    Future.successful(true)
+  // TODO maybe store the complete object
+    ruleContext.hasNino
 
   override val auditType = Some(HAS_NINO)
 }
@@ -165,8 +164,8 @@ object HasSaUtr extends Condition {
   override val auditType = Some(HAS_SA_UTR)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    // TODO fixme: Future.successful(authContext.principal.accounts.sa.isDefined)
-    Future.successful(true)
+    // TODO maybe store the complete object
+    ruleContext.hasSaUtr
 }
 
 object HasRegisteredFor2SV extends Condition {
@@ -180,8 +179,7 @@ object HasStrongCredentials extends Condition {
   override val auditType = Some(HAS_STRONG_CREDENTIALS)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    // TODO: fixme Future.successful(authContext.user.credentialStrength == CredentialStrength.Strong)
-    Future.successful(true)
+    ruleContext.credentialStrength.map(_ == CredentialStrength.Strong)
 }
 
 object HasIndividualAffinityGroup extends Condition {

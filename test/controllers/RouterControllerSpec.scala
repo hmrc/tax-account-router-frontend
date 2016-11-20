@@ -65,7 +65,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       checkResult(route, locationWithOrigin, "none")
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return location without origin when location is provided by rules and there is not an origin for this location" in new Setup {
@@ -80,7 +80,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       checkResult(route, location1, "none")
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return default location when location provided by rules is not defined" in new Setup {
@@ -223,7 +223,7 @@ object Mocks extends MockitoSugar {
 
   def mockTwoStepVerification = {
     val twoStepVerification = mock[TwoStepVerification]
-    when(twoStepVerification.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
+    when(twoStepVerification.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
       override def answer(invocationOnMock: InvocationOnMock): Future[Option[Location]] = {
         Future.successful(Some(invocationOnMock.getArguments()(0).asInstanceOf[Location]))
       }
