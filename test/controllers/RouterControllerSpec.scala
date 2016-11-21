@@ -129,7 +129,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
 
-      verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(fakeRequest), any[HeaderCarrier])
 
       verify(mockAnalyticsEventSender).sendEvents(eqTo(expectedLocation.name), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
@@ -199,7 +199,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
     implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-    implicit lazy val ruleContext = RuleContext(authContext)
+    implicit lazy val ruleContext = RuleContext(None)
     val auditContext: TAuditContext = AuditContext()
     val mockThrottlingService = mock[ThrottlingService]
     val mockTwoStepVerification = Mocks.mockTwoStepVerification

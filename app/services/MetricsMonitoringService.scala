@@ -34,7 +34,7 @@ trait MetricsMonitoringService {
 
   val metricsRegistry: MetricRegistry
 
-  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
     Future {
       val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")

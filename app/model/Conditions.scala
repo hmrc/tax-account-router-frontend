@@ -148,8 +148,7 @@ object LoggedInViaGovernmentGateway extends Condition {
 
 object HasNino extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-  // TODO maybe store the complete object
-    ruleContext.hasNino
+    ruleContext.authority.map(_.nino.isDefined)
 
   override val auditType = Some(HAS_NINO)
 }
@@ -164,22 +163,21 @@ object HasSaUtr extends Condition {
   override val auditType = Some(HAS_SA_UTR)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    // TODO maybe store the complete object
-    ruleContext.hasSaUtr
+    ruleContext.authority.map(_.saUtr.isDefined)
 }
 
 object HasRegisteredFor2SV extends Condition {
   override val auditType = Some(HAS_REGISTERED_FOR_2SV)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.currentCoAFEAuthority.map(_.twoFactorAuthOtpId.isDefined)
+    ruleContext.authority.map(_.twoFactorAuthOtpId.isDefined)
 }
 
 object HasStrongCredentials extends Condition {
   override val auditType = Some(HAS_STRONG_CREDENTIALS)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.credentialStrength.map(_ == CredentialStrength.Strong)
+    ruleContext.authority.map(_.credentialStrength == CredentialStrength.Strong)
 }
 
 object HasIndividualAffinityGroup extends Condition {

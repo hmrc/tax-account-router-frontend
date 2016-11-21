@@ -19,10 +19,8 @@ package model
 import connector._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain._
-import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -34,13 +32,14 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
   sealed trait Setup {
 
     implicit val hc = HeaderCarrier()
-    val mockFrontendAuthConnector = mock[FrontendAuthConnector]
+    val mockAuthConnector: FrontendAuthConnector = mock[FrontendAuthConnector]
     val mockUserDetailsConnector = mock[UserDetailsConnector]
     val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
-    val allMocks = Seq(mockFrontendAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)
+    val allMocks = Seq(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)
+    val credId = "credId"
 
-    val ruleContext = new RuleContext(mock[AuthContext]) {
-      override val frontendAuthConnector = mockFrontendAuthConnector
+    val ruleContext = new RuleContext(Some(credId)) {
+      override val authConnector = mockAuthConnector
       override val userDetailsConnector = mockUserDetailsConnector
       override val selfAssessmentConnector = mockSelfAssessmentConnector
     }
@@ -48,7 +47,10 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val enrolmentsUri = "/enrolments"
     val userDetailsLink = "/userDetailsLink"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = Some(enrolmentsUri), userDetailsLink = userDetailsLink, internalUserIdentifier = internalUserIdentifier)
+    val expectedAuthority = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsLink = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
+      credentialStrength = CredentialStrength.None,
+      nino = None,
+      saUtr = None)
 
     val expectedAffinityGroup = "some-affinity-group"
     val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
@@ -59,8 +61,8 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     )
 
     when(mockUserDetailsConnector.getUserDetails(userDetailsLink)).thenReturn(Future.successful(expectedUserDetails))
-    when(mockFrontendAuthConnector.getEnrolments(enrolmentsUri)).thenReturn(Future.successful(expectedActiveEnrolmentsSeq))
-    when(mockFrontendAuthConnector.currentCoAFEAuthority()).thenReturn(Future.successful(expectedCoafeAuthority))
+    when(mockAuthConnector.getEnrolments(enrolmentsUri)).thenReturn(Future.successful(expectedActiveEnrolmentsSeq))
+    when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(expectedAuthority))
   }
 
   "activeEnrolments" should {
@@ -75,8 +77,8 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
-      verify(mockFrontendAuthConnector).getEnrolments(enrolmentsUri)
+      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).getEnrolments(enrolmentsUri)
       verifyNoMoreInteractions(allMocks: _*)
     }
   }
@@ -93,46 +95,38 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
-      verify(mockFrontendAuthConnector).getEnrolments(enrolmentsUri)
+      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).getEnrolments(enrolmentsUri)
       verifyNoMoreInteractions(allMocks: _*)
     }
   }
 
   "saUserInfo" should {
-    "return the last self-assessment return if available in SA and the user has an SA account" in {
+    "return the last self-assessment return if available in SA and the user has an SA account" in new Setup {
       //given
       val saReturn = SaReturn(List("something"))
 
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
-
-      val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
       val expectedUtr = "123456789"
       when(mockSelfAssessmentConnector.lastReturn(expectedUtr)(hc)).thenReturn(Future(saReturn))
 
-      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts(sa = Some(SaAccount("", SaUtr(expectedUtr))))), None)
-      //and
-      val ruleContext = new RuleContext(authContext) {
-        override val selfAssessmentConnector = mockSelfAssessmentConnector
-      }
+      val authorityWithSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsLink = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
+        credentialStrength = CredentialStrength.None,
+        nino = None,
+        saUtr = Some(SaUtr(expectedUtr)))
+      when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithSa))
 
       //then
       await(ruleContext.lastSaReturn) shouldBe saReturn
       verify(mockSelfAssessmentConnector).lastReturn(expectedUtr)
     }
 
-    "return an empty self-assessment return if the user has no SA account" in {
-      //given
-      val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
+    "return an empty self-assessment return if the user has no SA account" in new Setup {
+      val authorityWithoutSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsLink = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
+        credentialStrength = CredentialStrength.None,
+        nino = None,
+        saUtr = None)
+      when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithoutSa))
 
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
-
-      val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-      //and
-      val ruleContext = new RuleContext(authContext) {
-        override val selfAssessmentConnector = mockSelfAssessmentConnector
-      }
-      //then
       await(ruleContext.lastSaReturn) shouldBe SaReturn.empty
 
       verifyZeroInteractions(mockSelfAssessmentConnector)
@@ -141,10 +135,10 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
   "currentCoAFEAuthority" should {
     "return the current authority" in new Setup {
-      val result = ruleContext.currentCoAFEAuthority
+      val result = ruleContext.authority
 
-      await(result) shouldBe expectedCoafeAuthority
-      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      await(result) shouldBe expectedAuthority
+      verify(mockAuthConnector).tarAuthority(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
   }
@@ -156,7 +150,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       result shouldBe expectedAffinityGroup
 
-      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verify(mockAuthConnector).tarAuthority(credId)
       verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
       verifyNoMoreInteractions(allMocks: _*)
     }

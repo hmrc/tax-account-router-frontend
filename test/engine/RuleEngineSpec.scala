@@ -59,7 +59,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       //when
       val maybeLocation: Future[Option[Location]] = new RuleEngine {
         override val rules: List[Rule] = List(falseRule, trueRule)
-      }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
+      }.getLocation(mock[RuleContext], auditContext)(request, hc)
 
       //then
       val location: Option[Location] = await(maybeLocation)
@@ -87,7 +87,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       //when
       val maybeLocation: Future[Option[Location]] = new RuleEngine {
         override val rules: List[Rule] = List(firstRule, secondRule)
-      }.getLocation(mock[AuthContext], mock[RuleContext], auditContext)(request, hc)
+      }.getLocation(mock[RuleContext], auditContext)(request, hc)
 
       //then
       val location: Option[Location] = await(maybeLocation)

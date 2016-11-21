@@ -19,7 +19,6 @@ package engine
 import model.{Location, _}
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -29,7 +28,7 @@ trait RuleEngine {
 
   val rules: List[Rule]
 
-  def getLocation(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
+  def getLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
 
     rules.foldLeft(Future[Option[Location]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location

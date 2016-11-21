@@ -74,11 +74,12 @@ trait RouterController extends FrontendController with Actions {
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
 
-    val ruleContext = RuleContext(authContext)
+    // TODO: where is the credId?
+    val ruleContext = RuleContext(None)
 
     val auditContext = createAuditContext()
 
-    val ruleEngineResult = ruleEngine.getLocation(authContext, ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
+    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
 
     for {
       destinationAfterRulesApplied <- ruleEngineResult
