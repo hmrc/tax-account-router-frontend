@@ -163,7 +163,7 @@ object HasSaUtr extends Condition {
   override val auditType = Some(HAS_SA_UTR)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.authority.map(_.saUtr.isDefined)
+    ruleContext.authority.map(_.sautr.isDefined)
 }
 
 object HasRegisteredFor2SV extends Condition {

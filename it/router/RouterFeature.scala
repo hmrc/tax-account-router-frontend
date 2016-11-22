@@ -104,7 +104,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     }
 
     scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
-
+      
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))

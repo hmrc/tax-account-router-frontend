@@ -42,12 +42,12 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class TARAuthority(twoFactorAuthOtpId: Option[String], idsUri: String, userDetailsLink: String, enrolmentsUri: Option[String], credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
+// TODO: consider mapping enrolments -> enrolmentsUri (as it was before)
+case class TARAuthority(twoFactorAuthOtpId: Option[String], ids: String, userDetailsLink: String, enrolments: Option[String], credentialStrength: CredentialStrength, nino: Option[Nino], sautr: Option[SaUtr])
 
 object TARAuthority {
   implicit val reads: Reads[TARAuthority] = Json.reads[TARAuthority]
 }
-
 
 trait FrontendAuthConnector extends AuthConnector {
 

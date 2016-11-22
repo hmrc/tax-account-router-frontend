@@ -44,18 +44,18 @@ case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
     enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
-  lazy val lastSaReturn = authority.flatMap { auth => auth.saUtr.fold(Future(SaReturn.empty))(saUtr => selfAssessmentConnector.lastReturn(saUtr.utr)) }
+  lazy val lastSaReturn = authority.flatMap { auth => auth.sautr.fold(Future(SaReturn.empty))(saUtr => selfAssessmentConnector.lastReturn(saUtr.utr)) }
 
   lazy val authority = credId match {
     case Some(credId) => authConnector.tarAuthority(credId)
     case None => authConnector.currentTarAuthority
   }
 
-  lazy val internalUserIdentifier = authority.flatMap(auth => authConnector.getIds(auth.idsUri))
+  lazy val internalUserIdentifier = authority.flatMap(auth => authConnector.getIds(auth.ids))
 
   lazy val enrolments = authority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
-    authority.enrolmentsUri.fold(noEnrolments)(authConnector.getEnrolments)
+    authority.enrolments.fold(noEnrolments)(authConnector.getEnrolments)
   }
 
   lazy val affinityGroup = userDetails.map(_.affinityGroup)

@@ -324,7 +324,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val authMock = mock[TARAuthority]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         val saUtr = if (saUtrPresent) Some(SaUtr("saUtr")) else None
-        when(authMock.saUtr).thenReturn(Future.successful(saUtr))
+        when(authMock.sautr).thenReturn(Future.successful(saUtr))
 
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)

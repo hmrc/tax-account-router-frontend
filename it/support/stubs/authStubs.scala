@@ -111,7 +111,9 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
       "ids" -> "/auth/ids-uri"
     ) ++
       (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
-      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj())
+      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
+      (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
+      (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj())
 
     stubFor(get(urlEqualTo("/auth/authority"))
       .willReturn(
@@ -125,7 +127,7 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
           .withStatus(200)
           .withBody(
             s"""
-              |{"internalId":"$internalUserIdentifier"}
+               |{"internalId":"$internalUserIdentifier"}
             """.stripMargin)))
   }
 }
@@ -136,7 +138,7 @@ object LoggedInSessionUser {
             accounts: Accounts,
             credentialStrength: CredentialStrength,
             affinityGroup: String,
-            internalUserIdentifier : String,
+            internalUserIdentifier: String,
             userDetailsLink: String) =
     new LoggedInSessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink)
 }
