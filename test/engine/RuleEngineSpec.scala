@@ -26,7 +26,6 @@ import org.mockito.Mockito.{when, _}
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -109,7 +108,6 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit val fakeRequest = FakeRequest()
       implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val mockAuthContext = mock[AuthContext]
       val mockRuleContext = mock[RuleContext]
       val mockAuditContext = mock[TAuditContext]
 

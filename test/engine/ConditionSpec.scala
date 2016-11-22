@@ -28,7 +28,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -61,7 +60,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
           override val auditType: Option[RoutingReason] = if (auditTypeDefined) Some(auditEventType) else None
         }
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
@@ -89,7 +87,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
       s"be combined with another condition using 'and' operator - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
@@ -126,7 +123,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
       s"be combined with another condition using 'or' operator - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
@@ -161,7 +157,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
     forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedResultConditionTruth: Boolean) =>
       s"be negated - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
@@ -184,7 +179,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
     "never be evaluated by invoking isTrue" in {
       val compositeCondition = new CompositeCondition {}
 
-      val mockAuthContext = mock[AuthContext]
       val mockRuleContext = mock[RuleContext]
 
       the[RuntimeException] thrownBy {
@@ -199,7 +193,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
       Location("url", "name")
     }
 
-    val mockAuthContext = mock[AuthContext]
     val mockRuleContext = mock[RuleContext]
     val auditContext = AuditContext()
 

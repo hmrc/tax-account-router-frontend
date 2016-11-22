@@ -17,8 +17,7 @@
 package connector
 
 import config.WSHttp
-import play.api.libs.json.Reads._
-import play.api.libs.json._
+import play.api.libs.functional.syntax._
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
@@ -26,6 +25,9 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 case class EnrolmentIdentifier(key: String, value: String)
+
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
@@ -42,12 +44,20 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-// TODO: consider mapping enrolments -> enrolmentsUri (as it was before)
-case class TARAuthority(twoFactorAuthOtpId: Option[String], ids: String, userDetailsLink: String, enrolments: Option[String], credentialStrength: CredentialStrength, nino: Option[Nino], sautr: Option[SaUtr])
+case class TARAuthority(twoFactorAuthOtpId: Option[String], idsUri: String, userDetailsUri: String, enrolmentsUri: Option[String],
+                        credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
 
 object TARAuthority {
-  implicit val reads: Reads[TARAuthority] = Json.reads[TARAuthority]
+  implicit val reads: Reads[TARAuthority] =
+    ((__ \ "twoFactorAuthOtpId").readNullable[String] and
+      (__ \ "ids").read[String] and
+      (__ \ "userDetailsLink").read[String] and
+      (__ \ "enrolments").readNullable[String] and
+      (__ \ "credentialStrength").read[CredentialStrength] and
+      (__ \ "nino").readNullable[Nino] and
+      (__ \ "sautr").readNullable[SaUtr]).apply(TARAuthority.apply _)
 }
+
 
 trait FrontendAuthConnector extends AuthConnector {
 

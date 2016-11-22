@@ -25,7 +25,6 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -158,7 +157,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
   sealed trait Setup {
     implicit val fakeRequest = FakeRequest()
     implicit val hc = HeaderCarrier()
-    implicit val authContext = mock[AuthContext]
     val mockMetricRegistry = mock[MetricRegistry]
     val metricsMonitoringService = new MetricsMonitoringService {
       override val metricsRegistry = mockMetricRegistry

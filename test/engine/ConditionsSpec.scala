@@ -25,7 +25,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -62,8 +61,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
-
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
         val hasAnyBusinessEnrolment = new HasAnyBusinessEnrolment {
@@ -96,7 +93,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
@@ -125,8 +121,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       implicit val fakeRequest = FakeRequest()
       implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-      val authContext = mock[AuthContext]
 
       s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
 
@@ -157,8 +151,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit val fakeRequest = FakeRequest()
       implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val authContext = mock[AuthContext]
-
       s"be true whether the user has a partnership supplementary schedule - scenario: $scenario" in {
 
         val ruleContext = mock[RuleContext]
@@ -188,8 +180,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       implicit val fakeRequest = FakeRequest()
       implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val authContext = mock[AuthContext]
-
       s"be true whether the user has a self employment supplementary schedule - scenario: $scenario" in {
 
         val ruleContext = mock[RuleContext]
@@ -215,8 +205,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       )
 
     forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
-
-      val authContext = mock[AuthContext]
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
@@ -249,8 +237,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       )
 
     forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
-
-      val authContext = mock[AuthContext]
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
@@ -324,7 +310,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val authMock = mock[TARAuthority]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         val saUtr = if (saUtrPresent) Some(SaUtr("saUtr")) else None
-        when(authMock.sautr).thenReturn(Future.successful(saUtr))
+        when(authMock.saUtr).thenReturn(Future.successful(saUtr))
 
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
@@ -426,7 +412,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         val ruleContext = mock[RuleContext]
 
         val expectedResult = ggEnrolmentsAvailable match {
@@ -439,7 +424,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         result shouldBe ggEnrolmentsAvailable
         verify(ruleContext).enrolments
-        verifyNoMoreInteractions(ruleContext, authContext)
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
@@ -463,7 +448,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         val ruleContext = mock[RuleContext]
 
         val expectedResult = affinityGroupAvailable match {
@@ -476,7 +460,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         result shouldBe affinityGroupAvailable
         verify(ruleContext).affinityGroup
-        verifyNoMoreInteractions(ruleContext, authContext)
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
@@ -500,7 +484,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         val ruleContext = mock[RuleContext]
 
         val expectedResult = saReturnAvailable match {
@@ -513,7 +496,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         result shouldBe saReturnAvailable
         verify(ruleContext).lastSaReturn
-        verifyNoMoreInteractions(ruleContext, authContext)
+        verifyNoMoreInteractions(ruleContext)
       }
     }
   }
@@ -523,8 +506,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     "not have any audit type specified" in {
       AnyOtherRuleApplied.auditType shouldBe None
     }
-
-    val authContext = mock[AuthContext]
 
     "always be true" in {
 
@@ -556,7 +537,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.affinityGroup).thenReturn(Future(affinityGroup))
 
@@ -585,7 +565,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.notActivatedEnrolmentKeys).thenReturn(Future.successful(enrolments))
 
@@ -615,7 +594,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-        val authContext = mock[AuthContext]
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 

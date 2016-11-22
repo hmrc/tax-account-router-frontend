@@ -47,10 +47,10 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val enrolmentsUri = "/enrolments"
     val userDetailsLink = "/userDetailsLink"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val expectedAuthority = TARAuthority(twoFactorAuthOtpId = None, ids = "", userDetailsLink = userDetailsLink, enrolments = Some(enrolmentsUri),
+    val expectedAuthority = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsUri = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
       credentialStrength = CredentialStrength.None,
       nino = None,
-      sautr = None)
+      saUtr = None)
 
     val expectedAffinityGroup = "some-affinity-group"
     val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
@@ -109,10 +109,10 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedUtr = "123456789"
       when(mockSelfAssessmentConnector.lastReturn(expectedUtr)(hc)).thenReturn(Future(saReturn))
 
-      val authorityWithSa = TARAuthority(twoFactorAuthOtpId = None, ids = "", userDetailsLink = userDetailsLink, enrolments = Some(enrolmentsUri),
+      val authorityWithSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsUri = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
         credentialStrength = CredentialStrength.None,
         nino = None,
-        sautr = Some(SaUtr(expectedUtr)))
+        saUtr = Some(SaUtr(expectedUtr)))
       when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithSa))
 
       //then
@@ -121,10 +121,10 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     }
 
     "return an empty self-assessment return if the user has no SA account" in new Setup {
-      val authorityWithoutSa = TARAuthority(twoFactorAuthOtpId = None, ids = "", userDetailsLink = userDetailsLink, enrolments = Some(enrolmentsUri),
+      val authorityWithoutSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = "", userDetailsUri = userDetailsLink, enrolmentsUri = Some(enrolmentsUri),
         credentialStrength = CredentialStrength.None,
         nino = None,
-        sautr = None)
+        saUtr = None)
       when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithoutSa))
 
       await(ruleContext.lastSaReturn) shouldBe SaReturn.empty
