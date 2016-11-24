@@ -23,6 +23,7 @@ import engine.{Condition, RuleEngine}
 import model.Locations._
 import model._
 import play.api.Logger
+import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc._
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -31,6 +32,13 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
+
+case class Destination(location: String)
+
+object Destination {
+  implicit val writes: Writes[Destination] = Json.writes[Destination]
+  implicit val reads: Reads[Destination] = Json.reads[Destination]
+}
 
 object RouterController extends RouterController {
   override protected def authConnector = FrontendAuthConnector
@@ -76,9 +84,22 @@ trait RouterController extends FrontendController with Actions {
 
     // TODO: where is the credId?
     val ruleContext = RuleContext(None)
-
     val auditContext = createAuditContext()
 
+    calculateFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
+  }
+
+  def destination(credId: String) = Action.async { implicit request =>
+    val ruleContext = RuleContext(Some(credId))
+    // TODO: no op audit context!
+    val auditContext = createAuditContext()
+    calculateFinalDestination(ruleContext, auditContext).map {
+      location => Ok(Json.toJson(Destination(location.fullUrl)))
+    }
+  }
+
+
+  def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent]) = {
     val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
 
     for {
@@ -86,11 +107,11 @@ trait RouterController extends FrontendController with Actions {
       destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
-      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
+      //sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
       analyticsEventSender.sendEvents(finalDestination.name, auditContext)
-      Redirect(finalDestination.fullUrl)
+      finalDestination
     }
   }
 

@@ -22,6 +22,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
 import org.scalatestplus.play.OneServerPerSuite
+import play.api.libs.ws.WS
 import play.api.test.FakeApplication
 import support.Env
 import support.sugar._

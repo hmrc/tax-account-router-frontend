@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
 import play.api.test.FakeApplication
 import support.page._
-import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
+import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
@@ -17,7 +17,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected to PTA") {
 
       Given("a user logged in through Verify")
-      createStubs(TaxAccountUser(loggedInViaGateway = false))
+      SessionUser(loggedInViaGateway = false).stubLoggedIn()
 
       createStubs(PtaHomeStubPage)
 
@@ -43,7 +43,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with any business account be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser())
+      SessionUser().stubLoggedIn()
 
       And("the user has business related enrolments")
       stubBusinessEnrolments()
@@ -74,7 +74,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -108,7 +108,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -142,7 +142,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("gg is returning 500")
       stubEnrolmentsToReturn500()
@@ -173,7 +173,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -207,7 +207,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -241,7 +241,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -275,7 +275,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -304,7 +304,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
+      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
 
       And("the user has an inactive enrolment and individual affinity group")
       stubInactiveEnrolments()
@@ -334,7 +334,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
+      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
 
       And("the user has no inactive enrolments and individual affinity group")
       stubNoEnrolments()
@@ -364,7 +364,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser(affinityGroup = AffinityGroupValue.INDIVIDUAL))
+      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
 
       And("the user has no inactive enrolments and affinity group is not available")
       stubNoEnrolments()

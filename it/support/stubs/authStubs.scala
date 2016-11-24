@@ -21,9 +21,11 @@ import java.util.UUID
 
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
+import connector.AffinityGroupValue
 import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
+import support.Env
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 import uk.gov.hmrc.play.http.SessionKeys
@@ -49,18 +51,19 @@ trait SessionCookieBaker {
   }
 }
 
-class LoggedInSessionUser(loggedInViaGateway: Boolean,
-                          isRegisteredFor2SV: Boolean,
-                          accounts: Accounts,
-                          credentialStrength: CredentialStrength,
-                          affinityGroup: String,
-                          internalUserIdentifier: String,
-                          userDetailsLink: String) extends Stub with SessionCookieBaker {
+class SessionUser(loggedInViaGateway: Boolean,
+                  isRegisteredFor2SV: Boolean,
+                  accounts: Accounts,
+                  credentialStrength: CredentialStrength,
+                  affinityGroup: String,
+                  internalUserIdentifier: String,
+                  userDetailsLink: String) extends SessionCookieBaker {
 
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
   private val oid = "oid-1234567890"
 
-  override def create() = {
+
+  private val cookieData: Map[String, String] = {
     val token =
       if (loggedInViaGateway)
         Seq(SessionKeys.token -> "PGdhdGV3YXk6R2F0ZXdheVRva2VuIHhtbG5zOndzdD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNC8wNC90cnVzdCIgeG1sbnM6d3NhPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzAzL2FkZHJlc3NpbmciIHhtbG5zOndzc2U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS1zZWNleHQtMS4wLnhzZCIgeG1sbnM6d3N1PSJodHRwOi8vZG9jcy5vYXNpcy1vcGVuLm9yZy93c3MvMjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXdzc2VjdXJpdHktdXRpbGl0eS0xLjAueHNkIiB4bWxuczpzb2FwPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VudmVsb3BlLyI")
@@ -73,16 +76,55 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
       SessionKeys.affinityGroup -> affinityGroup,
       SessionKeys.authProvider -> RouterAuthenticationProvider.id
     ) ++ token
+    data
+  }
 
+  private val authorityObject = Json.obj(
+    "credentialStrength" -> credentialStrength.name.toLowerCase,
+    "affinityGroup" -> affinityGroup,
+    "uri" -> s"/auth/oid/$oid",
+    "loggedInAt" -> "2014-06-09T14:57:09.522Z",
+    "accounts" -> accounts,
+    "levelOfAssurance" -> 2,
+    "confidenceLevel" -> 500,
+    "userDetailsLink" -> userDetailsLink,
+    "ids" -> "/auth/ids-uri"
+  ) ++
+    (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
+    (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
+    (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
+    (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj())
 
+  def stubLoggedOut() = {
+    stubAuthorityForCredId()
+    stubIdsUrl()
+  }
+
+  private def stubAuthorityForCredId() = {
+    stubFor(get(urlEqualTo(s"/auth/gg/$internalUserIdentifier"))
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(authorityObject.toString())))
+  }
+
+  def stubLoggedIn() = {
+    stubGGSignIn()
+    stubLogin()
+    stubAuthorityForLoggedIn()
+    stubIdsUrl()
+  }
+
+  private def stubGGSignIn() = {
     stubFor(get(urlEqualTo("/gg/sign-in?continue=/account"))
       .willReturn(aResponse()
         .withStatus(303)
-        .withHeader(HeaderNames.SET_COOKIE, cookieValue(data))
+        .withHeader(HeaderNames.SET_COOKIE, cookieValue(cookieData))
         .withHeader(HeaderNames.SET_COOKIE, s"""_ga="GA1.4.405633776.1470748420"; Path=/; HTTPOnly"; Path=/; HTTPOnly""")
         .withHeader(HeaderNames.LOCATION, "http://localhost:9000/account")))
+  }
 
-
+  private def stubLogin() = {
     stubFor(post(urlEqualTo("/login"))
       .willReturn(
         aResponse()
@@ -98,29 +140,17 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
                |}|
             """.stripMargin
           )))
+  }
 
-    val authorityObject = Json.obj(
-      "credentialStrength" -> credentialStrength.name.toLowerCase,
-      "affinityGroup" -> affinityGroup,
-      "uri" -> s"/auth/oid/$oid",
-      "loggedInAt" -> "2014-06-09T14:57:09.522Z",
-      "accounts" -> accounts,
-      "levelOfAssurance" -> 2,
-      "confidenceLevel" -> 500,
-      "userDetailsLink" -> userDetailsLink,
-      "ids" -> "/auth/ids-uri"
-    ) ++
-      (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
-      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
-      (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
-      (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj())
-
+  private def stubAuthorityForLoggedIn() = {
     stubFor(get(urlEqualTo("/auth/authority"))
       .willReturn(
         aResponse()
           .withStatus(200)
           .withBody(authorityObject.toString())))
+  }
 
+  private def stubIdsUrl() = {
     stubFor(get(urlEqualTo("/auth/ids-uri"))
       .willReturn(
         aResponse()
@@ -132,13 +162,13 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
   }
 }
 
-object LoggedInSessionUser {
-  def apply(loggedInViaGateway: Boolean,
-            isRegisteredFor2SV: Boolean,
-            accounts: Accounts,
-            credentialStrength: CredentialStrength,
-            affinityGroup: String,
-            internalUserIdentifier: String,
-            userDetailsLink: String) =
-    new LoggedInSessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink)
+object SessionUser {
+  def apply(loggedInViaGateway: Boolean = true,
+            isRegisteredFor2SV: Boolean = true,
+            accounts: Accounts = Accounts(),
+            credentialStrength: CredentialStrength = CredentialStrength.None,
+            affinityGroup: String = AffinityGroupValue.ORGANISATION,
+            internalUserIdentifier: String = "id1234567890",
+            userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri") =
+    new SessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink)
 }
