@@ -121,7 +121,10 @@ trait ThrottlingService extends BSONBuilderHelpers {
           }
       }
     }
-    ruleContext.internalUserIdentifier.flatMap(location)
+    ruleContext.internalUserIdentifier.flatMap {
+      case Some(identifier) => location(identifier)
+      case _ => Future.successful(initialLocation)
+    }
   }
 
   def doThrottling(location: Location, auditContext: TAuditContext, userIdentifier: InternalUserIdentifier)(implicit request: Request[AnyContent], ex: ExecutionContext): Future[Location] = {

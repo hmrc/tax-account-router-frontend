@@ -26,8 +26,8 @@ case class TaxAccountUser(loggedIn: Boolean = true,
                           accounts: Accounts = Accounts(),
                           credentialStrength: CredentialStrength = CredentialStrength.None,
                           affinityGroup: String = AffinityGroupValue.ORGANISATION,
-                          internalUserIdentifier : String = "id1234567890",
-                          userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri")
+                          internalUserIdentifier : Option[String] = Some("id1234567890"),
+                          userDetailsLink: Option[String] = Some(s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri"))
   extends Stub {
 
   def create() = {

@@ -19,6 +19,7 @@ package model
 import connector._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
+import play.api.LoggerLike
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
@@ -37,9 +38,11 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val mockFrontendAuthConnector = mock[FrontendAuthConnector]
     val mockUserDetailsConnector = mock[UserDetailsConnector]
     val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
-    val allMocks = Seq(mockFrontendAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)
+    val mockLogger = mock[LoggerLike]
+    val allMocks = Seq(mockFrontendAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, mockLogger)
 
     val ruleContext = new RuleContext(mock[AuthContext]) {
+      override val logger = mockLogger
       override val frontendAuthConnector = mockFrontendAuthConnector
       override val userDetailsConnector = mockUserDetailsConnector
       override val selfAssessmentConnector = mockSelfAssessmentConnector
@@ -48,7 +51,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val enrolmentsUri = "/enrolments"
     val userDetailsLink = "/userDetailsLink"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = Some(enrolmentsUri), userDetailsLink = userDetailsLink, internalUserIdentifier = internalUserIdentifier)
+    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = Some(enrolmentsUri), userDetailsLink = Some(userDetailsLink), internalUserIdentifier = Some(internalUserIdentifier))
 
     val expectedAffinityGroup = "some-affinity-group"
     val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
@@ -158,6 +161,25 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
       verify(mockFrontendAuthConnector).currentCoAFEAuthority()
       verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
+      verifyNoMoreInteractions(allMocks: _*)
+    }
+  }
+
+  "userDetails" should {
+
+    "return future failed and log a warning message when userDetailsLink is empty" in new Setup {
+
+      reset(mockFrontendAuthConnector)
+      val coafeAuthorityWithNoUserDetailsLink = expectedCoafeAuthority.copy(userDetailsLink = None)
+      when(mockFrontendAuthConnector.currentCoAFEAuthority()).thenReturn(Future.successful(coafeAuthorityWithNoUserDetailsLink))
+
+      val expectedException = intercept[RuntimeException] {
+        await(ruleContext.userDetails)
+      }
+      expectedException.getMessage shouldBe "userDetailsLink is not defined"
+
+      verify(mockFrontendAuthConnector).currentCoAFEAuthority()
+      verify(mockLogger).warn("failed to get user details", expectedException)
       verifyNoMoreInteractions(allMocks: _*)
     }
   }

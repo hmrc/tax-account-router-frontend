@@ -88,7 +88,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
         //when
         val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository).throttle(initialLocation, mockAuditContext, mockRuleContext)
@@ -124,7 +124,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           )(any[ExecutionContext])
         ).thenReturn(Future(initialLocation))
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
         //when
         val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, hourlyLimitService = mockHourlyLimitService).throttle(initialLocation, mockAuditContext,mockRuleContext)
@@ -155,7 +155,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         //and
         val mockRoutingCacheRepository = mock[RoutingCacheRepository]
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
 
         //when
@@ -213,7 +213,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           //and
           val mockRoutingCacheRepository = mock[RoutingCacheRepository]
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
 
           //and
@@ -283,7 +283,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, expectedLocation, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
 
           //when
@@ -334,7 +334,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         when(mockRoutingCacheRepository.createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))).thenReturn(Future(mockDatabaseUpdateResult))
 
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
 
         //when
@@ -386,7 +386,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val mockHourlyLimitService = Mocks.mockHourlyLimitService()
 
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
 
           //when
@@ -449,7 +449,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
             )(any[ExecutionContext])
           ).thenReturn(Future(routedLocation))
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(userIdentifier))
+          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
 
           //when
           val returnedLocation: Future[Location] = new ThrottlingServiceTest(routingCacheRepository = mockRoutingCacheRepository, hourlyLimitService = mockHourlyLimitService).throttle(routedLocation, mockAuditContext, mockRuleContext)

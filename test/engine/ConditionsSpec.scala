@@ -353,7 +353,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
         val ruleContext = mock[RuleContext]
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, None, "", InternalUserIdentifier(""))))
+        when(ruleContext.currentCoAFEAuthority).thenReturn(Future(CoAFEAuthority(twoFactorAuthOtpId, None, Some(""), Some(InternalUserIdentifier("")))))
 
         val result = await(HasRegisteredFor2SV.isTrue(authContext, ruleContext))
 

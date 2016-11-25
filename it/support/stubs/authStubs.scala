@@ -54,8 +54,8 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
                           accounts: Accounts,
                           credentialStrength: CredentialStrength,
                           affinityGroup: String,
-                          internalUserIdentifier: String,
-                          userDetailsLink: String) extends Stub with SessionCookieBaker {
+                          internalUserIdentifier: Option[String],
+                          userDetailsLink: Option[String]) extends Stub with SessionCookieBaker {
 
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
   private val oid = "oid-1234567890"
@@ -106,12 +106,12 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
       "loggedInAt" -> "2014-06-09T14:57:09.522Z",
       "accounts" -> accounts,
       "levelOfAssurance" -> 2,
-      "confidenceLevel" -> 500,
-      "userDetailsLink" -> userDetailsLink,
-      "ids" -> "/auth/ids-uri"
+      "confidenceLevel" -> 500
     ) ++
       (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
-      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj())
+      (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
+      userDetailsLink.map(link => Json.obj("userDetailsLink" -> link)).getOrElse(Json.obj()) ++
+      internalUserIdentifier.map(_ => Json.obj("ids" -> "/auth/ids-uri")).getOrElse(Json.obj())
 
     stubFor(get(urlEqualTo("/auth/authority"))
       .willReturn(
@@ -119,14 +119,13 @@ class LoggedInSessionUser(loggedInViaGateway: Boolean,
           .withStatus(200)
           .withBody(authorityObject.toString())))
 
-    stubFor(get(urlEqualTo("/auth/ids-uri"))
-      .willReturn(
-        aResponse()
+    val idsResponse = internalUserIdentifier.map(internalId => aResponse()
           .withStatus(200)
           .withBody(
-            s"""
-              |{"internalId":"$internalUserIdentifier"}
-            """.stripMargin)))
+            s"""{"internalId":"$internalId"}"""))
+      .getOrElse(aResponse().withStatus(404))
+
+    stubFor(get(urlEqualTo("/auth/ids-uri")).willReturn(idsResponse))
   }
 }
 
@@ -136,7 +135,7 @@ object LoggedInSessionUser {
             accounts: Accounts,
             credentialStrength: CredentialStrength,
             affinityGroup: String,
-            internalUserIdentifier : String,
-            userDetailsLink: String) =
+            internalUserIdentifier : Option[String],
+            userDetailsLink: Option[String]) =
     new LoggedInSessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink)
 }

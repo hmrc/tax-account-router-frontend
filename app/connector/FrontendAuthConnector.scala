@@ -25,6 +25,8 @@ import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
+import scala.concurrent.Future
+
 case class EnrolmentIdentifier(key: String, value: String)
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
@@ -41,7 +43,7 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: String, internalUserIdentifier: InternalUserIdentifier)
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], internalUserIdentifier: Option[InternalUserIdentifier])
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
@@ -50,19 +52,19 @@ object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
 
 trait FrontendAuthConnector extends AuthConnector {
 
-  private case class Authority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: String, idsUri: String)
+  private case class Authority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], idsUri: Option[String])
 
   private object Authority {
     implicit val reads: Reads[Authority] =
       ((__ \ "twoFactorAuthOtpId").readNullable[String] and
         (__ \ "enrolments").readNullable[String] and
-        (__ \ "userDetailsLink").read[String] and
-        (__ \ "ids").read[String]).apply(Authority.apply _)
+        (__ \ "userDetailsLink").readNullable[String] and
+        (__ \ "ids").readNullable[String]).apply(Authority.apply _)
   }
 
   def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = {
 
-    def getIds(idsUri: String) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+    def getIds(idsUri: Option[String]) = idsUri.map(uri => http.GET[InternalUserIdentifier](s"$serviceUrl$uri").map(Option(_))).getOrElse(Future.successful(None))
 
     http.GET[Authority](s"$serviceUrl/auth/authority")
       .flatMap(authority => getIds(authority.idsUri).map(internalUserIdentifier =>
