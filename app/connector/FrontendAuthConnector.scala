@@ -43,7 +43,15 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], internalUserIdentifier: Option[InternalUserIdentifier])
+case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], idsUri: Option[String])
+
+object CoAFEAuthority {
+  implicit val reads: Reads[CoAFEAuthority] =
+    ((__ \ "twoFactorAuthOtpId").readNullable[String] and
+      (__ \ "enrolments").readNullable[String] and
+      (__ \ "userDetailsLink").readNullable[String] and
+      (__ \ "ids").readNullable[String])(apply _)
+}
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
@@ -52,25 +60,9 @@ object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
 
 trait FrontendAuthConnector extends AuthConnector {
 
-  private case class Authority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], idsUri: Option[String])
+  def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
-  private object Authority {
-    implicit val reads: Reads[Authority] =
-      ((__ \ "twoFactorAuthOtpId").readNullable[String] and
-        (__ \ "enrolments").readNullable[String] and
-        (__ \ "userDetailsLink").readNullable[String] and
-        (__ \ "ids").readNullable[String]).apply(Authority.apply _)
-  }
-
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = {
-
-    def getIds(idsUri: Option[String]) = idsUri.map(uri => http.GET[InternalUserIdentifier](s"$serviceUrl$uri").map(Option(_))).getOrElse(Future.successful(None))
-
-    http.GET[Authority](s"$serviceUrl/auth/authority")
-      .flatMap(authority => getIds(authority.idsUri).map(internalUserIdentifier =>
-        CoAFEAuthority(authority.twoFactorAuthOtpId, authority.enrolmentsUri, authority.userDetailsLink, internalUserIdentifier)
-      ))
-  }
+  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = http.GET[CoAFEAuthority](s"$serviceUrl/auth/authority")
 
   def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }

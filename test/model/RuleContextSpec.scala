@@ -50,8 +50,9 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
     val enrolmentsUri = "/enrolments"
     val userDetailsLink = "/userDetailsLink"
+    val someIdsUri = "/ids-uri"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = Some(enrolmentsUri), userDetailsLink = Some(userDetailsLink), internalUserIdentifier = Some(internalUserIdentifier))
+    val expectedCoafeAuthority = CoAFEAuthority(None, enrolmentsUri = Some(enrolmentsUri), userDetailsLink = Some(userDetailsLink), idsUri = Some(someIdsUri))
 
     val expectedAffinityGroup = "some-affinity-group"
     val expectedUserDetails = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
@@ -64,6 +65,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     when(mockUserDetailsConnector.getUserDetails(userDetailsLink)).thenReturn(Future.successful(expectedUserDetails))
     when(mockFrontendAuthConnector.getEnrolments(enrolmentsUri)).thenReturn(Future.successful(expectedActiveEnrolmentsSeq))
     when(mockFrontendAuthConnector.currentCoAFEAuthority()).thenReturn(Future.successful(expectedCoafeAuthority))
+    when(mockFrontendAuthConnector.getIds(someIdsUri)).thenReturn(Future.successful(internalUserIdentifier))
   }
 
   "activeEnrolments" should {
@@ -179,7 +181,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       expectedException.getMessage shouldBe "userDetailsLink is not defined"
 
       verify(mockFrontendAuthConnector).currentCoAFEAuthority()
-      verify(mockLogger).warn("failed to get user details", expectedException)
+      verify(mockLogger).warn("failed to get user details because userDetailsLink is not defined")
       verifyNoMoreInteractions(allMocks: _*)
     }
   }

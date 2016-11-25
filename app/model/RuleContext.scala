@@ -32,9 +32,8 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val userDetails = currentCoAFEAuthority.flatMap { authority =>
     authority.userDetailsLink.map(userDetailsConnector.getUserDetails).getOrElse {
-      val exception = new RuntimeException("userDetailsLink is not defined")
-      logger.warn("failed to get user details", exception)
-      Future.failed(exception)
+      logger.warn("failed to get user details because userDetailsLink is not defined")
+      Future.failed(new RuntimeException("userDetailsLink is not defined"))
     }
   }
 
@@ -53,7 +52,12 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
-  lazy val internalUserIdentifier = currentCoAFEAuthority.map(authority => authority.internalUserIdentifier)
+  lazy val internalUserIdentifier = currentCoAFEAuthority.flatMap { authority =>
+    authority.idsUri match {
+      case Some(uri) => frontendAuthConnector.getIds(uri).map(Option(_))
+      case _ => Future.successful(None)
+    }
+  }
 
   lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
