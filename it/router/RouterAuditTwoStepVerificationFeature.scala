@@ -44,7 +44,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is optional for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = optionalUserId))
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(optionalUserId)))
 
       And("user is admin")
       stubUserDetails(credentialRole = user)
@@ -76,7 +76,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is mandatory for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = mandatoryUserId))
+      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(mandatoryUserId)))
 
       And("user is admin")
       stubUserDetails(credentialRole = user)

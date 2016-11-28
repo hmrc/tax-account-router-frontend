@@ -17,6 +17,7 @@
 package model
 
 import connector._
+import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -24,12 +25,16 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
+  val logger: LoggerLike = Logger
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
   val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
   val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
 
   lazy val userDetails = currentCoAFEAuthority.flatMap { authority =>
-    userDetailsConnector.getUserDetails(authority.userDetailsLink)
+    authority.userDetailsLink.map(userDetailsConnector.getUserDetails).getOrElse {
+      logger.warn("failed to get user details because userDetailsLink is not defined")
+      Future.failed(new RuntimeException("userDetailsLink is not defined"))
+    }
   }
 
   lazy val activeEnrolmentKeys = activeEnrolments.map(enrList => enrList.map(_.key).toSet[String])
@@ -47,7 +52,12 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
 
   lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
 
-  lazy val internalUserIdentifier = currentCoAFEAuthority.map(_.internalUserIdentifier)
+  lazy val internalUserIdentifier = currentCoAFEAuthority.flatMap { authority =>
+    authority.idsUri match {
+      case Some(uri) => frontendAuthConnector.getIds(uri).map(Option(_))
+      case _ => Future.successful(None)
+    }
+  }
 
   lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])

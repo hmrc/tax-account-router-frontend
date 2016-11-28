@@ -105,8 +105,8 @@ trait TwoStepVerification {
         throttleLocations <- throttleLocations(applicableRule)
         internalUserIdentifier <- ruleContext.internalUserIdentifier
       } yield {
-        (applicableRule, throttleLocations) match {
-          case (Some(rule), Some(locations)) => Some(throttleLocation(rule, locations, internalUserIdentifier))
+        (applicableRule, throttleLocations, internalUserIdentifier) match {
+          case (Some(rule), Some(locations), Some(identifier)) => Some(throttleLocation(rule, locations, identifier))
           case _ => None
         }
       }
