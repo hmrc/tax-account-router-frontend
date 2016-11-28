@@ -2,15 +2,14 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import controllers.Destination
+import controllers.{UserType, UserTypeResponse}
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
-// TODO: duplicated testcases, same as in RouterFeature. Maybe it can be defined in one place only
-class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
+class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(additionalConfiguration = config)
 
@@ -25,35 +24,10 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
 
   def await[A](future: Future[A])(implicit timeout: Duration) = Await.result(future, timeout)
 
-  private val destinationPTA = Destination("http://localhost:11111/personal-account")
-  private val destinationBTA = Destination("http://localhost:11111/business-account")
+  private val typeIndividual = UserTypeResponse(UserType.Individual)
+  private val typeBusiness = UserTypeResponse(UserType.Business)
 
-  feature("Router feature") {
-
-    scenario("a user should be redirected to PTA") {
-
-      Given("a user with cred id exists")
-      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = credId).stubLoggedOut()
-
-      When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
-      response.status shouldBe 200
-
-      Then("the routing should return PTA Home Page")
-      response.json.as[Destination] shouldBe destinationPTA
-
-      And("the authority object should be fetched by credId")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
-
-      And("user's enrolments should not be fetched from Auth")
-      verify(0, getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
-      And("user's details should not be fetched from User Details")
-      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
-
-      And("Sa micro service should not be invoked")
-      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
-    }
+  feature("User Type for credId") {
 
     scenario("a user with any business account be redirected to BTA") {
 
@@ -68,7 +42,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched by credId")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -83,12 +57,10 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-
-
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -101,7 +73,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -119,7 +91,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -134,7 +106,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -152,7 +124,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG and Auth returning 500 on GET enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
 
       And("gg is returning 500")
       stubEnrolmentsToReturn500()
@@ -162,7 +134,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
 
       And("the authority object should be fetched once for AuthenticatedBy")
@@ -181,7 +153,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -194,7 +166,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -211,7 +183,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
 
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -224,7 +196,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -242,7 +214,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts.copy(paye = None))
+      SessionUser(accounts = saAccounts.copy(paye = None), internalUserIdentifier = credId).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -255,7 +227,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -273,7 +245,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts.copy(paye = Some(PayeAccount("link", Nino("CS100700A")))))
+      SessionUser(internalUserIdentifier = credId, accounts = saAccounts.copy(paye = Some(PayeAccount("link", Nino("CS100700A"))))).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -286,7 +258,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationPTA
+      response.json.as[UserTypeResponse] shouldBe typeIndividual
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -301,7 +273,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has an inactive enrolment and individual affinity group")
       stubInactiveEnrolments()
@@ -312,7 +284,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -330,7 +302,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has no inactive enrolments and individual affinity group")
       stubNoEnrolments()
@@ -341,7 +313,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationPTA
+      response.json.as[UserTypeResponse] shouldBe typeIndividual
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -359,7 +331,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
     scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL)
+      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has no inactive enrolments and affinity group is not available")
       stubNoEnrolments()
@@ -370,7 +342,7 @@ class RouterDestinationForCredIdFeature extends StubbedFeatureSpec with CommonSt
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[Destination] shouldBe destinationBTA
+      response.json.as[UserTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)

@@ -1,4 +1,4 @@
 # microservice specific routes
 
 GET        /                        controllers.RouterController.account
-GET        /destination/:credId     controllers.RouterController.destination(credId: String)
+GET        /destination/:credId     controllers.RouterController.calculateUserType(credId: String)

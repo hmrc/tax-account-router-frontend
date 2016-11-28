@@ -57,7 +57,8 @@ class SessionUser(loggedInViaGateway: Boolean,
                   credentialStrength: CredentialStrength,
                   affinityGroup: String,
                   internalUserIdentifier: String,
-                  userDetailsLink: String) extends SessionCookieBaker {
+                  userDetailsLink: String,
+                  enrolmentsAvailable: Boolean) extends SessionCookieBaker {
 
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
   private val oid = "oid-1234567890"
@@ -91,12 +92,21 @@ class SessionUser(loggedInViaGateway: Boolean,
     "ids" -> "/auth/ids-uri"
   ) ++
     (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
-    (if (loggedInViaGateway) Json.obj("enrolments" -> "/auth/enrolments-uri", "credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
+    (if (enrolmentsAvailable) Json.obj("enrolments" -> "/auth/enrolments-uri") else Json.obj()) ++
+    (if (loggedInViaGateway) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
     (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
     (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj())
 
   def stubLoggedOut() = {
     stubAuthorityForCredId()
+    stubIdsUrl()
+  }
+
+
+  def stubLoggedIn() = {
+    stubGGSignIn()
+    stubLogin()
+    stubAuthorityForLoggedIn()
     stubIdsUrl()
   }
 
@@ -106,13 +116,6 @@ class SessionUser(loggedInViaGateway: Boolean,
         aResponse()
           .withStatus(200)
           .withBody(authorityObject.toString())))
-  }
-
-  def stubLoggedIn() = {
-    stubGGSignIn()
-    stubLogin()
-    stubAuthorityForLoggedIn()
-    stubIdsUrl()
   }
 
   private def stubGGSignIn() = {
@@ -169,6 +172,7 @@ object SessionUser {
             credentialStrength: CredentialStrength = CredentialStrength.None,
             affinityGroup: String = AffinityGroupValue.ORGANISATION,
             internalUserIdentifier: String = "id1234567890",
-            userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri") =
-    new SessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink)
+            userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri",
+            enrolmentsAvailable: Boolean = true) =
+    new SessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink, enrolmentsAvailable)
 }

@@ -67,7 +67,8 @@ trait FrontendAuthConnector extends AuthConnector {
 
   def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
+  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) =
+    http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {

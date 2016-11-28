@@ -19,6 +19,7 @@ package controllers
 import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
+import controllers.UserType.UserType
 import engine.{Condition, RuleEngine}
 import model.Locations._
 import model._
@@ -30,14 +31,21 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.play.http.HeaderCarrier
+import utils.EnumJson._
 
 import scala.concurrent.Future
 
-case class Destination(location: String)
+object UserType extends Enumeration {
+  type UserType = Value
+  val Individual, Business = Value
+}
 
-object Destination {
-  implicit val writes: Writes[Destination] = Json.writes[Destination]
-  implicit val reads: Reads[Destination] = Json.reads[Destination]
+case class UserTypeResponse(userType: UserType)
+
+object UserTypeResponse {
+  implicit val userTypeReads = enumFormat(UserType)
+  implicit val writes: Writes[UserTypeResponse] = Json.writes[UserTypeResponse]
+  implicit val reads: Reads[UserTypeResponse] = Json.reads[UserTypeResponse]
 }
 
 object RouterController extends RouterController {
@@ -89,12 +97,13 @@ trait RouterController extends FrontendController with Actions {
     calculateFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
   }
 
-  def destination(credId: String) = Action.async { implicit request =>
+  def calculateUserType(credId: String) = Action.async { implicit request =>
     val ruleContext = RuleContext(Some(credId))
     // TODO: no op audit context!
     val auditContext = createAuditContext()
-    calculateFinalDestination(ruleContext, auditContext).map {
-      location => Ok(Json.toJson(Destination(location.fullUrl)))
+    calculateFinalDestination(ruleContext, auditContext) map {
+      case Locations.PersonalTaxAccount => Ok(Json.toJson(UserTypeResponse(UserType.Individual)))
+      case Locations.BusinessTaxAccount => Ok(Json.toJson(UserTypeResponse(UserType.Business)))
     }
   }
 
@@ -128,21 +137,21 @@ object TarRules extends RuleEngine {
   import Condition._
 
   override val rules = List(
-    when(LoggedInViaVerify) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",
+    when(LoggedInViaVerify and not(ArrivingWithCredId)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",
 
-    when(LoggedInViaGovernmentGateway and not(GGEnrolmentsAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-gg-unavailable",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and not(GGEnrolmentsAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-gg-unavailable",
 
-    when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
 
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(SAReturnAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-sa-unavailable",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasEnrolments(SA) and not(SAReturnAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-sa-unavailable",
 
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasEnrolments(SA) and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
 
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasEnrolments(SA) and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
 
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed) and not(HasNino)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed) and not(HasNino)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino",
 
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
+    when(LoggedInViaGovernmentGateway or ArrivingWithCredId and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
 
     when(not(HasAnyInactiveEnrolment) and not(AffinityGroupAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-affinity-group-unavailable",
 
