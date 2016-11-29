@@ -25,7 +25,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Verify")
-      SessionUser(loggedInViaGateway = true).stubLoggedIn()
+      SessionUser(loggedInViaGateway = false).stubLoggedIn()
 
       val auditEventStub = stubAuditEvent()
 
@@ -37,7 +37,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the audit event raised should be the expected one")
       val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
-        IS_A_VERIFY_USER.key -> "true"
+        IS_A_VERIFY_USER.key -> "true",
+        IS_A_GOVERNMENT_GATEWAY_USER.key -> "false"
         ))
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user")
@@ -333,7 +334,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
         HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -370,7 +371,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
         HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false"
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")

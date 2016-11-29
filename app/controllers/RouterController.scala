@@ -89,24 +89,20 @@ trait RouterController extends FrontendController with Actions {
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
-
-    // TODO: where is the credId?
     val ruleContext = RuleContext(None)
     val auditContext = createAuditContext()
-
-    calculateFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
+    calculateFinalDestinationWithAuditAndMetrics(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
   }
 
   def calculateUserType(credId: String) = Action.async { implicit request =>
     val ruleContext = RuleContext(Some(credId))
-    // TODO: no op audit context!
     val auditContext = createAuditContext()
+    // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
     calculateFinalDestination(ruleContext, auditContext) map {
       case Locations.PersonalTaxAccount => Ok(Json.toJson(UserTypeResponse(UserType.Individual)))
       case Locations.BusinessTaxAccount => Ok(Json.toJson(UserTypeResponse(UserType.Business)))
     }
   }
-
 
   def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent]) = {
     val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
@@ -116,7 +112,20 @@ trait RouterController extends FrontendController with Actions {
       destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
-      //sendAuditEvent(auditContext, destinationAfterThrottleApplied)
+      Logger.debug(s"routing to: ${finalDestination.name}")
+      finalDestination
+    }
+  }
+
+  def calculateFinalDestinationWithAuditAndMetrics(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = {
+    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
+
+    for {
+      destinationAfterRulesApplied <- ruleEngineResult
+      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
+      finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
+    } yield {
+      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
       metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
       analyticsEventSender.sendEvents(finalDestination.name, auditContext)
