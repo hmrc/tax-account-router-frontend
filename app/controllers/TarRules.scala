@@ -16,14 +16,12 @@
 
 package controllers
 
-import engine.{Condition, RuleEngine}
+import engine.Condition._
+import engine.RuleEngine
 import model.Locations._
 import model._
 
-
 object TarRules extends RuleEngine {
-
-  import Condition._
 
   override val rules = List(
     when(LoggedInViaVerify and not(ArrivingWithCredId)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",

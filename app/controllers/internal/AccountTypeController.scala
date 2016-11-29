@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.internal
 
 import connector.FrontendAuthConnector
-import controllers.AccountType.AccountType
+import controllers.TarRules
+import controllers.internal.AccountType.AccountType
 import engine.RuleEngine
 import model.Locations._
 import model._

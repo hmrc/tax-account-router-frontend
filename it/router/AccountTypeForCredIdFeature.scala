@@ -2,7 +2,8 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import controllers.{AccountType, AccountTypeResponse}
+import controllers.internal.AccountTypeResponse
+import controllers.internal.{AccountType, AccountTypeResponse}
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
