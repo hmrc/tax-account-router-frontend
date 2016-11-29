@@ -104,7 +104,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     }
 
     scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
-      
+
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
@@ -390,6 +390,36 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
+  }
+
+  scenario("a user logged in through One Time Login or Privileged Access with no enrolments should go to BTA") {
+
+    Given("a user logged in through One Time Login or Privileged Access")
+    SessionUser(internalUserIdentifier = None, userDetailsLink = None).stubLoggedIn()
+
+    And("the user has no inactive enrolments")
+    stubNoEnrolments()
+
+    createStubs(BtaHomeStubPage)
+
+    When("the user hits the router")
+    go(RouterRootPath)
+
+    Then("the user should be routed to BTA Home Page")
+    on(BtaHomePage)
+
+    And("the authority object should be fetched once for AuthenticatedBy, but ids are not fetched")
+    verify(getRequestedFor(urlEqualTo("/auth/authority")))
+    verify(0, getRequestedFor(urlEqualTo("/auth/ids-uri")))
+
+    And("user's enrolments should be fetched from Auth")
+    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
+
+    And("user's details should not be fetched from User Details")
+    verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+
+    And("Sa micro service should not be invoked")
+    verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
   }
 
   private def verifyAuthorityObjectIsFetched() = {

@@ -2,7 +2,6 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import controllers.internal.AccountTypeResponse
 import controllers.internal.{AccountType, AccountTypeResponse}
 import play.api.test.FakeApplication
 import support.page._
@@ -33,7 +32,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user with any business account be redirected to BTA") {
 
       Given("a user with cred id exists")
-      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has business related enrolments")
       stubBusinessEnrolments()
@@ -61,7 +60,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -92,7 +91,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -125,7 +124,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and Auth returning 500 on GET enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("gg is returning 500")
       stubEnrolmentsToReturn500()
@@ -154,7 +153,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -184,7 +183,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts, internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -215,7 +214,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(accounts = saAccounts.copy(paye = None), internalUserIdentifier = credId).stubLoggedOut()
+      SessionUser(accounts = saAccounts.copy(paye = None), internalUserIdentifier = Some(credId)).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -246,7 +245,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(internalUserIdentifier = credId, accounts = saAccounts.copy(paye = Some(PayeAccount("link", Nino("CS100700A"))))).stubLoggedOut()
+      SessionUser(internalUserIdentifier = Some(credId), accounts = saAccounts.copy(paye = Some(PayeAccount("link", Nino("CS100700A"))))).stubLoggedOut()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -274,7 +273,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
+      SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has an inactive enrolment and individual affinity group")
       stubInactiveEnrolments()
@@ -303,7 +302,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
+      SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has no inactive enrolments and individual affinity group")
       stubNoEnrolments()
@@ -332,7 +331,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(internalUserIdentifier = credId, affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
+      SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
       And("the user has no inactive enrolments and affinity group is not available")
       stubNoEnrolments()

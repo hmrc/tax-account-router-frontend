@@ -44,7 +44,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is optional for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = optionalUserId).stubLoggedIn()
+      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(optionalUserId)).stubLoggedIn()
 
       And("user is admin")
       stubUserDetails(credentialRole = user)
@@ -76,7 +76,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is mandatory for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = mandatoryUserId).stubLoggedIn()
+      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(mandatoryUserId)).stubLoggedIn()
 
       And("user is admin")
       stubUserDetails(credentialRole = user)

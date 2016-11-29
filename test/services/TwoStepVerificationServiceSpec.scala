@@ -58,7 +58,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
     val signOutUrl = "http://localhost:9025/sign-out"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val authorityWithOtpDisabled = TARAuthority(twoFactorAuthOtpId = None, idsUri = "idsUri", userDetailsUri = "userDetailsLink",
+    val authorityWithOtpDisabled = TARAuthority(twoFactorAuthOtpId = None, idsUri = Some("idsUri"), userDetailsUri = Some("userDetailsLink"),
       enrolmentsUri = None, credentialStrength = CredentialStrength.None, nino = None, saUtr = None)
 
 
@@ -102,7 +102,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set.empty[String]))
-      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -117,7 +117,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
     "not rewrite the location when credential strength is strong and continue is BTA" in new Setup {
       when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled.copy(credentialStrength = CredentialStrength.Strong)))
-      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -130,7 +130,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
     "not rewrite the location when continue is BTA and user is registered for 2SV with SA enrolment" in new Setup {
       when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled.copy(twoFactorAuthOtpId = Some("1234"))))
-      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -144,7 +144,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     "not rewrite the location when continue is BTA and the call to get enrolments is failing" in new Setup {
       when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
-      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
@@ -160,7 +160,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
       when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
-      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+      when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
@@ -214,7 +214,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         when(ruleContext.userDetails).thenReturn(Future.successful(UserDetails(Some(CredentialRole(credentialRole)), "affinityGroup")))
 
         when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
-        when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(internalUserIdentifier))
+        when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
         when(twoStepVerificationThrottleMock.isRegistrationMandatory(expectedRuleName, internalUserIdentifier)).thenReturn(Future.successful(isMandatory))
         when(auditConnectorMock.sendEvent(any[AuditEvent])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(mock[AuditResult]))
 

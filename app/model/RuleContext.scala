@@ -17,21 +17,24 @@
 package model
 
 import connector._
-import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
+import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-// TODO: option of credId seems to be ugly here, we can do better. I'd rather pass the authority object!
 case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
+  val logger: LoggerLike = Logger
+
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
-  val authConnector:FrontendAuthConnector = FrontendAuthConnector
+  val authConnector: FrontendAuthConnector = FrontendAuthConnector
   val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
 
   lazy val userDetails = authority.flatMap { authority =>
-    userDetailsConnector.getUserDetails(authority.userDetailsUri)
+    authority.userDetailsUri.map(userDetailsConnector.getUserDetails).getOrElse {
+      logger.warn("failed to get user details because userDetailsUri is not defined")
+      Future.failed(new RuntimeException("userDetailsUri is not defined"))
+    }
   }
 
   lazy val activeEnrolmentKeys = activeEnrolments.map(enrList => enrList.map(_.key).toSet[String])
@@ -51,7 +54,13 @@ case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
     case None => authConnector.currentTarAuthority
   }
 
-  lazy val internalUserIdentifier = authority.flatMap(auth => authConnector.getIds(auth.idsUri))
+  lazy val internalUserIdentifier = authority.flatMap { authority =>
+    authority.idsUri match {
+      case Some(uri) => authConnector.getIds(uri).map(Option(_))
+      case _ => Future.successful(None)
+    }
+  }
+
 
   lazy val enrolments = authority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])

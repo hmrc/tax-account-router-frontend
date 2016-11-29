@@ -32,7 +32,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 
   "currentTarAuthority" should {
     "get current tar authority" in new Setup {
-      val authResponse = TARAuthority(None, "", "", None, CredentialStrength.None, None, None)
+      val authResponse = TARAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET[Any](eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier])).thenReturn(Future.successful(authResponse))
 
       val result = await(connector.currentTarAuthority)
@@ -63,7 +63,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
             |    "enrolments": "$enrolmentsUri"
             |    }""".stripMargin
 
-      Json.parse(authResponse).as[TARAuthority] shouldBe TARAuthority(Some(twoFactorOtpId), idsUri, userDetailsLink, Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
+      Json.parse(authResponse).as[TARAuthority] shouldBe TARAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
     }
   }
 

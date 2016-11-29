@@ -56,8 +56,8 @@ class SessionUser(loggedInViaGateway: Boolean,
                   accounts: Accounts,
                   credentialStrength: CredentialStrength,
                   affinityGroup: String,
-                  internalUserIdentifier: String,
-                  userDetailsLink: String,
+                  internalUserIdentifier: Option[String],
+                  userDetailsLink: Option[String],
                   enrolmentsAvailable: Boolean) extends SessionCookieBaker {
 
   private val affinityGroupField = s""""affinityGroup": "$affinityGroup","""
@@ -87,15 +87,16 @@ class SessionUser(loggedInViaGateway: Boolean,
     "loggedInAt" -> "2014-06-09T14:57:09.522Z",
     "accounts" -> accounts,
     "levelOfAssurance" -> 2,
-    "confidenceLevel" -> 500,
-    "userDetailsLink" -> userDetailsLink,
-    "ids" -> "/auth/ids-uri"
+    "confidenceLevel" -> 500
   ) ++
     (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
     (if (enrolmentsAvailable) Json.obj("enrolments" -> "/auth/enrolments-uri") else Json.obj()) ++
-    (if (loggedInViaGateway) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier)) else Json.obj()) ++
+    (if (loggedInViaGateway && internalUserIdentifier.isDefined) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier.get)) else Json.obj()) ++
     (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
-    (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj())
+    (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj()) ++
+    userDetailsLink.map(link => Json.obj("userDetailsLink" -> link)).getOrElse(Json.obj()) ++
+    internalUserIdentifier.map(_ => Json.obj("ids" -> "/auth/ids-uri")).getOrElse(Json.obj())
+
 
   def stubLoggedOut() = {
     stubAuthorityForCredId()
@@ -111,11 +112,11 @@ class SessionUser(loggedInViaGateway: Boolean,
   }
 
   private def stubAuthorityForCredId() = {
-    stubFor(get(urlEqualTo(s"/auth/gg/$internalUserIdentifier"))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(authorityObject.toString())))
+    internalUserIdentifier.map(internalId => {
+      stubFor(get(urlEqualTo(s"/auth/gg/$internalId")).willReturn(aResponse()
+        .withStatus(200)
+        .withBody(authorityObject.toString())))
+    })
   }
 
   private def stubGGSignIn() = {
@@ -153,15 +154,15 @@ class SessionUser(loggedInViaGateway: Boolean,
           .withBody(authorityObject.toString())))
   }
 
+
   private def stubIdsUrl() = {
-    stubFor(get(urlEqualTo("/auth/ids-uri"))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(
-            s"""
-               |{"internalId":"$internalUserIdentifier"}
-            """.stripMargin)))
+    val idsResponse = internalUserIdentifier.map(internalId => aResponse()
+      .withStatus(200)
+      .withBody(
+        s"""{"internalId":"$internalId"}"""))
+      .getOrElse(aResponse().withStatus(404))
+
+    stubFor(get(urlEqualTo("/auth/ids-uri")).willReturn(idsResponse))
   }
 }
 
@@ -171,8 +172,8 @@ object SessionUser {
             accounts: Accounts = Accounts(),
             credentialStrength: CredentialStrength = CredentialStrength.None,
             affinityGroup: String = AffinityGroupValue.ORGANISATION,
-            internalUserIdentifier: String = "id1234567890",
-            userDetailsLink: String = s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri",
+            internalUserIdentifier: Option[String] = Some("id1234567890"),
+            userDetailsLink: Option[String] = Some(s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri"),
             enrolmentsAvailable: Boolean = true) =
     new SessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink, enrolmentsAvailable)
 }

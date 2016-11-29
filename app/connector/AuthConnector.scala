@@ -44,14 +44,14 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class TARAuthority(twoFactorAuthOtpId: Option[String], idsUri: String, userDetailsUri: String, enrolmentsUri: Option[String],
+case class TARAuthority(twoFactorAuthOtpId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String],
                         credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
 
 object TARAuthority {
   implicit val reads: Reads[TARAuthority] =
     ((__ \ "twoFactorAuthOtpId").readNullable[String] and
-      (__ \ "ids").read[String] and
-      (__ \ "userDetailsLink").read[String] and
+      (__ \ "ids").readNullable[String] and
+      (__ \ "userDetailsLink").readNullable[String] and
       (__ \ "enrolments").readNullable[String] and
       (__ \ "credentialStrength").read[CredentialStrength] and
       (__ \ "nino").readNullable[Nino] and
