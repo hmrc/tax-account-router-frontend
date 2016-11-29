@@ -1,0 +1,2 @@
+
+GET        /:credId/account-type        controllers.AccountTypeController.userTypeForCredId(credId : String)

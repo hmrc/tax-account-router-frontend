@@ -22,7 +22,7 @@ import support.Env
 
 object Navigation {
 
-  def goToDestination(path: String)(implicit app: Application) = WS.url(s"${Env.host}$path")(app)
+  def goToPath(path: String)(implicit app: Application) = WS.url(s"${Env.host}$path")(app)
 
 
 }

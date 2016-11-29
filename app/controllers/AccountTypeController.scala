@@ -16,28 +16,36 @@
 
 package controllers
 
-import auth.RouterAuthenticationProvider
-import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
+import controllers.AccountType.AccountType
 import engine.RuleEngine
 import model.Locations._
 import model._
 import play.api.Logger
-import play.api.mvc._
-import services._
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.frontend.auth._
+import play.api.libs.json.{Json, Reads, Writes}
+import play.api.mvc.{Action, AnyContent, Request}
+import services.{ThrottlingService, TwoStepVerification}
+import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.play.http.HeaderCarrier
+import utils.EnumJson._
 
-import scala.concurrent.Future
+object AccountType extends Enumeration {
+  type AccountType = Value
+  val Individual, Organisation = Value
+}
 
-object RouterController extends RouterController {
+case class AccountTypeResponse(`type`: AccountType)
+
+object AccountTypeResponse {
+  implicit val userTypeReads = enumFormat(AccountType)
+  implicit val writes: Writes[AccountTypeResponse] = Json.writes[AccountTypeResponse]
+  implicit val reads: Reads[AccountTypeResponse] = Json.reads[AccountTypeResponse]
+}
+
+object AccountTypeController extends AccountTypeController {
   override protected def authConnector = FrontendAuthConnector
 
   override val defaultLocation = BusinessTaxAccount
-
-  override val metricsMonitoringService = MetricsMonitoringService
 
   override val ruleEngine = TarRules
 
@@ -45,17 +53,10 @@ object RouterController extends RouterController {
 
   override val twoStepVerification = TwoStepVerification
 
-  override val auditConnector = FrontendAuditConnector
-
   override def createAuditContext() = AuditContext()
-
-  override val analyticsEventSender = AnalyticsEventSender
 }
 
-trait RouterController extends FrontendController with Actions {
-
-  val metricsMonitoringService: MetricsMonitoringService
-
+trait AccountTypeController extends FrontendController with Actions {
   def defaultLocation: Location
 
   def ruleEngine: RuleEngine
@@ -64,21 +65,25 @@ trait RouterController extends FrontendController with Actions {
 
   def twoStepVerification: TwoStepVerification
 
-  def auditConnector: AuditConnector
-
+  /**
+    *
+    * For the moment no audit event will be sent, but evaluation of the rules require the audit context
+    * so it is not removed until it is confirmed. We will most probably need auditing here too, but with a different type.
+    *
+    */
   def createAuditContext(): TAuditContext
 
-  def analyticsEventSender: AnalyticsEventSender
-
-  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
-
-  def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
-    val ruleContext = RuleContext(None)
+  def userTypeForCredId(credId: String) = Action.async { implicit request =>
+    val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
-    calculateFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
+    // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
+    calculateFinalDestination(ruleContext, auditContext) map {
+      case Locations.PersonalTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Individual)))
+      case Locations.BusinessTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Organisation)))
+    }
   }
 
-  def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = {
+  private def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent]) = {
     val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
 
     for {
@@ -86,18 +91,8 @@ trait RouterController extends FrontendController with Actions {
       destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
       finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
     } yield {
-      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
       Logger.debug(s"routing to: ${finalDestination.name}")
-      analyticsEventSender.sendEvents(finalDestination.name, auditContext)
       finalDestination
-    }
-  }
-
-  private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
-    auditContext.toAuditEvent(throttledLocation).foreach { auditEvent =>
-      auditConnector.sendEvent(auditEvent)
-      Logger.debug(s"Routing decision summary: ${auditEvent.detail \ "reasons"}")
     }
   }
 }

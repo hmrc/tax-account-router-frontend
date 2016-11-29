@@ -2,14 +2,14 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import controllers.{UserType, UserTypeResponse}
+import controllers.{AccountType, AccountTypeResponse}
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
-class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
+class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
   override lazy val app = FakeApplication(additionalConfiguration = config)
 
@@ -24,10 +24,10 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
   def await[A](future: Future[A])(implicit timeout: Duration) = Await.result(future, timeout)
 
-  private val typeIndividual = UserTypeResponse(UserType.Individual)
-  private val typeBusiness = UserTypeResponse(UserType.Business)
+  private val typeIndividual = AccountTypeResponse(AccountType.Individual)
+  private val typeBusiness = AccountTypeResponse(AccountType.Organisation)
 
-  feature("User Type for credId") {
+  feature("Principal for credId") {
 
     scenario("a user with any business account be redirected to BTA") {
 
@@ -38,11 +38,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubBusinessEnrolments()
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched by credId")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -69,11 +69,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -102,11 +102,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       createStubs(BtaHomeStubPage)
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -130,11 +130,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubEnrolmentsToReturn500()
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
 
       And("the authority object should be fetched once for AuthenticatedBy")
@@ -162,11 +162,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -192,11 +192,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -223,11 +223,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true)
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -254,11 +254,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true)
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeIndividual
+      response.json.as[AccountTypeResponse] shouldBe typeIndividual
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -280,11 +280,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -309,11 +309,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeIndividual
+      response.json.as[AccountTypeResponse] shouldBe typeIndividual
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -338,11 +338,11 @@ class UserTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetailsToReturn500()
 
       When("the destination for cred id is fetched")
-      val response = await(Navigation.goToDestination(s"/account/destination/$credId")(app).get())
+      val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
       Then("the routing should return BTA Home Page")
-      response.json.as[UserTypeResponse] shouldBe typeBusiness
+      response.json.as[AccountTypeResponse] shouldBe typeBusiness
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
