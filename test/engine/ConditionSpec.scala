@@ -133,7 +133,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         }
 
         val condition2 = mock[Condition]
-        when(condition2.evaluate( eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+        when(condition2.evaluate(eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
 
         val resultCondition: Condition = condition1.or(condition2)
 
@@ -213,7 +213,7 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
         val rule = Condition.when(condition).thenGoTo(location)
 
-        val ruleResult: Option[Location] = await(rule.apply(mockRuleContext, auditContext))
+        val ruleResult = await(rule.apply(mockRuleContext, auditContext))
 
         ruleResult shouldBe expectedLocation
       }
