@@ -35,17 +35,14 @@ trait RuleEngine {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
       else {
         val ruleApplyResult: Future[Option[Location]] = rule.apply(ruleContext, auditContext)
-        val ruleName = rule.name
-        ruleApplyResult.map { result =>
-          if (result.isDefined) {
-            auditContext.ruleApplied = ruleName
-            Logger.debug(s"rule applied: $ruleName")
-            result
-          }
-          else {
-            Logger.debug(s"rule evaluated but not applied: $ruleName")
-            result
-          }
+        ruleApplyResult.map {
+          case Some(location) =>
+            auditContext.ruleApplied = rule.name
+            Logger.debug(s"rule applied: ${rule.name}")
+            Some(location)
+          case _ =>
+            Logger.debug(s"rule evaluated but not applied: ${rule.name}")
+            None
         }
       })
     }.map(nextLocation => nextLocation.getOrElse(defaultLocation))

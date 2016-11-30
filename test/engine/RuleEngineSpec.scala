@@ -46,15 +46,12 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   val falseLocation: Location = evaluateUsingPlay(Location("/false", "false"))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
 
-  trait Setup {
-    val theDefaultLocation = Location("default-location", "/default-location")
-
-  }
+  val theDefaultLocation = Location("default-location", "/default-location")
 
 
   "a rule engine" should {
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in new Setup {
+    "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in {
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
@@ -72,7 +69,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       auditContext.ruleApplied shouldBe trueRule.name
     }
 
-    "evaluate empty rules and return with default location" in new Setup {
+    "evaluate empty rules and return with default location" in {
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
@@ -90,7 +87,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       auditContext.ruleApplied shouldBe ""
     }
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in new Setup {
+    "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
 
       //given
       val firstRule = mock[Rule]
