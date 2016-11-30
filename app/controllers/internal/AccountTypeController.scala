@@ -73,13 +73,18 @@ trait AccountTypeController extends FrontendController with Actions {
     val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
     // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
-    ruleEngine.matchRulesForLocation(ruleContext, auditContext) map {
-      case Locations.PersonalTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Individual)))
-      case Locations.BusinessTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Organisation)))
-      case unknownLocation: Location =>
-        logger.warn(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
-        Ok(Json.toJson(AccountTypeResponse(defaultAccountType)))
+    ruleEngine.matchRulesForLocation(ruleContext, auditContext) map { location =>
+      val accountType = accountTypeBasedOnLocation(location)
+      Ok(Json.toJson(AccountTypeResponse(accountType)))
     }
+  }
+
+  private def accountTypeBasedOnLocation(location: Location) = location match {
+    case Locations.PersonalTaxAccount => AccountType.Individual
+    case Locations.BusinessTaxAccount => AccountType.Organisation
+    case unknownLocation: Location =>
+      logger.warn(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
+      defaultAccountType
   }
 
 }
