@@ -48,7 +48,7 @@ object AccountTypeController extends AccountTypeController {
 
   override val ruleEngine = TarRules
 
-  override val logger: LoggerLike = Logger
+  override val logger = Logger
 
   override def createAuditContext() = AuditContext()
 

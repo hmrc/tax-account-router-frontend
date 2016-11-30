@@ -70,23 +70,19 @@ trait RouterController extends FrontendController with Actions {
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
     val ruleContext = RuleContext(None)
     val auditContext = createAuditContext()
-    calculateFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
+    getFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
   }
 
-  def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = {
-    val ruleEngineResult = ruleEngine.matchRulesForLocation(ruleContext, auditContext)
-
-    for {
-      destinationAfterRulesApplied <- ruleEngineResult
-      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
-      finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
-    } yield {
-      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
-      Logger.debug(s"routing to: ${finalDestination.name}")
-      analyticsEventSender.sendEvents(finalDestination.name, auditContext)
-      finalDestination
-    }
+  private def getFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = for {
+    destinationAfterRulesApplied <- ruleEngine.matchRulesForLocation(ruleContext, auditContext)
+    destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
+    finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
+  } yield {
+    sendAuditEvent(auditContext, destinationAfterThrottleApplied)
+    metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
+    Logger.debug(s"routing to: ${finalDestination.name}")
+    analyticsEventSender.sendEvents(finalDestination.name, auditContext)
+    finalDestination
   }
 
   private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
