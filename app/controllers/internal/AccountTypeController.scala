@@ -60,13 +60,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def logger: LoggerLike
 
   def ruleEngine: RuleEngine
-
-  /**
-    *
-    * For the moment no audit event will be sent, but evaluation of the rules require the audit context
-    * so it is not removed until it is confirmed. We will most probably need auditing here too, but with a different type.
-    *
-    */
+  
   def createAuditContext(): TAuditContext
 
   def accountTypeForCredId(credId: String) = Action.async { implicit request =>
