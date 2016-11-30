@@ -28,7 +28,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -56,16 +55,15 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
         val auditEventType = RoutingReason.Reason("event-key")
 
         val condition = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedResult)
+          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedResult)
 
           override val auditType: Option[RoutingReason] = if (auditTypeDefined) Some(auditEventType) else None
         }
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
-        val result = await(condition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
+        val result = await(condition.evaluate(mockRuleContext, mockAuditContext))
         result shouldBe expectedResult
 
         eventually {
@@ -89,26 +87,25 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
       s"be combined with another condition using 'and' operator - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
         val condition1 = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
+          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
           override val auditType: Option[RoutingReason] = None
         }
 
         val condition2 = mock[Condition]
-        when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+        when(condition2.evaluate(eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
 
         val resultCondition: Condition = condition1.and(condition2)
 
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
+        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
 
-        if (!condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+        if (!condition1Truth) verify(condition2, never()).evaluate(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
     }
   }
@@ -126,26 +123,25 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
       s"be combined with another condition using 'or' operator - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
         val condition1 = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
+          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
 
           override val auditType: Option[RoutingReason] = None
         }
 
         val condition2 = mock[Condition]
-        when(condition2.evaluate(eqTo(mockAuthContext), eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+        when(condition2.evaluate(eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
 
         val resultCondition: Condition = condition1.or(condition2)
 
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
+        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
 
-        if (condition1Truth) verify(condition2, never()).evaluate(any[AuthContext], any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+        if (condition1Truth) verify(condition2, never()).evaluate(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       }
     }
   }
@@ -161,19 +157,18 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
     forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedResultConditionTruth: Boolean) =>
       s"be negated - scenario: $scenario" in {
 
-        val mockAuthContext = mock[AuthContext]
         val mockRuleContext = mock[RuleContext]
         val mockAuditContext = mock[TAuditContext]
 
         val condition = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
+          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
           override val auditType: Option[RoutingReason] = None
         }
 
         val resultCondition: Condition = Condition.not(condition)
 
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockAuthContext, mockRuleContext, mockAuditContext))
+        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
 
         resultConditionTruth shouldBe expectedResultConditionTruth
       }
@@ -184,11 +179,10 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
     "never be evaluated by invoking isTrue" in {
       val compositeCondition = new CompositeCondition {}
 
-      val mockAuthContext = mock[AuthContext]
       val mockRuleContext = mock[RuleContext]
 
       the[RuntimeException] thrownBy {
-        compositeCondition.isTrue(mockAuthContext, mockRuleContext)
+        compositeCondition.isTrue(mockRuleContext)
       } should have message "This should never be called"
     }
   }
@@ -199,7 +193,6 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
       Location("url", "name")
     }
 
-    val mockAuthContext = mock[AuthContext]
     val mockRuleContext = mock[RuleContext]
     val auditContext = AuditContext()
 
@@ -213,14 +206,14 @@ class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with Spec
 
       s"return a rule given a condition - scenario: $scenario" in {
         val condition = new Condition {
-          override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
+          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
 
           override val auditType: Option[RoutingReason] = None
         }
 
         val rule = Condition.when(condition).thenGoTo(location)
 
-        val ruleResult: Option[Location] = await(rule.apply(mockAuthContext, mockRuleContext, auditContext))
+        val ruleResult = await(rule.apply(mockRuleContext, auditContext))
 
         ruleResult shouldBe expectedLocation
       }

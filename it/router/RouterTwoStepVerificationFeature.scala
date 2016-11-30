@@ -3,7 +3,7 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.test.FakeApplication
 import support.page._
-import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
+import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr, Vrn}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain._
 
@@ -14,7 +14,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     Given("a user logged in through Government Gateway")
     val saUtr = "12345"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
     stubUserDetails(credentialRole = user)
 
     And("the user has self assessment enrolments")
@@ -50,7 +50,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     Given("a user logged in through Government Gateway")
     val saUtr = "12345"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
     stubUserDetails(credentialRole = assistant)
 
     And("the user has self assessment enrolments")
@@ -87,7 +87,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     val saUtr = "12345"
     val vrn = "45678"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), vat = Some(VatAccount("", Vrn(vrn))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
     And("the user is an admin")
     stubUserDetails(credentialRole = user)
@@ -125,7 +125,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
     Given("a user logged in through Government Gateway")
     val saUtr = "12345"
     val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
     And("the user is an assistant")
     stubUserDetails(credentialRole = assistant)
@@ -162,7 +162,8 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     Given("a user logged in through Government Gateway")
     val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+
     stubUserDetails()
 
     And("the user has self assessment enrolments")
@@ -194,7 +195,7 @@ class RouterTwoStepVerificationFeature extends StubbedFeatureSpec with CommonStu
 
     Given("a user logged in through Government Gateway")
     val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-    createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
+    SessionUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong).stubLoggedIn()
 
     And("the user has self assessment enrolments")
     stubSelfAssessmentEnrolments()
@@ -234,7 +235,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
       stubUserDetails(credentialRole = user)
 
       And("the user has self assessment enrolments")
@@ -270,7 +271,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
       stubUserDetails(credentialRole = user)
 
       And("the user has self assessment enrolments")
@@ -306,7 +307,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
       And("the user is an assistant")
       stubUserDetails(credentialRole = user)
@@ -344,7 +345,7 @@ class RouterFeatureForMandatoryRegistration extends StubbedFeatureSpec with Comm
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
       And("the user is an assistant")
       stubUserDetails(credentialRole = assistant)

@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
-import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
+import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map => mutableMap}
@@ -44,7 +44,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is optional for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(optionalUserId)))
+      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(optionalUserId)).stubLoggedIn()
 
       And("user is admin")
       stubUserDetails(credentialRole = user)
@@ -76,7 +76,7 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
     scenario("when there is an applicable rule and registration is mandatory for an admin") {
 
       Given("a user logged in through Government Gateway not registered for 2SV")
-      createStubs(TaxAccountUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(mandatoryUserId)))
+      SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(mandatoryUserId)).stubLoggedIn()
 
       And("user is admin")
       stubUserDetails(credentialRole = user)

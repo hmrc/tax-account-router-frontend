@@ -18,7 +18,6 @@ package engine
 
 import model.{Location, RuleContext, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -33,9 +32,9 @@ trait Rule {
 
     override val name: String = ruleName
 
-    override def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = self.apply(authContext, ruleContext, auditContext)
+    override def apply(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = self.apply(ruleContext, auditContext)
   }
 
-  def apply(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]]
+  def apply(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]]
 
 }

@@ -18,22 +18,22 @@ package model
 
 import connector._
 import play.api.{Logger, LoggerLike}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
+case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
   val logger: LoggerLike = Logger
+
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
-  val frontendAuthConnector: FrontendAuthConnector = FrontendAuthConnector
+  val authConnector: FrontendAuthConnector = FrontendAuthConnector
   val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
 
-  lazy val userDetails = currentCoAFEAuthority.flatMap { authority =>
-    authority.userDetailsLink.map(userDetailsConnector.getUserDetails).getOrElse {
-      logger.warn("failed to get user details because userDetailsLink is not defined")
-      Future.failed(new RuntimeException("userDetailsLink is not defined"))
+  lazy val userDetails = authority.flatMap { authority =>
+    authority.userDetailsUri.map(userDetailsConnector.getUserDetails).getOrElse {
+      logger.warn("failed to get user details because userDetailsUri is not defined")
+      Future.failed(new RuntimeException("userDetailsUri is not defined"))
     }
   }
 
@@ -47,24 +47,28 @@ case class RuleContext(authContext: AuthContext)(implicit hc: HeaderCarrier) {
     enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
   }
 
-  lazy val lastSaReturn = authContext.principal.accounts.sa
-    .fold(Future(SaReturn.empty))(saAccount => selfAssessmentConnector.lastReturn(saAccount.utr.value))
+  lazy val lastSaReturn = authority.flatMap { auth => auth.saUtr.fold(Future(SaReturn.empty))(saUtr => selfAssessmentConnector.lastReturn(saUtr.utr)) }
 
-  lazy val currentCoAFEAuthority = frontendAuthConnector.currentCoAFEAuthority()
+  lazy val authority = credId match {
+    case Some(aCredId) => authConnector.userAuthority(aCredId)
+    case None => authConnector.currentUserAuthority
+  }
 
-  lazy val internalUserIdentifier = currentCoAFEAuthority.flatMap { authority =>
+  lazy val internalUserIdentifier = authority.flatMap { authority =>
     authority.idsUri match {
-      case Some(uri) => frontendAuthConnector.getIds(uri).map(Option(_))
+      case Some(uri) => authConnector.getIds(uri).map(Option(_))
       case _ => Future.successful(None)
     }
   }
 
-  lazy val enrolments = currentCoAFEAuthority.flatMap { authority =>
+
+  lazy val enrolments = authority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
-    authority.enrolmentsUri.fold(noEnrolments)(frontendAuthConnector.getEnrolments)
+    authority.enrolmentsUri.fold(noEnrolments)(authConnector.getEnrolments)
   }
 
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
 
   lazy val isAdmin = userDetails.map(_.isAdmin)
+
 }

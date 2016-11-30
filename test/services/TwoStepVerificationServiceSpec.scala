@@ -31,8 +31,7 @@ import play.api.libs.json.Json
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.{AuditEvent, ExtendedDataEvent}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain._
-import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.{HeaderCarrier, InternalServerException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -53,14 +52,15 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     implicit val request = FakeRequest()
     implicit val hc = HeaderCarrier()
     val auditContext = mock[TAuditContext]
-    val principal = Principal(None, Accounts())
     val auditConnectorMock = mock[AuditConnector]
     val ruleContext = mock[RuleContext]
     val twoStepVerificationThrottleMock = mock[TwoStepVerificationThrottle]
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
     val signOutUrl = "http://localhost:9025/sign-out"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val coAFEAuthorityWithOtpDisabled = CoAFEAuthority(None, None, Some(""), Some(InternalUserIdentifier("")))
+    val authorityWithOtpDisabled = UserAuthority(twoFactorAuthOtpId = None, idsUri = Some("idsUri"), userDetailsUri = Some("userDetailsLink"),
+      enrolmentsUri = None, credentialStrength = CredentialStrength.None, nino = None, saUtr = None)
+
 
     val twoStepVerification = new TwoStepVerification {
       override def twoStepVerificationPath = ???
@@ -84,10 +84,6 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
   "getDestinationVia2SV" should {
 
     "not rewrite the location when two step verification is disabled" in new Setup(twoStepVerificationSwitch = false) {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
@@ -96,10 +92,6 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     }
 
     "not rewrite the location when continue is not BTA" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
       val result = await(twoStepVerification.getDestinationVia2SV(PersonalTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
@@ -107,19 +99,15 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     }
 
     "not rewrite the location when no enrolments and continue is BTA" in new Setup {
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
+      when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set.empty[String]))
       when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
-
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(4)).authority
       verify(ruleContext, times(2)).enrolments
       verify(ruleContext, times(2)).activeEnrolmentKeys
       verify(ruleContext).internalUserIdentifier
@@ -128,72 +116,57 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     }
 
     "not rewrite the location when credential strength is strong and continue is BTA" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.Strong, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
+      when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled.copy(credentialStrength = CredentialStrength.Strong)))
       when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(4)).authority
       verify(ruleContext).internalUserIdentifier
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyZeroInteractions(allMocks: _*)
     }
 
     "not rewrite the location when continue is BTA and user is registered for 2SV with SA enrolment" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(Some("1234"), None, Some(""), Some(InternalUserIdentifier("")))))
+      when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled.copy(twoFactorAuthOtpId = Some("1234"))))
       when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(2)).authority
       verify(ruleContext).internalUserIdentifier
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
 
     "not rewrite the location when continue is BTA and the call to get enrolments is failing" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
+      when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.failed(new InternalServerException("GG returns 500")))
       when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
-
 
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
       verify(ruleContext, times(2)).enrolments
-      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(4)).authority
       verify(ruleContext).internalUserIdentifier
       verify(auditContext, atLeastOnce()).setRoutingReason(any[RoutingReason.RoutingReason], anyBoolean())(any[ExecutionContext])
       verifyNoMoreInteractions(allMocks: _*)
     }
 
     "not rewrite the location when continue is BTA and user has more than one enrolment" in new Setup {
-
-      val loggedInUser = LoggedInUser("userId", None, None, None, CredentialStrength.None, ConfidenceLevel.L0)
-      implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-      when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(coAFEAuthorityWithOtpDisabled))
+      when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled))
       when(ruleContext.enrolments).thenReturn(Future.successful(Seq.empty[GovernmentGatewayEnrolment]))
       when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set("IR-SA", "some-other-enrolment")))
       when(ruleContext.internalUserIdentifier).thenReturn(Future.successful(Some(internalUserIdentifier)))
 
+
       val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
       result shouldBe None
-      verify(ruleContext, times(2)).currentCoAFEAuthority
+      verify(ruleContext, times(4)).authority
       verify(ruleContext, times(2)).enrolments
       verify(ruleContext, times(2)).activeEnrolmentKeys
       verify(ruleContext).internalUserIdentifier
@@ -230,12 +203,10 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
 
         def verifyNoAuditWasSent() = verifyNoMoreInteractions(auditConnectorMock)
 
-        val loggedInUser = LoggedInUser("", None, None, None, CredentialStrength.Weak, ConfidenceLevel.L0)
-        implicit val authContext = AuthContext(loggedInUser, principal, None)
-
-        when(ruleContext.currentCoAFEAuthority).thenReturn(Future.successful(CoAFEAuthority(None, None, Some(""), Some(internalUserIdentifier))))
+        when(ruleContext.authority).thenReturn(Future.successful(authorityWithOtpDisabled.copy(credentialStrength = CredentialStrength.Weak)))
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future.successful(enrolments))
         when(ruleContext.isAdmin).thenReturn(Future.successful(isAdmin))
+
         val activeGGEnrolments = enrolments.map(GovernmentGatewayEnrolment(_, Seq(), "Activated")).toSeq
         when(ruleContext.activeEnrolments).thenReturn(Future.successful(activeGGEnrolments))
         val credentialRole = if (isAdmin) "User" else "Assistant"
@@ -250,10 +221,9 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
         val result = await(twoStepVerification.getDestinationVia2SV(BusinessTaxAccount, ruleContext, auditContext))
 
         result shouldBe Some(expectedRedirectLocation())
-        verify(ruleContext, atLeastOnce()).currentCoAFEAuthority
+        verify(ruleContext, atLeastOnce()).authority
         verify(ruleContext, Mockito.atMost(2)).activeEnrolmentKeys
         verify(ruleContext).isAdmin
-
         verify(ruleContext, Mockito.atMost(2)).enrolments
         verify(ruleContext).internalUserIdentifier
         verify(twoStepVerificationThrottleMock).isRegistrationMandatory(expectedRuleName, internalUserIdentifier)

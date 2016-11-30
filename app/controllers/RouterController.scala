@@ -19,8 +19,7 @@ package controllers
 import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
-import engine.{Condition, RuleEngine}
-import model.Locations._
+import engine.RuleEngine
 import model._
 import play.api.Logger
 import play.api.mvc._
@@ -34,8 +33,6 @@ import scala.concurrent.Future
 
 object RouterController extends RouterController {
   override protected def authConnector = FrontendAuthConnector
-
-  override val defaultLocation = BusinessTaxAccount
 
   override val metricsMonitoringService = MetricsMonitoringService
 
@@ -56,8 +53,6 @@ trait RouterController extends FrontendController with Actions {
 
   val metricsMonitoringService: MetricsMonitoringService
 
-  def defaultLocation: Location
-
   def ruleEngine: RuleEngine
 
   def throttlingService: ThrottlingService
@@ -73,24 +68,21 @@ trait RouterController extends FrontendController with Actions {
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
-
-    val ruleContext = RuleContext(authContext)
-
+    val ruleContext = RuleContext(None)
     val auditContext = createAuditContext()
+    getFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
+  }
 
-    val ruleEngineResult = ruleEngine.getLocation(authContext, ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
-
-    for {
-      destinationAfterRulesApplied <- ruleEngineResult
-      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
-      finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
-    } yield {
-      sendAuditEvent(auditContext, destinationAfterThrottleApplied)
-      metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
-      Logger.debug(s"routing to: ${finalDestination.name}")
-      analyticsEventSender.sendEvents(finalDestination.name, auditContext)
-      Redirect(finalDestination.fullUrl)
-    }
+  private def getFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = for {
+    destinationAfterRulesApplied <- ruleEngine.matchRulesForLocation(ruleContext, auditContext)
+    destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
+    finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
+  } yield {
+    sendAuditEvent(auditContext, destinationAfterThrottleApplied)
+    metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
+    Logger.debug(s"routing to: ${finalDestination.name}")
+    analyticsEventSender.sendEvents(finalDestination.name, auditContext)
+    finalDestination
   }
 
   private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
@@ -101,31 +93,4 @@ trait RouterController extends FrontendController with Actions {
   }
 }
 
-object TarRules extends RuleEngine {
 
-  import Condition._
-
-  override val rules = List(
-    when(LoggedInViaVerify) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",
-
-    when(LoggedInViaGovernmentGateway and not(GGEnrolmentsAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-gg-unavailable",
-
-    when(LoggedInViaGovernmentGateway and HasAnyBusinessEnrolment) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
-
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(SAReturnAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-sa-unavailable",
-
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(HasPreviousReturns)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
-
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and (IsInAPartnership or IsSelfEmployed)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
-
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed) and not(HasNino)) thenGoTo BusinessTaxAccount withName "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino",
-
-    when(LoggedInViaGovernmentGateway and HasEnrolments(SA) and not(IsInAPartnership) and not(IsSelfEmployed)) thenGoTo PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
-
-    when(not(HasAnyInactiveEnrolment) and not(AffinityGroupAvailable)) thenGoTo BusinessTaxAccount withName "bta-home-page-affinity-group-unavailable",
-
-    when(not(HasAnyInactiveEnrolment) and HasIndividualAffinityGroup) thenGoTo PersonalTaxAccount withName "pta-home-page-individual",
-
-    when(AnyOtherRuleApplied) thenGoTo BusinessTaxAccount withName "bta-home-page-passed-through"
-  )
-}

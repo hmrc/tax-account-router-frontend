@@ -19,7 +19,6 @@ package engine
 import model.{Location, _}
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -29,22 +28,23 @@ trait RuleEngine {
 
   val rules: List[Rule]
 
-  def getLocation(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
+  val defaultLocation: Location
 
+  def matchRulesForLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Location] = {
     rules.foldLeft(Future[Option[Location]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
       else {
-        val ruleApplyResult: Future[Option[Location]] = rule.apply(authContext, ruleContext, auditContext)
-        val ruleName = rule.name
-        ruleApplyResult.map { result =>
-          if (result.isDefined) {
-            auditContext.ruleApplied = ruleName
-            Logger.debug(s"rule applied: $ruleName")
-          }
-          else Logger.debug(s"rule evaluated but not applied: $ruleName")
-          result
+        val ruleApplyResult: Future[Option[Location]] = rule.apply(ruleContext, auditContext)
+        ruleApplyResult.map {
+          case Some(location) =>
+            auditContext.ruleApplied = rule.name
+            Logger.debug(s"rule applied: ${rule.name}")
+            Some(location)
+          case _ =>
+            Logger.debug(s"rule evaluated but not applied: ${rule.name}")
+            None
         }
       })
-    }
+    }.map(nextLocation => nextLocation.getOrElse(defaultLocation))
   }
 }

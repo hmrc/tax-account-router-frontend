@@ -19,7 +19,6 @@ package engine
 import model.RoutingReason.RoutingReason
 import model.{RuleContext, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -28,8 +27,8 @@ import scala.util.Success
 
 object Condition {
   def not(condition: Condition): Condition = new CompositeCondition {
-    override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-      condition.evaluate(authContext, ruleContext, auditContext).map(!_)
+    override def evaluate(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
+      condition.evaluate(ruleContext, auditContext).map(!_)
   }
 
   def when(condition: Condition): When = When(condition)
@@ -41,25 +40,25 @@ trait Condition {
 
   val auditType: Option[RoutingReason]
 
-  def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
+  def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean]
 
-  def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-    this.isTrue(authContext, ruleContext).andThen { case Success(result) if auditType.isDefined => auditContext.setRoutingReason(auditType.get, result) }
+  def evaluate(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+    this.isTrue(ruleContext).andThen { case Success(result) if auditType.isDefined => auditContext.setRoutingReason(auditType.get, result) }
   }
 
   def and(other: Condition): Condition = new CompositeCondition {
 
-    override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-      val condition1FutureResult: Future[Boolean] = self.evaluate(authContext, ruleContext, auditContext)
-      condition1FutureResult.flatMap(c1r => if (c1r) other.evaluate(authContext, ruleContext, auditContext).map(c2r => c1r && c2r) else condition1FutureResult)
+    override def evaluate(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+      val selfEvaluationResult = self.evaluate(ruleContext, auditContext)
+      selfEvaluationResult.flatMap(c1r => if (c1r) other.evaluate(ruleContext, auditContext).map(c2r => c1r && c2r) else selfEvaluationResult)
     }
   }
 
   def or(other: Condition): Condition = new CompositeCondition {
 
-    override def evaluate(authContext: AuthContext, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-      val condition1FutureResult: Future[Boolean] = self.evaluate(authContext, ruleContext, auditContext)
-      condition1FutureResult.flatMap(c1r => if (c1r) condition1FutureResult else other.evaluate(authContext, ruleContext, auditContext))
+    override def evaluate(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
+      val selfEvaluationResult = self.evaluate(ruleContext, auditContext)
+      selfEvaluationResult.flatMap(c1r => if (c1r) selfEvaluationResult else other.evaluate(ruleContext, auditContext))
     }
   }
 }

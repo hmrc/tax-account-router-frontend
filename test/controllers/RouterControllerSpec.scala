@@ -65,7 +65,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       checkResult(route, locationWithOrigin, "none")
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return location without origin when location is provided by rules and there is not an origin for this location" in new Setup {
@@ -80,7 +80,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       checkResult(route, location1, "none")
 
       verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockTwoStepVerification).getDestinationVia2SV(eqTo(location1), eqTo(ruleContext), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
 
     "return default location when location provided by rules is not defined" in new Setup {
@@ -90,7 +90,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
-      val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
+      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
 
       //when
       val route = controller.route
@@ -102,10 +102,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     }
 
     "send events to graphite and GA" in new Setup {
-
       //given
       val expectedLocation = BusinessTaxAccount
-
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
@@ -113,7 +111,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       auditContext.ruleApplied = ruleApplied
 
       val controller = new TestRouterController(
-        defaultLocation = expectedLocation,
         ruleEngine = ruleEngineStubReturningNoneLocation,
         throttlingService = mockThrottlingService,
         metricsMonitoringService = mockMetricsMonitoringService,
@@ -129,7 +126,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
 
-      verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(authContext), eqTo(fakeRequest), any[HeaderCarrier])
+      verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(fakeRequest), any[HeaderCarrier])
 
       verify(mockAnalyticsEventSender).sendEvents(eqTo(expectedLocation.name), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
     }
@@ -153,7 +150,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val mockAuditConnector = mock[AuditConnector]
       val controller = new TestRouterController(
-        defaultLocation = location1,
         ruleEngine = ruleEngineStubReturningSomeLocation,
         auditConnector = mockAuditConnector,
         auditContext = Some(auditContext),
@@ -181,16 +177,18 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   case class TestCondition(truth: Boolean) extends Condition {
     override val auditType = None
 
-    override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
+    override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
   }
 
   trait Setup {
 
     val ruleEngineStubReturningSomeLocation = new RuleEngine {
+      override val defaultLocation: Location = BusinessTaxAccount
       override val rules = List(When(TestCondition(true)).thenGoTo(location1))
     }
 
     val ruleEngineStubReturningNoneLocation = new RuleEngine {
+      override val defaultLocation: Location = BusinessTaxAccount
       override val rules = List(When(TestCondition(false)).thenGoTo(location2))
     }
 
@@ -199,7 +197,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
     implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
-    implicit lazy val ruleContext = RuleContext(authContext)
+    implicit lazy val ruleContext = RuleContext(None)
     val auditContext: TAuditContext = AuditContext()
     val mockThrottlingService = mock[ThrottlingService]
     val mockTwoStepVerification = Mocks.mockTwoStepVerification
@@ -223,7 +221,7 @@ object Mocks extends MockitoSugar {
 
   def mockTwoStepVerification = {
     val twoStepVerification = mock[TwoStepVerification]
-    when(twoStepVerification.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[AuthContext], any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
+    when(twoStepVerification.getDestinationVia2SV(any[Location], any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenAnswer(new Answer[Future[Option[Location]]] {
       override def answer(invocationOnMock: InvocationOnMock): Future[Option[Location]] = {
         Future.successful(Some(invocationOnMock.getArguments()(0).asInstanceOf[Location]))
       }
@@ -235,8 +233,7 @@ object Mocks extends MockitoSugar {
 
 }
 
-class TestRouterController(override val defaultLocation: Location = BusinessTaxAccount,
-                           override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
+class TestRouterController(override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
                            override val ruleEngine: RuleEngine,
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
                            override val auditConnector: AuditConnector = Mocks.mockAuditConnector,

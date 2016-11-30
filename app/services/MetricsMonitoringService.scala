@@ -20,7 +20,6 @@ import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.MetricsRegistry
 import model.{Location, TAuditContext}
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -34,7 +33,7 @@ trait MetricsMonitoringService {
 
   val metricsRegistry: MetricRegistry
 
-  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
     Future {
       val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")

@@ -19,7 +19,6 @@ package engine
 import model.RoutingReason.RoutingReason
 import model.RuleContext
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -29,5 +28,5 @@ trait CompositeCondition extends Condition {
   // a composite condition is not going to send any audit event
   override val auditType: Option[RoutingReason] = None
 
-  override def isTrue(authContext: AuthContext, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = throw new RuntimeException("This should never be called")
+  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = throw new RuntimeException("This should never be called")
 }

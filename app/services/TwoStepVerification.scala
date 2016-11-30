@@ -26,7 +26,6 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.config.AppName
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -54,7 +53,7 @@ trait TwoStepVerification {
 
   def isUplifted(location: Location) = upliftLocations.contains(location)
 
-  private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext, mandatory: Boolean)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+  private def sendAuditEvent(biz2SVRule: Biz2SVRule, ruleContext: RuleContext, mandatory: Boolean)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
     val enrolmentsFut = ruleContext.activeEnrolments
     val userDetailsFut = ruleContext.userDetails
     val transactionName = if (mandatory) "two step verification mandatory" else "two step verification optional"
@@ -77,7 +76,7 @@ trait TwoStepVerification {
     }
   }
 
-  def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+  def getDestinationVia2SV(continue: Location, ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
 
     def throttleLocations(biz2SVRule: Option[Biz2SVRule]) = biz2SVRule match {
       case Some(rule) => ruleContext.isAdmin.map(if (_) rule.adminLocations else rule.assistantLocations).map(Some(_))
@@ -101,7 +100,7 @@ trait TwoStepVerification {
 
     if (twoStepVerificationEnabled && continue == BusinessTaxAccount) {
       for {
-        applicableRule <- biz2svRules.findOne(_.conditions.forAll(_.evaluate(authContext, ruleContext, auditContext)))
+        applicableRule <- biz2svRules.findOne(_.conditions.forAll(_.evaluate(ruleContext, auditContext)))
         throttleLocations <- throttleLocations(applicableRule)
         internalUserIdentifier <- ruleContext.internalUserIdentifier
       } yield {

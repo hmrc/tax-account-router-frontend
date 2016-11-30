@@ -9,7 +9,7 @@ import model.{AuditContext, SA, VAT}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
-import support.stubs.{CommonStubs, StubbedFeatureSpec, TaxAccountUser}
+import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
@@ -25,7 +25,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Verify")
-      createStubs(TaxAccountUser(loggedInViaGateway = false))
+      SessionUser(loggedInViaGateway = false).stubLoggedIn()
 
       val auditEventStub = stubAuditEvent()
 
@@ -46,7 +46,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      createStubs(TaxAccountUser())
+      SessionUser().stubLoggedIn()
 
       And("the user has business related enrolments")
       stubBusinessEnrolments()
@@ -76,7 +76,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -112,7 +112,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has no inactive enrolments")
       stubNoEnrolments()
@@ -150,7 +150,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -188,7 +188,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -227,7 +227,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -267,7 +267,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts))
+      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -305,7 +305,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
       stubUserDetails()
 
       And("the user has self assessment enrolments")
@@ -333,7 +333,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "false",
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false",
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
         HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -344,7 +344,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
       stubUserDetails()
 
       And("the user has self assessment enrolments")
@@ -370,7 +370,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_REGISTERED_FOR_2SV.key -> "false",
         HAS_STRONG_CREDENTIALS.key -> "false",
         HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA,VAT)).key -> "false"
+        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -380,7 +380,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -413,7 +413,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      createStubs(TaxAccountUser(accounts = accounts, isRegisteredFor2SV = false))
+      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubMoreThanOneSAEnrolment()
@@ -446,7 +446,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = INDIVIDUAL))
+      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
 
       And("the user has self assessment enrolments and individual affinity group")
       stubNoEnrolments()
@@ -483,7 +483,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      createStubs(TaxAccountUser(accounts = accounts, affinityGroup = INDIVIDUAL))
+      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+
 
       And("the user has no enrolments")
       stubNoEnrolments()

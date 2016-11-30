@@ -16,6 +16,8 @@
 
 package services
 
+import java.security.MessageDigest
+
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -23,7 +25,9 @@ import org.scalatest.prop.Tables.Table
 import uk.gov.hmrc.play.test.UnitSpec
 
 class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
-
+  private val bucketSize = 100
+  private val decimalPointFactor = 10
+  
   "registrationMandatory" should {
 
     // expected user modulus is always 500
@@ -41,7 +45,7 @@ class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
         val ruleName = "some rule"
         when(timeBasedLimitMock.getCurrentPercentageLimit(ruleName)).thenReturn(expectedThreshold)
 
-        twoStepVerificationThrottle.isRegistrationMandatory(ruleName,discriminator) shouldBe expectedResult
+        twoStepVerificationThrottle.isRegistrationMandatory(ruleName, discriminator) shouldBe expectedResult
 
         verify(timeBasedLimitMock).getCurrentPercentageLimit(ruleName)
         verifyNoMoreInteractions(timeBasedLimitMock)

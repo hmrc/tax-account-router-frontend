@@ -18,16 +18,17 @@ package connector
 
 import config.WSHttp
 import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
-import play.api.libs.json._
+import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-
-import scala.concurrent.Future
 
 case class EnrolmentIdentifier(key: String, value: String)
+
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+
 case class GovernmentGatewayEnrolment(key: String, identifiers: Seq[EnrolmentIdentifier], state: String)
 
 object GovernmentGatewayEnrolment {
@@ -43,26 +44,34 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class CoAFEAuthority(twoFactorAuthOtpId: Option[String], enrolmentsUri: Option[String], userDetailsLink: Option[String], idsUri: Option[String])
+case class UserAuthority(twoFactorAuthOtpId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String],
+                         credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
 
-object CoAFEAuthority {
-  implicit val reads: Reads[CoAFEAuthority] =
+object UserAuthority {
+  implicit val reads: Reads[UserAuthority] =
     ((__ \ "twoFactorAuthOtpId").readNullable[String] and
-      (__ \ "enrolments").readNullable[String] and
+      (__ \ "ids").readNullable[String] and
       (__ \ "userDetailsLink").readNullable[String] and
-      (__ \ "ids").readNullable[String])(apply _)
+      (__ \ "enrolments").readNullable[String] and
+      (__ \ "credentialStrength").read[CredentialStrength] and
+      (__ \ "nino").readNullable[Nino] and
+      (__ \ "sautr").readNullable[SaUtr]).apply(UserAuthority.apply _)
+}
+
+
+trait FrontendAuthConnector extends AuthConnector {
+
+  def currentUserAuthority(implicit hc: HeaderCarrier) = http.GET[UserAuthority](s"$serviceUrl/auth/authority")
+
+  def userAuthority(credId: String)(implicit hc: HeaderCarrier) = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+
+  def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+
+  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) =
+    http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
   lazy val http = WSHttp
-}
-
-trait FrontendAuthConnector extends AuthConnector {
-
-  def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
-
-  def currentCoAFEAuthority()(implicit hc: HeaderCarrier) = http.GET[CoAFEAuthority](s"$serviceUrl/auth/authority")
-
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) = http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }

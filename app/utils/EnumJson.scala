@@ -33,4 +33,12 @@ object EnumJson {
       case _ => JsError("String value expected")
     }
   }
+
+  implicit def enumWrites[E <: Enumeration]: Writes[E#Value] = new Writes[E#Value] {
+    def writes(v: E#Value): JsValue = JsString(v.toString)
+  }
+
+  implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
+    Format(enumReads(enum), enumWrites)
+  }
 }
