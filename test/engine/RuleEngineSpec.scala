@@ -41,33 +41,56 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       Future(b)
   }
 
-  private val trueLocation: Location = evaluateUsingPlay(Location("/true", "true"))
+  val trueLocation: Location = evaluateUsingPlay(Location("/true", "true"))
   val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
-  private val falseLocation: Location = evaluateUsingPlay(Location("/false", "false"))
+  val falseLocation: Location = evaluateUsingPlay(Location("/false", "false"))
   val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
+
+  trait Setup {
+    val theDefaultLocation = Location("default-location", "/default-location")
+
+  }
 
 
   "a rule engine" should {
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in {
+    "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in new Setup {
       implicit lazy val request = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
 
       val auditContext: AuditContext = AuditContext()
 
       //when
-      val maybeLocation: Future[Option[Location]] = new RuleEngine {
+      val locationFuture: Future[Location] = new RuleEngine {
+        override val defaultLocation = theDefaultLocation
         override val rules: List[Rule] = List(falseRule, trueRule)
       }.getLocation(mock[RuleContext], auditContext)(request, hc)
 
       //then
-      val location: Option[Location] = await(maybeLocation)
-      location shouldBe Some(trueLocation)
+      await(locationFuture) shouldBe trueLocation
 
       auditContext.ruleApplied shouldBe trueRule.name
     }
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
+    "evaluate empty rules and return with default location" in new Setup {
+      implicit lazy val request = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+
+      val auditContext: AuditContext = AuditContext()
+
+      //when
+      val locationFuture: Future[Location] = new RuleEngine {
+        override val defaultLocation = theDefaultLocation
+        override val rules: List[Rule] = List()
+      }.getLocation(mock[RuleContext], auditContext)(request, hc)
+
+      //then
+      await(locationFuture) shouldBe theDefaultLocation
+
+      auditContext.ruleApplied shouldBe ""
+    }
+
+    "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in new Setup {
 
       //given
       val firstRule = mock[Rule]
@@ -84,16 +107,16 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       val auditContext = AuditContext()
 
       //when
-      val maybeLocation: Future[Option[Location]] = new RuleEngine {
+      val locationFuture: Future[Location] = new RuleEngine {
+        override val defaultLocation = theDefaultLocation
         override val rules: List[Rule] = List(firstRule, secondRule)
       }.getLocation(mock[RuleContext], auditContext)(request, hc)
 
       //then
-      val location: Option[Location] = await(maybeLocation)
-      location shouldBe Some(expectedLocation)
+      await(locationFuture) shouldBe expectedLocation
 
       //then
-      verify(firstRule).apply( any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
+      verify(firstRule).apply(any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
       verify(secondRule, never()).apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
 
       auditContext.ruleApplied shouldBe "first-rule"

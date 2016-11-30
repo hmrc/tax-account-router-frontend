@@ -28,8 +28,9 @@ trait RuleEngine {
 
   val rules: List[Rule]
 
-  def getLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Option[Location]] = {
+  val defaultLocation: Location
 
+  def getLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Location] = {
     rules.foldLeft(Future[Option[Location]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
       else {
@@ -44,6 +45,6 @@ trait RuleEngine {
           result
         }
       })
-    }
+    }.map(nextLocation => nextLocation.getOrElse(defaultLocation))
   }
 }

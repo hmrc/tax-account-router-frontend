@@ -20,12 +20,10 @@ import connector.FrontendAuthConnector
 import controllers.TarRules
 import controllers.internal.AccountType.AccountType
 import engine.RuleEngine
-import model.Locations._
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.mvc.Action
 import play.api.{Logger, LoggerLike}
-import services.{ThrottlingService, TwoStepVerification}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils.EnumJson._
@@ -52,14 +50,8 @@ object AccountTypeController extends AccountTypeController {
 
   override val logger: LoggerLike = Logger
 
-  override val throttlingService = ThrottlingService
-
-  override val twoStepVerification = TwoStepVerification
-
   override def createAuditContext() = AuditContext()
 
-  // TODO: default location should be moved out from the controller. It belongs to the rule engine
-  override val defaultLocation = BusinessTaxAccount
 }
 
 trait AccountTypeController extends FrontendController with Actions {
@@ -68,12 +60,6 @@ trait AccountTypeController extends FrontendController with Actions {
   def logger: LoggerLike
 
   def ruleEngine: RuleEngine
-
-  def throttlingService: ThrottlingService
-
-  def twoStepVerification: TwoStepVerification
-
-  def defaultLocation: Location
 
   /**
     *
@@ -87,7 +73,7 @@ trait AccountTypeController extends FrontendController with Actions {
     val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
     // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
-    calculateFinalDestination(ruleContext, auditContext) map {
+    ruleEngine.getLocation(ruleContext, auditContext) map {
       case Locations.PersonalTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Individual)))
       case Locations.BusinessTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Organisation)))
       case unknownLocation: Location =>
@@ -96,16 +82,4 @@ trait AccountTypeController extends FrontendController with Actions {
     }
   }
 
-  private def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent]) = {
-    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
-
-    for {
-      destinationAfterRulesApplied <- ruleEngineResult
-      destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
-      finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
-    } yield {
-      Logger.debug(s"routing to: ${finalDestination.name}")
-      finalDestination
-    }
-  }
 }

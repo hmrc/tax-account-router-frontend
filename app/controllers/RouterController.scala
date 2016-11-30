@@ -20,7 +20,6 @@ import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.RuleEngine
-import model.Locations._
 import model._
 import play.api.Logger
 import play.api.mvc._
@@ -34,8 +33,6 @@ import scala.concurrent.Future
 
 object RouterController extends RouterController {
   override protected def authConnector = FrontendAuthConnector
-
-  override val defaultLocation = BusinessTaxAccount
 
   override val metricsMonitoringService = MetricsMonitoringService
 
@@ -55,8 +52,6 @@ object RouterController extends RouterController {
 trait RouterController extends FrontendController with Actions {
 
   val metricsMonitoringService: MetricsMonitoringService
-
-  def defaultLocation: Location
 
   def ruleEngine: RuleEngine
 
@@ -79,7 +74,7 @@ trait RouterController extends FrontendController with Actions {
   }
 
   def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = {
-    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext).map(nextLocation => nextLocation.getOrElse(defaultLocation))
+    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext)
 
     for {
       destinationAfterRulesApplied <- ruleEngineResult

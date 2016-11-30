@@ -23,6 +23,8 @@ import model._
 
 object TarRules extends RuleEngine {
 
+  override val defaultLocation = BusinessTaxAccount
+
   override val rules = List(
     when(LoggedInViaVerify) thenGoTo PersonalTaxAccount withName "pta-home-page-for-verify-user",
 

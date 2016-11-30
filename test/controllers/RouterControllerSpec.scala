@@ -90,7 +90,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
-      val controller = new TestRouterController(defaultLocation = expectedLocation, ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
+      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
 
       //when
       val route = controller.route
@@ -102,10 +102,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     }
 
     "send events to graphite and GA" in new Setup {
-
       //given
       val expectedLocation = BusinessTaxAccount
-
       //and
       when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
 
@@ -113,7 +111,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       auditContext.ruleApplied = ruleApplied
 
       val controller = new TestRouterController(
-        defaultLocation = expectedLocation,
         ruleEngine = ruleEngineStubReturningNoneLocation,
         throttlingService = mockThrottlingService,
         metricsMonitoringService = mockMetricsMonitoringService,
@@ -153,7 +150,6 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       val mockAuditConnector = mock[AuditConnector]
       val controller = new TestRouterController(
-        defaultLocation = location1,
         ruleEngine = ruleEngineStubReturningSomeLocation,
         auditConnector = mockAuditConnector,
         auditContext = Some(auditContext),
@@ -187,10 +183,12 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   trait Setup {
 
     val ruleEngineStubReturningSomeLocation = new RuleEngine {
+      override val defaultLocation: Location = BusinessTaxAccount
       override val rules = List(When(TestCondition(true)).thenGoTo(location1))
     }
 
     val ruleEngineStubReturningNoneLocation = new RuleEngine {
+      override val defaultLocation: Location = BusinessTaxAccount
       override val rules = List(When(TestCondition(false)).thenGoTo(location2))
     }
 
@@ -235,8 +233,7 @@ object Mocks extends MockitoSugar {
 
 }
 
-class TestRouterController(override val defaultLocation: Location = BusinessTaxAccount,
-                           override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
+class TestRouterController(override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
                            override val ruleEngine: RuleEngine,
                            override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
                            override val auditConnector: AuditConnector = Mocks.mockAuditConnector,
