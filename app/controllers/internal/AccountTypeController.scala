@@ -60,7 +60,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def logger: LoggerLike
 
   def ruleEngine: RuleEngine
-  
+
   def createAuditContext(): TAuditContext
 
   def accountTypeForCredId(credId: String) = Action.async { implicit request =>
