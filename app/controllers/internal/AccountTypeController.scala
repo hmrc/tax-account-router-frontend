@@ -66,7 +66,6 @@ trait AccountTypeController extends FrontendController with Actions {
   def accountTypeForCredId(credId: String) = Action.async { implicit request =>
     val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
-    // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
     ruleEngine.matchRulesForLocation(ruleContext, auditContext) map { location =>
       val accountType = accountTypeBasedOnLocation(location)
       Ok(Json.toJson(AccountTypeResponse(accountType)))
