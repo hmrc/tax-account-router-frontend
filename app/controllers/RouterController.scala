@@ -74,7 +74,7 @@ trait RouterController extends FrontendController with Actions {
   }
 
   def calculateFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = {
-    val ruleEngineResult = ruleEngine.getLocation(ruleContext, auditContext)
+    val ruleEngineResult = ruleEngine.matchRulesForLocation(ruleContext, auditContext)
 
     for {
       destinationAfterRulesApplied <- ruleEngineResult

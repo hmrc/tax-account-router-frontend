@@ -30,16 +30,30 @@ import scala.concurrent.Future
 
 class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 
-  "currentTarAuthority" should {
-    "get current tar authority" in new Setup {
-      val authResponse = TARAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
+  "currentDetailedAuthority" should {
+    "get current detailed authority" in new Setup {
+      val authResponse = DetailedAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET[Any](eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier])).thenReturn(Future.successful(authResponse))
 
-      val result = await(connector.currentTarAuthority)
+      val result = await(connector.currentDetailedAuthority)
 
       result shouldBe authResponse
 
       verify(mockHttp).GET(eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier])
+    }
+  }
+
+  "detailedAuthority" should {
+    "get detailed authority for credId" in new Setup {
+      val credId = "credId"
+      val authResponse = DetailedAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
+      when(mockHttp.GET[Any](eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier])).thenReturn(Future.successful(authResponse))
+
+      val result = await(connector.detailedAuthority(credId))
+
+      result shouldBe authResponse
+
+      verify(mockHttp).GET(eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier])
     }
   }
 
@@ -63,7 +77,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
             |    "enrolments": "$enrolmentsUri"
             |    }""".stripMargin
 
-      Json.parse(authResponse).as[TARAuthority] shouldBe TARAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
+      Json.parse(authResponse).as[DetailedAuthority] shouldBe DetailedAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
     }
   }
 

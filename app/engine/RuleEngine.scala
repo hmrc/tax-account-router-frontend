@@ -30,7 +30,7 @@ trait RuleEngine {
 
   val defaultLocation: Location
 
-  def getLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Location] = {
+  def matchRulesForLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Location] = {
     rules.foldLeft(Future[Option[Location]](None)) {
       (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
       else {
@@ -40,9 +40,12 @@ trait RuleEngine {
           if (result.isDefined) {
             auditContext.ruleApplied = ruleName
             Logger.debug(s"rule applied: $ruleName")
+            result
           }
-          else Logger.debug(s"rule evaluated but not applied: $ruleName")
-          result
+          else {
+            Logger.debug(s"rule evaluated but not applied: $ruleName")
+            result
+          }
         }
       })
     }.map(nextLocation => nextLocation.getOrElse(defaultLocation))

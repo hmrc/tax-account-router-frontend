@@ -37,8 +37,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the audit event raised should be the expected one")
       val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
-        IS_A_VERIFY_USER.key -> "true",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "false"
+        IS_A_VERIFY_USER.key -> "true"
         ))
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user")

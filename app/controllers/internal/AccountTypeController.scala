@@ -73,7 +73,7 @@ trait AccountTypeController extends FrontendController with Actions {
     val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
     // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
-    ruleEngine.getLocation(ruleContext, auditContext) map {
+    ruleEngine.matchRulesForLocation(ruleContext, auditContext) map {
       case Locations.PersonalTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Individual)))
       case Locations.BusinessTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Organisation)))
       case unknownLocation: Location =>

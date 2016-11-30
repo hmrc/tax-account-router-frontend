@@ -49,8 +49,8 @@ trait Condition {
   def and(other: Condition): Condition = new CompositeCondition {
 
     override def evaluate(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = {
-      val condition1FutureResult: Future[Boolean] = self.evaluate(ruleContext, auditContext)
-      condition1FutureResult.flatMap(c1r => if (c1r) other.evaluate(ruleContext, auditContext).map(c2r => c1r && c2r) else condition1FutureResult)
+      val conditionResult: Future[Boolean] = self.evaluate(ruleContext, auditContext)
+      conditionResult.flatMap(c1r => if (c1r) other.evaluate(ruleContext, auditContext).map(c2r => c1r && c2r) else conditionResult)
     }
   }
 

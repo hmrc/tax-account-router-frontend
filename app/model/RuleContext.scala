@@ -50,8 +50,8 @@ case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
   lazy val lastSaReturn = authority.flatMap { auth => auth.saUtr.fold(Future(SaReturn.empty))(saUtr => selfAssessmentConnector.lastReturn(saUtr.utr)) }
 
   lazy val authority = credId match {
-    case Some(credId) => authConnector.tarAuthority(credId)
-    case None => authConnector.currentTarAuthority
+    case Some(aCredId) => authConnector.detailedAuthority(aCredId)
+    case None => authConnector.currentDetailedAuthority
   }
 
   lazy val internalUserIdentifier = authority.flatMap { authority =>

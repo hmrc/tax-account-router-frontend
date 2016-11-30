@@ -134,7 +134,7 @@ object IsSelfEmployed extends Condition {
 
 object LoggedInViaVerify extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(!request.session.data.contains("token"))
+    Future.successful(!request.session.data.contains("token") &&  ruleContext.credId.isEmpty)
 
   override val auditType = Some(IS_A_VERIFY_USER)
 }

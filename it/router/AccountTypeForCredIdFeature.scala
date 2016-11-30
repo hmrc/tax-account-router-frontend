@@ -44,8 +44,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the account type should be Organisation")
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
-      And("the authority object should be fetched by credId")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -76,7 +76,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -109,7 +109,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -136,9 +136,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the account type should be Organisation")
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
-
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -169,7 +168,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -199,7 +198,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -230,7 +229,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -260,6 +259,9 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the account type should be Organisation")
       response.json.as[AccountTypeResponse] shouldBe individualAccountType
 
+      And("the authority object should be fetched once for AuthenticatedBy")
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
+
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
@@ -287,7 +289,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -316,7 +318,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe individualAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -345,7 +347,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetchedByCredId(credId)
+      verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -356,10 +358,5 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
-  }
-
-  private def verifyAuthorityObjectIsFetchedByCredId(credId: String) = {
-    verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
-    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
   }
 }

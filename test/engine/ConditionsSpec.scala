@@ -199,12 +199,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     val scenarios =
       Table(
-        ("scenario", "tokenPresent", "expectedResult"),
-        ("has logged in using Verify", false, true),
-        ("has not logged in using Verify", true, false)
+        ("scenario", "tokenPresent", "comingWithCredId", "expectedResult"),
+        ("has no token and not coming with credId", false, false, true),
+        ("has no token and coming with credId", false, true, false),
+        ("has token and not coming with credId", true, false, false)
       )
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, comingWithCredId: Boolean,  expectedResult: Boolean) =>
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
@@ -216,6 +217,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         val ruleContext = mock[RuleContext]
+        when(ruleContext.credId).thenReturn(if(comingWithCredId) Some("credId") else None)
 
         val result = await(LoggedInViaVerify.isTrue(ruleContext))
         result shouldBe expectedResult
@@ -249,7 +251,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         val ruleContext = mock[RuleContext]
-
         when(ruleContext.credId).thenReturn(if(comingWithCredId) Some("credId") else None)
 
         val result = await(IsAGovernmentGatewayUser.isTrue(ruleContext))
@@ -275,7 +276,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has a NINO - scenario: $scenario" in {
         val ruleContext = mock[RuleContext]
-        val authMock = mock[TARAuthority]
+        val authMock = mock[DetailedAuthority]
 
         val nino = if (ninoPresent) Some(Nino("AA123456C")) else None
         when(authMock.nino).thenReturn(Future.successful(nino))
@@ -310,7 +311,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has SAUTR - scenario: $scenario" in {
         val ruleContext = mock[RuleContext]
-        val authMock = mock[TARAuthority]
+        val authMock = mock[DetailedAuthority]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         val saUtr = if (saUtrPresent) Some(SaUtr("saUtr")) else None
         when(authMock.saUtr).thenReturn(Future.successful(saUtr))
@@ -348,7 +349,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         val twoFactorAuthOtpId = if (isRegistered) Some("1234") else None
-        val authMock = mock[TARAuthority]
+        val authMock = mock[DetailedAuthority]
         val ruleContext = mock[RuleContext]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         when(authMock.twoFactorAuthOtpId).thenReturn(Future.successful(twoFactorAuthOtpId))
@@ -379,7 +380,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, credentialStrength: CredentialStrength, expected: Boolean) =>
 
       scenario in {
-        val authMock = mock[TARAuthority]
+        val authMock = mock[DetailedAuthority]
         val ruleContext = mock[RuleContext]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         when(authMock.credentialStrength).thenReturn(Future.successful(credentialStrength))

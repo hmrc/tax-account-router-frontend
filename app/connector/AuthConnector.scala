@@ -44,26 +44,26 @@ object InternalUserIdentifier {
   implicit def convertToString(id: InternalUserIdentifier): String = id.value
 }
 
-case class TARAuthority(twoFactorAuthOtpId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String],
-                        credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
+case class DetailedAuthority(twoFactorAuthOtpId: Option[String], idsUri: Option[String], userDetailsUri: Option[String], enrolmentsUri: Option[String],
+                             credentialStrength: CredentialStrength, nino: Option[Nino], saUtr: Option[SaUtr])
 
-object TARAuthority {
-  implicit val reads: Reads[TARAuthority] =
+object DetailedAuthority {
+  implicit val reads: Reads[DetailedAuthority] =
     ((__ \ "twoFactorAuthOtpId").readNullable[String] and
       (__ \ "ids").readNullable[String] and
       (__ \ "userDetailsLink").readNullable[String] and
       (__ \ "enrolments").readNullable[String] and
       (__ \ "credentialStrength").read[CredentialStrength] and
       (__ \ "nino").readNullable[Nino] and
-      (__ \ "sautr").readNullable[SaUtr]).apply(TARAuthority.apply _)
+      (__ \ "sautr").readNullable[SaUtr]).apply(DetailedAuthority.apply _)
 }
 
 
 trait FrontendAuthConnector extends AuthConnector {
 
-  def currentTarAuthority(implicit hc: HeaderCarrier) = http.GET[TARAuthority](s"$serviceUrl/auth/authority")
+  def currentDetailedAuthority(implicit hc: HeaderCarrier) = http.GET[DetailedAuthority](s"$serviceUrl/auth/authority")
 
-  def tarAuthority(credId: String)(implicit hc: HeaderCarrier) = http.GET[TARAuthority](s"$serviceUrl/auth/gg/$credId")
+  def detailedAuthority(credId: String)(implicit hc: HeaderCarrier) = http.GET[DetailedAuthority](s"$serviceUrl/auth/gg/$credId")
 
   def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 

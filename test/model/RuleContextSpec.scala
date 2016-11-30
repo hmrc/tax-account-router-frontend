@@ -41,7 +41,14 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val allMocks = Seq(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, mockLogger)
     val credId = "credId"
 
-    val ruleContext = new RuleContext(Some(credId)) {
+    val ruleContextWithCredId = new RuleContext(Some(credId)) {
+      override val logger = mockLogger
+      override val authConnector = mockAuthConnector
+      override val userDetailsConnector = mockUserDetailsConnector
+      override val selfAssessmentConnector = mockSelfAssessmentConnector
+    }
+
+    val ruleContextWithNoCredId = new RuleContext(None) {
       override val logger = mockLogger
       override val authConnector = mockAuthConnector
       override val userDetailsConnector = mockUserDetailsConnector
@@ -52,7 +59,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     val userDetailsLink = "/userDetailsLink"
     val someIdsUri = "/ids-uri"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val expectedAuthority = TARAuthority(twoFactorAuthOtpId = None, idsUri = Some(someIdsUri), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
+    val expectedAuthority = DetailedAuthority(twoFactorAuthOtpId = None, idsUri = Some(someIdsUri), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
       credentialStrength = CredentialStrength.None,
       nino = None,
       saUtr = None)
@@ -67,7 +74,8 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
     when(mockUserDetailsConnector.getUserDetails(userDetailsLink)).thenReturn(Future.successful(expectedUserDetails))
     when(mockAuthConnector.getEnrolments(enrolmentsUri)).thenReturn(Future.successful(expectedActiveEnrolmentsSeq))
-    when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(expectedAuthority))
+    when(mockAuthConnector.detailedAuthority(credId)).thenReturn(Future.successful(expectedAuthority))
+    when(mockAuthConnector.currentDetailedAuthority).thenReturn(Future.successful(expectedAuthority))
     when(mockAuthConnector.getIds(someIdsUri)).thenReturn(Future.successful(internalUserIdentifier))
   }
 
@@ -77,13 +85,13 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.activeEnrolmentKeys)
+      val returnedActiveEnrolments = await(ruleContextWithCredId.activeEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).detailedAuthority(credId)
       verify(mockAuthConnector).getEnrolments(enrolmentsUri)
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -95,13 +103,13 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedActiveEnrolmentsSet = Set("some-other-key")
 
       //when
-      val returnedActiveEnrolments = await(ruleContext.notActivatedEnrolmentKeys)
+      val returnedActiveEnrolments = await(ruleContextWithCredId.notActivatedEnrolmentKeys)
 
       //then
       expectedActiveEnrolmentsSet shouldBe returnedActiveEnrolments
 
       //and
-      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).detailedAuthority(credId)
       verify(mockAuthConnector).getEnrolments(enrolmentsUri)
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -115,36 +123,44 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       val expectedUtr = "123456789"
       when(mockSelfAssessmentConnector.lastReturn(expectedUtr)(hc)).thenReturn(Future(saReturn))
 
-      val authorityWithSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = Some(""), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
+      val authorityWithSa = DetailedAuthority(twoFactorAuthOtpId = None, idsUri = Some(""), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
         credentialStrength = CredentialStrength.None,
         nino = None,
         saUtr = Some(SaUtr(expectedUtr)))
-      when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithSa))
+      when(mockAuthConnector.detailedAuthority(credId)).thenReturn(Future.successful(authorityWithSa))
 
       //then
-      await(ruleContext.lastSaReturn) shouldBe saReturn
+      await(ruleContextWithCredId.lastSaReturn) shouldBe saReturn
       verify(mockSelfAssessmentConnector).lastReturn(expectedUtr)
     }
 
     "return an empty self-assessment return if the user has no SA account" in new Setup {
-      val authorityWithoutSa = TARAuthority(twoFactorAuthOtpId = None, idsUri = Some(""), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
+      val authorityWithoutSa = DetailedAuthority(twoFactorAuthOtpId = None, idsUri = Some(""), userDetailsUri = Some(userDetailsLink), enrolmentsUri = Some(enrolmentsUri),
         credentialStrength = CredentialStrength.None,
         nino = None,
         saUtr = None)
-      when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithoutSa))
+      when(mockAuthConnector.detailedAuthority(credId)).thenReturn(Future.successful(authorityWithoutSa))
 
-      await(ruleContext.lastSaReturn) shouldBe SaReturn.empty
+      await(ruleContextWithCredId.lastSaReturn) shouldBe SaReturn.empty
 
       verifyZeroInteractions(mockSelfAssessmentConnector)
     }
   }
 
-  "currentCoAFEAuthority" should {
-    "return the current authority" in new Setup {
-      val result = ruleContext.authority
+  "authority" should {
+    "return the authority for credId if rule context is created with credId" in new Setup {
+      val result = ruleContextWithCredId.authority
 
       await(result) shouldBe expectedAuthority
-      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).detailedAuthority(credId)
+      verifyNoMoreInteractions(allMocks: _*)
+    }
+
+    "return the current authorityif rule context is created with no credId" in new Setup {
+      val result = ruleContextWithNoCredId.authority
+
+      await(result) shouldBe expectedAuthority
+      verify(mockAuthConnector).currentDetailedAuthority
       verifyNoMoreInteractions(allMocks: _*)
     }
   }
@@ -152,11 +168,11 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
   "affinityGroup" should {
     "return the affinity group from gg profile" in new Setup {
 
-      val result = await(ruleContext.affinityGroup)
+      val result = await(ruleContextWithCredId.affinityGroup)
 
       result shouldBe expectedAffinityGroup
 
-      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).detailedAuthority(credId)
       verify(mockUserDetailsConnector).getUserDetails(userDetailsLink)
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -166,14 +182,14 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
     "return future failed and log a warning message when userDetailsLink is empty" in new Setup {
       reset(mockAuthConnector)
       val authorityWithNoUserDetailsLink = expectedAuthority.copy(userDetailsUri = None)
-      when(mockAuthConnector.tarAuthority(credId)).thenReturn(Future.successful(authorityWithNoUserDetailsLink))
+      when(mockAuthConnector.detailedAuthority(credId)).thenReturn(Future.successful(authorityWithNoUserDetailsLink))
 
       val expectedException = intercept[RuntimeException] {
-        await(ruleContext.userDetails)
+        await(ruleContextWithCredId.userDetails)
       }
       expectedException.getMessage shouldBe "userDetailsUri is not defined"
 
-      verify(mockAuthConnector).tarAuthority(credId)
+      verify(mockAuthConnector).detailedAuthority(credId)
       verify(mockLogger).warn("failed to get user details because userDetailsUri is not defined")
       verifyNoMoreInteractions(allMocks: _*)
     }

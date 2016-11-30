@@ -38,7 +38,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
   "Account type controller " should {
     "return type Organisation when BTA location is provided by rules and there is an origin for this location" in new Setup {
       // given
-      when(mockRuleEngine.getLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.BusinessTaxAccount))
+      when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.BusinessTaxAccount))
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
 
@@ -49,7 +49,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
 
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Organisation
 
-      verify(mockRuleEngine).getLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+      verify(mockRuleEngine).matchRulesForLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       ruleContextCaptor.getValue.credId shouldBe Some(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
@@ -57,7 +57,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
     "return type Individual when PTA location is provided by rules and there is an origin for this location" in new Setup {
 
       // given
-      when(mockRuleEngine.getLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.PersonalTaxAccount))
+      when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.PersonalTaxAccount))
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
 
@@ -68,7 +68,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
 
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Individual
 
-      verify(mockRuleEngine).getLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
+      verify(mockRuleEngine).matchRulesForLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
       ruleContextCaptor.getValue.credId shouldBe Some(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
