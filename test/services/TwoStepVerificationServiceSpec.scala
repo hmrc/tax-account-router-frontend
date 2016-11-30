@@ -58,7 +58,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
     val allMocks = Seq(auditContext, twoStepVerificationThrottleMock, ruleContext)
     val signOutUrl = "http://localhost:9025/sign-out"
     val internalUserIdentifier = InternalUserIdentifier("user-id")
-    val authorityWithOtpDisabled = DetailedAuthority(twoFactorAuthOtpId = None, idsUri = Some("idsUri"), userDetailsUri = Some("userDetailsLink"),
+    val authorityWithOtpDisabled = UserAuthority(twoFactorAuthOtpId = None, idsUri = Some("idsUri"), userDetailsUri = Some("userDetailsLink"),
       enrolmentsUri = None, credentialStrength = CredentialStrength.None, nino = None, saUtr = None)
 
 

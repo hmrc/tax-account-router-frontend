@@ -27,27 +27,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 class TwoStepVerificationThrottleSpec extends UnitSpec with MockitoSugar {
   private val bucketSize = 100
   private val decimalPointFactor = 10
-
-  "registrationMandatory" should {
-
-    implicit class MD5(value: String) {
-      def toMD5 = {
-        val md5 = MessageDigest.getInstance("MD5")
-        md5.digest(value.getBytes).map("%02x".format(_)).mkString
-      }
-    }
-
-    "be efficent" in {
-
-      val discriminator = "discriminator"
-      val before = System.currentTimeMillis()
-      val userValue = Math.abs((discriminator.toMD5.hashCode % (bucketSize * decimalPointFactor)).toDouble) / decimalPointFactor
-      val after = System.currentTimeMillis()
-      println(s"Efficient ${after - before}ms")
-    }
-  }
-
-
+  
   "registrationMandatory" should {
 
     // expected user modulus is always 500

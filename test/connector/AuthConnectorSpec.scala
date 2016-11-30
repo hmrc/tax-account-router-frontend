@@ -30,12 +30,12 @@ import scala.concurrent.Future
 
 class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 
-  "currentDetailedAuthority" should {
-    "get current detailed authority" in new Setup {
-      val authResponse = DetailedAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
+  "currentUserAuthority" should {
+    "execute call to auth microservice get the authority" in new Setup {
+      val authResponse = UserAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET[Any](eqTo(s"$authUrl/auth/authority"))(any[HttpReads[Any]](), any[HeaderCarrier])).thenReturn(Future.successful(authResponse))
 
-      val result = await(connector.currentDetailedAuthority)
+      val result = await(connector.currentUserAuthority)
 
       result shouldBe authResponse
 
@@ -43,13 +43,13 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
     }
   }
 
-  "detailedAuthority" should {
-    "get detailed authority for credId" in new Setup {
+  "userAuthority" should {
+    "execute call to auth microservice get the authority" in new Setup {
       val credId = "credId"
-      val authResponse = DetailedAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
+      val authResponse = UserAuthority(None, Some(""), Some(""), None, CredentialStrength.None, None, None)
       when(mockHttp.GET[Any](eqTo(s"$authUrl/auth/gg/$credId"))(any[HttpReads[Any]](), any[HeaderCarrier])).thenReturn(Future.successful(authResponse))
 
-      val result = await(connector.detailedAuthority(credId))
+      val result = await(connector.userAuthority(credId))
 
       result shouldBe authResponse
 
@@ -58,7 +58,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
   }
 
   "authority response" should {
-    "parse correctly to TARAuthority domain object" in {
+    "parse correctly to Authority domain object" in {
       val userDetailsLink = "/user-details/id/5658962a3d00003d002f3ca1"
       val twoFactorOtpId = "/user-details/id/5658962a3d00003d002f3ca1"
       val credentialStrength = CredentialStrength.Strong
@@ -77,7 +77,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
             |    "enrolments": "$enrolmentsUri"
             |    }""".stripMargin
 
-      Json.parse(authResponse).as[DetailedAuthority] shouldBe DetailedAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
+      Json.parse(authResponse).as[UserAuthority] shouldBe UserAuthority(Some(twoFactorOtpId), Some(idsUri), Some(userDetailsLink), Some(enrolmentsUri), credentialStrength, Some(nino), Some(saUtr))
     }
   }
 

@@ -276,7 +276,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has a NINO - scenario: $scenario" in {
         val ruleContext = mock[RuleContext]
-        val authMock = mock[DetailedAuthority]
+        val authMock = mock[UserAuthority]
 
         val nino = if (ninoPresent) Some(Nino("AA123456C")) else None
         when(authMock.nino).thenReturn(Future.successful(nino))
@@ -311,7 +311,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
       s"be true whether the user has SAUTR - scenario: $scenario" in {
         val ruleContext = mock[RuleContext]
-        val authMock = mock[DetailedAuthority]
+        val authMock = mock[UserAuthority]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         val saUtr = if (saUtrPresent) Some(SaUtr("saUtr")) else None
         when(authMock.saUtr).thenReturn(Future.successful(saUtr))
@@ -349,7 +349,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         val twoFactorAuthOtpId = if (isRegistered) Some("1234") else None
-        val authMock = mock[DetailedAuthority]
+        val authMock = mock[UserAuthority]
         val ruleContext = mock[RuleContext]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         when(authMock.twoFactorAuthOtpId).thenReturn(Future.successful(twoFactorAuthOtpId))
@@ -380,7 +380,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, credentialStrength: CredentialStrength, expected: Boolean) =>
 
       scenario in {
-        val authMock = mock[DetailedAuthority]
+        val authMock = mock[UserAuthority]
         val ruleContext = mock[RuleContext]
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
         when(authMock.credentialStrength).thenReturn(Future.successful(credentialStrength))
