@@ -223,20 +223,21 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "LoggedInViaGovernmentGateway" should {
+  "IsAGovernmentGatewayUser" should {
 
     "have an audit type specified" in {
-      LoggedInViaGovernmentGateway.auditType shouldBe Some(IS_A_GOVERNMENT_GATEWAY_USER)
+      IsAGovernmentGatewayUser.auditType shouldBe Some(IS_A_GOVERNMENT_GATEWAY_USER)
     }
 
     val scenarios =
       Table(
-        ("scenario", "tokenPresent", "expectedResult"),
-        ("has logged in using GG", true, true),
-        ("has not logged in using GG", false, false)
+        ("scenario", "tokenPresent", "comingWithCredId", "expectedResult"),
+        ("has logged in using GG", true, false, true),
+        ("has not logged in using GG but coming with credId", false, true, true),
+        ("has not logged in using GG and not coming with credId", false, false, false)
       )
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, expectedResult: Boolean) =>
+    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, comingWithCredId: Boolean, expectedResult: Boolean) =>
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
@@ -249,7 +250,9 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
         val ruleContext = mock[RuleContext]
 
-        val result = await(LoggedInViaGovernmentGateway.isTrue(ruleContext))
+        when(ruleContext.credId).thenReturn(if(comingWithCredId) Some("credId") else None)
+
+        val result = await(IsAGovernmentGatewayUser.isTrue(ruleContext))
         result shouldBe expectedResult
       }
     }

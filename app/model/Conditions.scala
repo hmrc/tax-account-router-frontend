@@ -139,20 +139,12 @@ object LoggedInViaVerify extends Condition {
   override val auditType = Some(IS_A_VERIFY_USER)
 }
 
-object LoggedInViaGovernmentGateway extends Condition {
+object IsAGovernmentGatewayUser extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(request.session.data.contains("token"))
+    Future.successful(request.session.data.contains("token") || ruleContext.credId.isDefined)
 
   override val auditType = Some(IS_A_GOVERNMENT_GATEWAY_USER)
 }
-
-object ArrivingWithCredId extends Condition {
-  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    Future.successful(ruleContext.credId.isDefined)
-
-  override val auditType = Some(IS_A_GOVERNMENT_GATEWAY_USER)
-}
-
 
 object HasNino extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =

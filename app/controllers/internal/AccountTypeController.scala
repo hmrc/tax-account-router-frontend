@@ -22,9 +22,9 @@ import controllers.internal.AccountType.AccountType
 import engine.RuleEngine
 import model.Locations._
 import model._
-import play.api.Logger
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{Action, AnyContent, Request}
+import play.api.{Logger, LoggerLike}
 import services.{ThrottlingService, TwoStepVerification}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
@@ -38,7 +38,7 @@ object AccountType extends Enumeration {
 case class AccountTypeResponse(`type`: AccountType)
 
 object AccountTypeResponse {
-  implicit val userTypeReads = enumFormat(AccountType)
+  implicit val accountTypeReads = enumFormat(AccountType)
   implicit val writes: Writes[AccountTypeResponse] = Json.writes[AccountTypeResponse]
   implicit val reads: Reads[AccountTypeResponse] = Json.reads[AccountTypeResponse]
 }
@@ -46,25 +46,34 @@ object AccountTypeResponse {
 object AccountTypeController extends AccountTypeController {
   override protected def authConnector = FrontendAuthConnector
 
-  override val defaultLocation = BusinessTaxAccount
+  override val defaultAccountType = AccountType.Organisation
 
   override val ruleEngine = TarRules
+
+  override val logger: LoggerLike = Logger
 
   override val throttlingService = ThrottlingService
 
   override val twoStepVerification = TwoStepVerification
 
   override def createAuditContext() = AuditContext()
+
+  // TODO: default location should be moved out from the controller. It belongs to the rule engine
+  override val defaultLocation = BusinessTaxAccount
 }
 
 trait AccountTypeController extends FrontendController with Actions {
-  def defaultLocation: Location
+  def defaultAccountType: AccountType.AccountType
+
+  def logger: LoggerLike
 
   def ruleEngine: RuleEngine
 
   def throttlingService: ThrottlingService
 
   def twoStepVerification: TwoStepVerification
+
+  def defaultLocation: Location
 
   /**
     *
@@ -74,13 +83,16 @@ trait AccountTypeController extends FrontendController with Actions {
     */
   def createAuditContext(): TAuditContext
 
-  def userTypeForCredId(credId: String) = Action.async { implicit request =>
+  def accountTypeForCredId(credId: String) = Action.async { implicit request =>
     val ruleContext = RuleContext(Some(credId))
     val auditContext = createAuditContext()
     // TODO calculate final destination should be refactor to return business type on a deeper layer (as opposed to process the destination)
     calculateFinalDestination(ruleContext, auditContext) map {
       case Locations.PersonalTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Individual)))
       case Locations.BusinessTaxAccount => Ok(Json.toJson(AccountTypeResponse(AccountType.Organisation)))
+      case unknownLocation: Location =>
+        logger.warn(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
+        Ok(Json.toJson(AccountTypeResponse(defaultAccountType)))
     }
   }
 

@@ -24,12 +24,12 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
   def await[A](future: Future[A])(implicit timeout: Duration) = Await.result(future, timeout)
 
-  private val typeIndividual = AccountTypeResponse(AccountType.Individual)
-  private val typeBusiness = AccountTypeResponse(AccountType.Organisation)
+  private val individualAccountType = AccountTypeResponse(AccountType.Individual)
+  private val organisationAccountType = AccountTypeResponse(AccountType.Organisation)
 
   feature("Principal for credId") {
 
-    scenario("a user with any business account be redirected to BTA") {
+    scenario("a user with any business account should get Organisation as account type") {
 
       Given("a user with cred id exists")
       SessionUser(isRegisteredFor2SV = false, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -41,8 +41,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched by credId")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -57,7 +57,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected to BTA") {
+    scenario("a user logged in through GG with self assessment enrolments and no previous returns should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -72,8 +72,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -88,7 +88,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
+    scenario("a user logged in through GG and sa returning 500 should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -105,8 +105,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -121,7 +121,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and Auth returning 500 on GET enrolments should be redirected to BTA") {
+    scenario("a user logged in through GG and Auth returning 500 on GET enrolments should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -133,8 +133,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
 
       And("the authority object should be fetched once for AuthenticatedBy")
@@ -150,7 +150,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
+    scenario("a user logged in through GG with self assessment enrolments and in a partnership should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -165,8 +165,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -181,7 +181,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
+    scenario("a user logged in through GG with self assessment enrolments and self employed should get Organisation as account type") {
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
 
@@ -195,8 +195,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -211,7 +211,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected to BTA") {
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts.copy(paye = None), internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -226,8 +226,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -242,7 +242,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected to PTA") {
+    scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should get Individual as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), accounts = saAccounts.copy(paye = Some(PayeAccount("link", Nino("CS100700A"))))).stubLoggedOut()
@@ -257,8 +257,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeIndividual
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe individualAccountType
 
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -270,7 +270,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
@@ -283,8 +283,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -299,7 +299,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should get Individual as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
@@ -312,8 +312,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeIndividual
+      Then("the account type should be Individual")
+      response.json.as[AccountTypeResponse] shouldBe individualAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
@@ -328,7 +328,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
+    scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
@@ -341,8 +341,8 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       val response = await(Navigation.goToPath(s"/internal/$credId/account-type")(app).get())
       response.status shouldBe 200
 
-      Then("the routing should return BTA Home Page")
-      response.json.as[AccountTypeResponse] shouldBe typeBusiness
+      Then("the account type should be Organisation")
+      response.json.as[AccountTypeResponse] shouldBe organisationAccountType
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verifyAuthorityObjectIsFetchedByCredId(credId)
