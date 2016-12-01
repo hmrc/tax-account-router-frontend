@@ -72,7 +72,7 @@ class AuthConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
             |    "twoFactorAuthOtpId": "$twoFactorOtpId",
             |    "credentialStrength": "${credentialStrength.name.toLowerCase}",
             |    "nino": "${nino.value}",
-            |    "sautr": "${saUtr.value}",
+            |    "saUtr": "${saUtr.value}",
             |    "ids": "$idsUri",
             |    "enrolments": "$enrolmentsUri"
             |    }""".stripMargin

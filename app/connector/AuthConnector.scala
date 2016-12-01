@@ -55,7 +55,7 @@ object UserAuthority {
       (__ \ "enrolments").readNullable[String] and
       (__ \ "credentialStrength").read[CredentialStrength] and
       (__ \ "nino").readNullable[Nino] and
-      (__ \ "sautr").readNullable[SaUtr]).apply(UserAuthority.apply _)
+      (__ \ "saUtr").readNullable[SaUtr]).apply(UserAuthority.apply _)
 }
 
 

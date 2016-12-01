@@ -92,7 +92,7 @@ class SessionUser(loggedInViaGateway: Boolean,
     (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
     (if (enrolmentsAvailable) Json.obj("enrolments" -> "/auth/enrolments-uri") else Json.obj()) ++
     (if (loggedInViaGateway && internalUserIdentifier.isDefined) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier.get)) else Json.obj()) ++
-    (if (accounts.sa.isDefined) Json.obj("sautr" -> accounts.sa.get.utr.value) else Json.obj()) ++
+    (if (accounts.sa.isDefined) Json.obj("saUtr" -> accounts.sa.get.utr.value) else Json.obj()) ++
     (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj()) ++
     userDetailsLink.map(link => Json.obj("userDetailsLink" -> link)).getOrElse(Json.obj()) ++
     internalUserIdentifier.map(_ => Json.obj("ids" -> "/auth/ids-uri")).getOrElse(Json.obj())
