@@ -22,12 +22,13 @@ import java.util.UUID
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
+import org.joda.time.DateTime
 import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import support.Env
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, CredentialStrength}
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
@@ -81,6 +82,7 @@ class SessionUser(loggedInViaGateway: Boolean,
   }
 
   private val authorityObject = Json.obj(
+    "legacyOid" -> "",
     "credentialStrength" -> credentialStrength.name.toLowerCase,
     "affinityGroup" -> affinityGroup,
     "uri" -> s"/auth/oid/$oid",

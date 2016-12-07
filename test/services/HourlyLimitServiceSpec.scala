@@ -17,7 +17,6 @@
 package services
 
 import connector.InternalUserIdentifier
-import helpers.SpecHelpers
 import model.Location
 import org.joda.time.{DateTime, DateTimeUtils}
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -35,7 +34,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with BeforeAndAfterAll {
+class HourlyLimitServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with BeforeAndAfterAll {
 
   val fixedDateTime = DateTime.now()
 

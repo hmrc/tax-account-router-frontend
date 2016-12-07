@@ -196,7 +196,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     implicit val fakeRequest = FakeRequest().withCookies(Cookie("_ga", gaClientId))
     implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-    implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None)
+    implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None, None, None, None)
     implicit lazy val ruleContext = RuleContext(None)
     val auditContext: TAuditContext = AuditContext()
     val mockThrottlingService = mock[ThrottlingService]

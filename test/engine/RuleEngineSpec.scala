@@ -32,7 +32,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication{
 
   case class BooleanCondition(b: Boolean) extends Condition {
     override val auditType: Option[RoutingReason] = None

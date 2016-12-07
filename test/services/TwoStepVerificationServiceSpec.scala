@@ -37,7 +37,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SpecHelpers with Eventually with IntegrationPatience {
+class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually with IntegrationPatience {
 
   val saEnrolments = Set("sa-enrolments")
   val vatEnrolments = Set("vat-enrolment1", "vat-enrolment2")
