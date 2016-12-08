@@ -119,6 +119,6 @@ class RouterAuditTwoStepVerificationFeature extends StubbedFeatureSpec with Comm
 
     val event = Json.parse(twoStepVerificationEvents.head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
-    (event \ "detail") shouldBe expectedDetail
+    (event \ "detail").get shouldBe expectedDetail
   }
 }

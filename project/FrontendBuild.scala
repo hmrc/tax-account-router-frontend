@@ -19,15 +19,15 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "frontend-bootstrap" % "6.7.0",
-    "uk.gov.hmrc" %% "play-config" % "2.1.0",
-    "uk.gov.hmrc" %% "play-json-logger" % "2.1.1",
-    "uk.gov.hmrc" %% "play-health" % "1.1.0",
-    "uk.gov.hmrc" %% "govuk-template" % "4.0.0",
-    "uk.gov.hmrc" %% "play-ui" % "4.17.2",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "5.8.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "5.6.0",
-    "uk.gov.hmrc" %% "mongo-caching" % "3.2.0"
+    "uk.gov.hmrc" %% "frontend-bootstrap" % "7.10.0",
+    "uk.gov.hmrc" %% "play-config" % "3.0.0",
+    "uk.gov.hmrc" %% "logback-json-logger" % "3.1.0",
+    "uk.gov.hmrc" %% "play-health" % "2.0.0",
+    "uk.gov.hmrc" %% "govuk-template" % "5.0.0",
+    "uk.gov.hmrc" %% "play-ui" % "5.2.0",
+    "uk.gov.hmrc" %% "play-authorised-frontend" % "6.2.0",
+    "uk.gov.hmrc" %% "http-caching-client" % "6.1.0",
+    "uk.gov.hmrc" %% "mongo-caching" % "4.0.0"
   )
 
   abstract class TestDependencies(scope: String) {
@@ -36,11 +36,12 @@ private object AppDependencies {
       "org.pegdown" % "pegdown" % "1.6.0" % scope,
       "org.jsoup" % "jsoup" % "1.8.3" % scope,
       "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-      "uk.gov.hmrc" %% "hmrctest" % "1.9.0" % scope,
+      "uk.gov.hmrc" %% "hmrctest" % "2.2.0" % scope,
       "com.github.tomakehurst" % "wiremock" % "1.56" % scope,
-      "org.scalatestplus" %% "play" % "1.2.0" % scope,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
       "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
-      "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope
+      "org.mockito" % "mockito-core" % "1.9.5" % scope,
+      "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope
     )
   }
 

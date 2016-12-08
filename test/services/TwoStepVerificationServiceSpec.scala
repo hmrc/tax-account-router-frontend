@@ -17,7 +17,6 @@
 package services
 
 import connector._
-import helpers.SpecHelpers
 import model.Locations._
 import model._
 import org.mockito.Matchers._
@@ -198,7 +197,7 @@ class TwoStepVerificationServiceSpec extends UnitSpec with MockitoSugar with Wit
           verify(auditConnectorMock).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
           (auditEventCaptor.getValue.detail \ "ruleApplied").as[String] shouldBe s"rule_$expectedRuleName"
           (auditEventCaptor.getValue.detail \ "credentialRole").as[String] shouldBe credentialRole
-          (auditEventCaptor.getValue.detail \ "userEnrolments") shouldBe Json.toJson(activeGGEnrolments)
+          (auditEventCaptor.getValue.detail \ "userEnrolments").get shouldBe Json.toJson(activeGGEnrolments)
         }
 
         def verifyNoAuditWasSent() = verifyNoMoreInteractions(auditConnectorMock)
