@@ -21,6 +21,12 @@ import play.api.libs.json._
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 
+object AffinityGroupValue {
+  val INDIVIDUAL = "Individual"
+  val ORGANISATION = "Organisation"
+  val AGENT = "Agent"
+}
+
 trait UserDetailsConnector {
 
   val serviceUrl: String
