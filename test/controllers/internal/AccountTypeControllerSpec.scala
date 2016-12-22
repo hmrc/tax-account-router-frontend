@@ -17,23 +17,23 @@
 package controllers.internal
 
 import engine.RuleEngine
+import helpers.VerifyLogger
 import model.{Location, Locations, RuleContext, TAuditContext}
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
-import play.api.LoggerLike
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
+import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually {
-
+class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually with MicroserviceFilterSupport {
 
   "Account type controller " should {
 
@@ -75,7 +75,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
 
     "return default account type when an unknown location is provided by rules (not PTA or BTA)" in new Setup {
       // given
-      val unknownLocation = Location("unkonwn-location","/unknown-location")
+      val unknownLocation = Location("unkonwn-location", "/unknown-location")
       when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(unknownLocation))
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
@@ -88,17 +88,19 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe theDefaultAccountType
 
       verify(mockRuleEngine).matchRulesForLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-      verify(mockLogger).warn(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
+
+      verifyWarningLogging(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
+
       ruleContextCaptor.getValue.credId shouldBe Some(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
+
   }
 
-  trait Setup {
+  trait Setup extends VerifyLogger {
     val mockRuleEngine = mock[RuleEngine]
     val mockAuthConnector = mock[AuthConnector]
     val mockAuditContext = mock[TAuditContext]
-    val mockLogger = mock[LoggerLike]
 
     val allMocks = Seq(mockRuleEngine, mockAuthConnector, mockAuditContext, mockLogger)
 

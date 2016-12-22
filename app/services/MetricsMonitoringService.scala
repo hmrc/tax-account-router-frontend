@@ -17,8 +17,9 @@
 package services
 
 import com.codahale.metrics.MetricRegistry
-import com.kenshoo.play.metrics.MetricsRegistry
+import com.kenshoo.play.metrics.Metrics
 import model.{Location, TAuditContext}
+import play.api.Play
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
@@ -26,7 +27,7 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 object MetricsMonitoringService extends MetricsMonitoringService {
-  override val metricsRegistry = MetricsRegistry.defaultRegistry
+  override val metricsRegistry = Play.current.injector.instanceOf[Metrics].defaultRegistry
 }
 
 trait MetricsMonitoringService {

@@ -524,6 +524,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
     (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
-    (event \ "detail" \ "reasons") shouldBe expectedReasons
+    (event \ "detail" \ "reasons").get shouldBe expectedReasons
   }
 }

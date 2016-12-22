@@ -16,9 +16,6 @@
 
 package services
 
-import java.io.File
-
-import com.typesafe.config.ConfigFactory
 import connector.InternalUserIdentifier
 import helpers.SpecHelpers
 import model.Locations._
@@ -30,11 +27,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
-import play.api.Mode.Mode
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import play.api.{Configuration, GlobalSettings, Play}
+import play.api.{Configuration, Play}
 import reactivemongo.api.ReadPreference
 import repositories.RoutingCacheRepository
 import uk.gov.hmrc.cache.model.{Cache, Id}
@@ -345,7 +341,6 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
         //and
         verify(mockAuditContext).setThrottlingDetails(ThrottlingAuditContext(Some(100), true, PersonalTaxAccount, true, false))
-
         //and
         verify(mockRoutingCacheRepository).findById(eqTo(id), any[ReadPreference])(any[ExecutionContext])
         verify(mockRoutingCacheRepository).createOrUpdate(id, "routingInfo", Json.toJson(RoutingInfo(PersonalTaxAccount.name, BusinessTaxAccount.name, expectedExpirationTime)))
@@ -368,7 +363,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     forAll(scenarios) { (routedLocation: Location, throttledLocation: Location, expectedExpirationTime: DateTime) =>
       s"return the right location after throttling when sticky routing is enabled and routingInfo is present: routedLocation -> $routedLocation, throttledLocation -> $throttledLocation" in {
-        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
+        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
           implicit lazy val fakeRequest = FakeRequest()
           val id = Id(userIdentifier)
@@ -423,7 +418,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     forAll(scenarios) { (routedLocation: Location, cacheRoutedLocation: Location, cacheThrottledLocation: Location, expectedExpirationTime: DateTime) =>
       s"return the right location after throttling when sticky routing is enabled and cache is present but routedLocation is different: routedLocation -> $cacheRoutedLocation, throttledLocation -> $cacheThrottledLocation" in {
-        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true), withGlobal = Some(new GlobalSettingsTest()))) {
+        running(FakeApplication(additionalConfiguration = createConfiguration(enabled = true, stickyRoutingEnabled = true))) {
           //given
           implicit lazy val fakeRequest = FakeRequest()
           val id = Id(userIdentifier)
@@ -479,12 +474,3 @@ class ThrottlingServiceTest(override val random: Random = Random,
                             override val routingCacheRepository: RoutingCacheRepository,
                             override val hourlyLimitService: HourlyLimitService = Mocks.mockHourlyLimitService()) extends ThrottlingService
 
-class GlobalSettingsTest extends GlobalSettings {
-
-  override def onLoadConfig(config: Configuration, path: File, classloader: ClassLoader, mode: Mode): Configuration = {
-    //remove throttling element in configuration taken from application.conf
-    val configuration: Configuration = Configuration(ConfigFactory.load(config.underlying).withoutPath("throttling"))
-    super.onLoadConfig(configuration, path, classloader, mode)
-  }
-
-}

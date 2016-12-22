@@ -17,9 +17,9 @@
 package model
 
 import connector._
+import helpers.VerifyLogger
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import play.api.LoggerLike
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -30,13 +30,12 @@ import scala.concurrent.Future
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
-  sealed trait Setup {
+  sealed trait Setup extends VerifyLogger {
 
     implicit val hc = HeaderCarrier()
     val mockAuthConnector: FrontendAuthConnector = mock[FrontendAuthConnector]
     val mockUserDetailsConnector = mock[UserDetailsConnector]
     val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
-    val mockLogger = mock[LoggerLike]
 
     val allMocks = Seq(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, mockLogger)
     val credId = "credId"
@@ -190,7 +189,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
       expectedException.getMessage shouldBe "userDetailsUri is not defined"
 
       verify(mockAuthConnector).userAuthority(credId)
-      verify(mockLogger).warn("failed to get user details because userDetailsUri is not defined")
+      verifyWarningLogging("failed to get user details because userDetailsUri is not defined")
       verifyNoMoreInteractions(allMocks: _*)
     }
   }

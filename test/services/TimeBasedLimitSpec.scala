@@ -36,7 +36,6 @@ class TimeBasedLimitSpec extends UnitSpec {
       val expectedLimit = 15
       running(FakeApplication(additionalConfiguration = Map(
         "two-step-verification.user-segment.sa.throttle.default" -> expectedLimit,
-        "two-step-verification.user-segment.sa.throttle.12" -> null,
         "two-step-verification.user-segment.sa_vat.throttle.12" -> (expectedLimit + 1)
       ))) {
         timeBasedLimit().getCurrentPercentageLimit("sa") shouldBe expectedLimit
