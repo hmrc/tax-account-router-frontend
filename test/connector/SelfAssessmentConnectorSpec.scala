@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,46 +16,73 @@
 
 package connector
 
+import ch.qos.logback.classic.Level
+import helpers.VerifyLogger
+import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Mockito._
+import org.scalatest.LoneElement
+import play.api.Logger
 import play.api.libs.json.Json
-import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.hooks.HttpHook
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpResponse}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.http._
+import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication {
+class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with VerifyLogger with LogCapturing with LoneElement {
 
-  val response = """{"utr":"5328981911","supplementarySchedules":["individual_tax_form","self_employment"]}"""
+  "lastReturn" should {
+    "return a saReturn object when the return is found" in new Setup {
+      val expectedSaReturn = SaReturn(List("individual_tax_form", "self_employment"), previousReturns = true)
+      when(httpMock.GET[SaReturn](eqTo(s"/sa/individual/$utr/return/last"))(any(), any[HeaderCarrier])).thenReturn(Future.successful(expectedSaReturn))
 
-  implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(FakeRequest().headers)
+      val saReturn = await(connectorUnderTest.lastReturn(utr))
+      saReturn shouldBe expectedSaReturn
 
-  val connectorUnderTest = new SelfAssessmentConnector {
-    override def http = new HttpGet {
-
-      override protected def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-        url match {
-          case "/sa/individual/5328981911/return/last" => Future.successful(HttpResponse(200, Some(Json.parse(response))))
-          case _ => Future.successful(HttpResponse(404))
-        }
-      }
-
-      override val hooks: Seq[HttpHook] = Seq.empty
+      verify(httpMock).GET[SaReturn](eqTo(s"/sa/individual/$utr/return/last"))(any(), any[HeaderCarrier])
     }
 
-    override val serviceUrl: String = ""
-  }
+    "return an empty saReturn (previousReturn is false) when the return is not found" in new Setup {
+      val expectedSaReturn = SaReturn(List.empty, previousReturns = false)
+      when(httpMock.GET[SaReturn](eqTo(s"/sa/individual/$utr/return/last"))(any(), any[HeaderCarrier])).thenReturn(Future.successful(expectedSaReturn))
 
-  "Calls to the self assessment microservice" should {
-    "be mapped to a saReturn object when the return is found" in {
-      val saReturn: SaReturn = await(connectorUnderTest.lastReturn("5328981911"))
-      saReturn shouldBe SaReturn(List("individual_tax_form", "self_employment"), previousReturns = true)
-    }
-    "be mapped to an empty saReturn (previousReturn is false) when the return is not found" in {
-      val saReturn: SaReturn = await(connectorUnderTest.lastReturn("other-utr"))
+      val saReturn = await(connectorUnderTest.lastReturn(utr))
       saReturn shouldBe SaReturn(List.empty, previousReturns = false)
+
+      verify(httpMock).GET[SaReturn](eqTo(s"/sa/individual/$utr/return/last"))(any(), any[HeaderCarrier])
+    }
+
+    "log warning and re-throw exception when SA is returning status code different from 2xx or 404" in new Setup {
+      val expectedException = new Upstream5xxResponse("error", 500, 500)
+      when(httpMock.GET[SaReturn](eqTo(s"/sa/individual/$utr/return/last"))(any(), any[HeaderCarrier])).thenReturn(Future.failed(expectedException))
+
+      withCaptureOfLoggingFrom(Logger) { logEvents =>
+        intercept[Upstream5xxResponse] {
+          await(connectorUnderTest.lastReturn(utr))
+        }
+
+        logEvents.size shouldBe 1
+        logEvents.loneElement.getMessage shouldBe s"Unable to retrieve last sa return details for user with utr $utr"
+        logEvents.loneElement.getLevel shouldBe Level.WARN
+      }
+    }
+
+    "deserialize a SA json into a SaReturn object" in {
+      val json = Json.parse("""{"utr":"5328981911", "supplementarySchedules":["individual_tax_form","self_employment"]}""")
+      val expectedObject = SaReturn(List("individual_tax_form", "self_employment"), previousReturns = true)
+      val currentObject = SaReturn.reads.reads(json)
+      currentObject.get shouldBe expectedObject
     }
   }
 
+  trait Setup {
+    implicit val hc = HeaderCarrier()
+    val httpMock = mock[HttpGet]
+
+    val connectorUnderTest = new SelfAssessmentConnector {
+      override val http = httpMock
+      override val serviceUrl: String = ""
+    }
+    val utr = "some-utr"
+  }
 
 }
