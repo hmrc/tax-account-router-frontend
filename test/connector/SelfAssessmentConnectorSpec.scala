@@ -17,10 +17,10 @@
 package connector
 
 import ch.qos.logback.classic.Level
-import helpers.VerifyLogger
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
+import org.scalatest.mock.MockitoSugar
 import play.api.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.http._
@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with VerifyLogger with LogCapturing with LoneElement {
+class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with LogCapturing with LoneElement {
 
   "lastReturn" should {
     "return a saReturn object when the return is found" in new Setup {
