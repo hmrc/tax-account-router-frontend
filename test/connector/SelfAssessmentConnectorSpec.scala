@@ -60,7 +60,6 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with
           await(connectorUnderTest.lastReturn(utr))
         }
 
-        logEvents.size shouldBe 1
         val logElement = logEvents.loneElement
         logElement.getMessage shouldBe s"Unable to retrieve last sa return details for user with utr $utr"
         logElement.getLevel shouldBe Level.WARN
