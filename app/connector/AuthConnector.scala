@@ -58,6 +58,12 @@ object UserAuthority {
       (__ \ "saUtr").readNullable[SaUtr]).apply(UserAuthority.apply _)
 }
 
+object EnrolmentState {
+  val ACTIVATED = "Activated"
+  val NOT_YET_ACTIVATED = "NotYetActivated"
+  val HANDED_TO_AGENT = "HandedToAgent"
+  val PENDING = "Pending"
+}
 
 trait FrontendAuthConnector extends AuthConnector {
 
