@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,11 @@ trait SelfAssessmentConnector {
 
   def lastReturn(utr: String)(implicit hc: HeaderCarrier): Future[SaReturn] = {
 
-    implicit val reads: Reads[SaReturn] = (__ \ "supplementarySchedules").read[List[String]].map(SaReturn(_))
-
     http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
-      case e: NotFoundException => SaReturn.empty
-      case e: Throwable=> {
-        Logger.error(s"Unable to retrieve last sa return details for user with utr '$utr", e)
+      case _: NotFoundException => SaReturn.empty
+      case e: Throwable =>
+        Logger.warn(s"Unable to retrieve last sa return details for user with utr $utr", e)
         throw e
-      }
     }
   }
 
@@ -64,4 +61,6 @@ case class SaReturn(supplementarySchedules: List[String] = List.empty, previousR
 
 object SaReturn {
   def empty: SaReturn = SaReturn(List.empty, previousReturns = false)
+
+  implicit val reads: Reads[SaReturn] = (__ \ "supplementarySchedules").read[List[String]].map(SaReturn(_))
 }
