@@ -58,8 +58,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
-        SA_RETURN_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        SA_RETURN_AVAILABLE.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       eventually {
@@ -89,8 +88,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        GG_ENROLMENTS_AVAILABLE.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")

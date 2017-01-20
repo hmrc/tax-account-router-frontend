@@ -40,8 +40,6 @@ object RouterController extends RouterController {
 
   override val throttlingService = ThrottlingService
 
-  override val twoStepVerification = TwoStepVerification
-
   override val auditConnector = FrontendAuditConnector
 
   override def createAuditContext() = AuditContext()
@@ -56,8 +54,6 @@ trait RouterController extends FrontendController with Actions {
   def ruleEngine: RuleEngine
 
   def throttlingService: ThrottlingService
-
-  def twoStepVerification: TwoStepVerification
 
   def auditConnector: AuditConnector
 
@@ -75,11 +71,10 @@ trait RouterController extends FrontendController with Actions {
 
   private def getFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = for {
     destinationAfterRulesApplied <- ruleEngine.matchRulesForLocation(ruleContext, auditContext)
-    destinationAfterThrottleApplied <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
-    finalDestination <- twoStepVerification.getDestinationVia2SV(destinationAfterThrottleApplied, ruleContext, auditContext).map(_.getOrElse(destinationAfterThrottleApplied))
+    finalDestination <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
   } yield {
-    sendAuditEvent(auditContext, destinationAfterThrottleApplied)
-    metricsMonitoringService.sendMonitoringEvents(auditContext, destinationAfterThrottleApplied)
+    sendAuditEvent(auditContext, finalDestination)
+    metricsMonitoringService.sendMonitoringEvents(auditContext, finalDestination)
     Logger.debug(s"routing to: ${finalDestination.name}")
     analyticsEventSender.sendEvents(finalDestination.name, auditContext)
     finalDestination

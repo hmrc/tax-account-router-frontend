@@ -64,7 +64,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-self-employed" -> "-",
         "has-nino" -> "-",
         "has-sa-utr" -> "-",
-        "has-registered-for-2sv" -> "-",
         "has-strong-credentials" -> "-",
         "has-individual-affinity-group" -> "-",
         "has-any-inactive-enrolment" -> "-",
@@ -89,7 +88,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_ENROLMENTS(Set(SA, VAT)), result = true)
       auditContext.setRoutingReason(HAS_NINO, result = true)
       auditContext.setRoutingReason(HAS_SA_UTR, result = true)
-      auditContext.setRoutingReason(HAS_REGISTERED_FOR_2SV, result = true)
       auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
       auditContext.setRoutingReason(HAS_ONLY_ENROLMENTS(Set(SA, VAT)), result = true)
       auditContext.setRoutingReason(HAS_INDIVIDUAL_AFFINITY_GROUP, result = true)
@@ -115,7 +113,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-self-employed" -> "true",
         "has-nino" -> "true",
         "has-sa-utr" -> "true",
-        "has-registered-for-2sv" -> "true",
         "has-strong-credentials" -> "true",
         "has-individual-affinity-group" -> "true",
         "has-any-inactive-enrolment" -> "true",
@@ -229,21 +226,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         (auditEvent.detail \ "throttling" \ "destination-name-before-throttling").as[String] shouldBe initialDestination.name
         (auditEvent.detail \ "throttling" \ "sticky-routing-applied").as[String] shouldBe stickyRoutingApplied.toString
       }
-    }
-  }
-
-  "TAuditContext" should {
-    "provide a setter and a getter for sentTo2SVRegister" in {
-      val auditContext = new TAuditContext {}
-      auditContext.isSentToOptional2SVRegister shouldBe false // default value
-      auditContext.twoStepVerificationRuleApplied shouldBe None
-      auditContext.setSentToOptional2SVRegister("rule1")
-      auditContext.isSentToOptional2SVRegister shouldBe true
-      auditContext.twoStepVerificationRuleApplied should contain("rule1")
-      auditContext.isSentToMandatory2SVRegister shouldBe false // default value
-      auditContext.setSentToMandatory2SVRegister("rule2")
-      auditContext.isSentToMandatory2SVRegister shouldBe true
-      auditContext.twoStepVerificationRuleApplied should contain("rule2")
     }
   }
 }

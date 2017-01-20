@@ -28,32 +28,9 @@ import uk.gov.hmrc.play.test.UnitSpec
 class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
   "AnalyticsEventSender" should {
-
-    "send event to GA when not routed to 2sv registration" in new Setup {
-
+    "send event to GA" in new Setup {
       analyticsEventSender.sendEvents(locationName, auditContext)
-
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, auditContext.ruleApplied, Nil))))
-    }
-
-    "send events to GA when routed to optional 2sv registration" in new Setup {
-      val biz2svRuleName = "sa"
-      auditContext.setSentToOptional2SVRegister(biz2svRuleName)
-      analyticsEventSender.sendEvents(locationName, auditContext)
-      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
-        GaEvent("routing", locationName, auditContext.ruleApplied, Nil),
-        GaEvent("sos_b2sv_registration_route", s"rule_sa", "optional", Nil)
-      )))
-    }
-
-    "send events to GA when routed to mandatory 2sv registration" in new Setup {
-      val biz2svRuleName = "sa"
-      auditContext.setSentToMandatory2SVRegister(biz2svRuleName)
-      analyticsEventSender.sendEvents(locationName, auditContext)
-      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(
-        GaEvent("routing", locationName, auditContext.ruleApplied, Nil),
-        GaEvent("sos_b2sv_registration_route", s"rule_sa", "mandatory", Nil)
-      )))
     }
   }
 
@@ -68,7 +45,5 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
     val locationName = "some-location"
     val auditContext = AuditContext()
     auditContext.ruleApplied = "some rule"
-
   }
-
 }

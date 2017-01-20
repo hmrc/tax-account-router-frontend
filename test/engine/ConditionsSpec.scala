@@ -328,41 +328,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasRegisteredFor2SV" should {
-
-    "have an audit type specified" in {
-      HasRegisteredFor2SV.auditType shouldBe Some(HAS_REGISTERED_FOR_2SV)
-    }
-
-    val scenarios =
-      Table(
-        ("scenario", "isRegistered"),
-        ("return true when user has registered", true),
-        ("return false when user has not registered", false)
-      )
-
-    forAll(scenarios) { (scenario: String, isRegistered: Boolean) =>
-
-      scenario in {
-        implicit val fakeRequest = FakeRequest()
-
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        val twoFactorAuthOtpId = if (isRegistered) Some("1234") else None
-        val authMock = mock[UserAuthority]
-        val ruleContext = mock[RuleContext]
-        when(ruleContext.authority).thenReturn(Future.successful(authMock))
-        when(authMock.twoFactorAuthOtpId).thenReturn(Future.successful(twoFactorAuthOtpId))
-
-        val result = await(HasRegisteredFor2SV.isTrue(ruleContext))
-        result shouldBe isRegistered
-
-        verify(ruleContext).authority
-        verifyNoMoreInteractions(ruleContext)
-      }
-    }
-  }
-
   "HasStrongCredentials" should {
 
     "have an audit type specified" in {

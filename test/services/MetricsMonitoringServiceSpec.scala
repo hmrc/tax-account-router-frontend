@@ -105,55 +105,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
     }
   }
 
-  it should {
-
-    val scenarios = Table(
-      ("scenario", "twoStepVerificationMandatory"),
-      ("2sv registration is mandatory", true),
-      ("2sv registration is optional", false)
-    )
-
-    forAll(scenarios) { (scenario: String, twoStepVerificationMandatory: Boolean) =>
-
-      s"send passed-through-2SV metric when flag is true - $scenario" in new Setup {
-
-        val auditContext = AuditContext()
-        if (twoStepVerificationMandatory)
-          auditContext.setSentToMandatory2SVRegister("rule1")
-        else
-          auditContext.setSentToOptional2SVRegister("rule1")
-
-        val mockThrottledLocation = mock[Location]
-        when(mockThrottledLocation.name).thenReturn(throttledLocation)
-
-        // when
-        metricsMonitoringService.sendMonitoringEvents(auditContext, mockThrottledLocation)
-
-        eventually {
-          verify(mockMeter2SV).mark()
-          verify(mockMeter2SVMandatory, if (twoStepVerificationMandatory) times(1) else never()).mark()
-          verify(mockMeter2SVOptional, if (!twoStepVerificationMandatory) times(1) else never()).mark()
-          verifyNoMoreInteractions(mockMeter2SV, mockMeter2SVMandatory, mockMeter2SVOptional)
-        }
-      }
-    }
-
-    "don't send passed-through-2SV metric when flag is false" in new Setup {
-
-      val auditContext = AuditContext()
-
-      val mockThrottledLocation = mock[Location]
-      when(mockThrottledLocation.name).thenReturn(throttledLocation)
-
-      // when
-      metricsMonitoringService.sendMonitoringEvents(auditContext, mockThrottledLocation)
-
-      eventually {
-        verifyZeroInteractions(mockMeter2SV, mockMeter2SVMandatory, mockMeter2SVOptional)
-      }
-    }
-  }
-
   sealed trait Setup {
     implicit val fakeRequest = FakeRequest()
     implicit val hc = HeaderCarrier()

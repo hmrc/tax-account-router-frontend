@@ -64,8 +64,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_BUSINESS_ENROLMENTS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
@@ -100,7 +99,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         SA_RETURN_AVAILABLE.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true",
         HAS_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
@@ -137,8 +135,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
         AFFINITY_GROUP_AVAILABLE.key -> "true",
         HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "false"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -175,8 +172,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -214,8 +210,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_SELF_EMPLOYED.key -> "true",
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_ENROLMENTS(Set(SA)).key -> "true"
         ))
 
       val expectedTransactionName = "sent to business tax account"
@@ -255,8 +250,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
         HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "-",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_SA_UTR.key -> "-"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino")
@@ -330,11 +324,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
-        HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
+        HAS_PREVIOUS_RETURNS.key -> "false"//,
+//        HAS_STRONG_CREDENTIALS.key -> "false",
+//        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
+//        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -366,11 +359,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
-        HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false"
+        HAS_PREVIOUS_RETURNS.key -> "false"//,
+//        HAS_STRONG_CREDENTIALS.key -> "false",
+//        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "true",
+//        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -401,9 +393,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
-        HAS_PREVIOUS_RETURNS.key -> "false",
-        HAS_STRONG_CREDENTIALS.key -> "true",
-        HAS_REGISTERED_FOR_2SV.key -> "false"
+        HAS_PREVIOUS_RETURNS.key -> "false"//,
+//        HAS_STRONG_CREDENTIALS.key -> "true"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
@@ -431,89 +422,87 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "true",
-        HAS_STRONG_CREDENTIALS.key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
-        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "false"
+        HAS_BUSINESS_ENROLMENTS.key -> "true"//,
+//        HAS_STRONG_CREDENTIALS.key -> "false",
+//        HAS_ONLY_ENROLMENTS(Set(SA, VAT)).key -> "false",
+//        HAS_ONLY_ENROLMENTS(Set(SA)).key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-business-enrolments")
     }
 
-    scenario("when a user logged in through GG and has no sa and no business enrolment with individual affinity group an audit event should be raised") {
-
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
-
-      And("the user has self assessment enrolments and individual affinity group")
-      stubNoEnrolments()
-
-      And("the user has individual affinity group")
-      stubUserDetails(affinityGroup = Some(INDIVIDUAL))
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "true",
-        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
-        AFFINITY_GROUP_AVAILABLE.key -> "true",
-        HAS_ENROLMENTS(Set(SA)).key -> "false"
-        ))
-
-      val expectedTransactionName = "sent to personal tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-individual")
-    }
-
-    scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group not available an audit event should be raised") {
-
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
-
-
-      And("the user has no enrolments")
-      stubNoEnrolments()
-
-      And("affinity group is not available")
-      stubUserDetailsToReturn500()
-
-      val auditEventStub = stubAuditEvent()
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
-        IS_A_VERIFY_USER.key -> "false",
-        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "true",
-        HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
-        AFFINITY_GROUP_AVAILABLE.key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
-        ))
-      val expectedTransactionName = "sent to business tax account"
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-affinity-group-unavailable")
-    }
+//    scenario("when a user logged in through GG and has no sa and no business enrolment with individual affinity group an audit event should be raised") {
+//
+//      Given("a user logged in through Government Gateway")
+//      val saUtr = "12345"
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+//
+//      And("the user has self assessment enrolments and individual affinity group")
+//      stubNoEnrolments()
+//
+//      And("the user has individual affinity group")
+//      stubUserDetails(affinityGroup = Some(INDIVIDUAL))
+//
+//      val auditEventStub = stubAuditEvent()
+//
+//      When("the user hits the router")
+//      go(RouterRootPath)
+//
+//      Then("an audit event should be sent")
+//      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+//
+//      And("the audit event raised should be the expected one")
+//      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+//        IS_A_VERIFY_USER.key -> "false",
+//        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+//        GG_ENROLMENTS_AVAILABLE.key -> "true",
+//        HAS_BUSINESS_ENROLMENTS.key -> "false",
+//        HAS_INDIVIDUAL_AFFINITY_GROUP.key -> "true",
+//        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
+//        AFFINITY_GROUP_AVAILABLE.key -> "true",
+//        HAS_ENROLMENTS(Set(SA)).key -> "false"
+//        ))
+//
+//      val expectedTransactionName = "sent to personal tax account"
+//      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-individual")
+//    }
+//
+//    scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group not available an audit event should be raised") {
+//
+//      Given("a user logged in through Government Gateway")
+//      val saUtr = "12345"
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+//
+//
+//      And("the user has no enrolments")
+//      stubNoEnrolments()
+//
+//      And("affinity group is not available")
+//      stubUserDetailsToReturn500()
+//
+//      val auditEventStub = stubAuditEvent()
+//
+//      When("the user hits the router")
+//      go(RouterRootPath)
+//
+//      Then("an audit event should be sent")
+//      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+//
+//      And("the audit event raised should be the expected one")
+//      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+//        IS_A_VERIFY_USER.key -> "false",
+//        IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
+//        GG_ENROLMENTS_AVAILABLE.key -> "true",
+//        HAS_BUSINESS_ENROLMENTS.key -> "false",
+//        HAS_ANY_INACTIVE_ENROLMENT.key -> "false",
+//        AFFINITY_GROUP_AVAILABLE.key -> "false",
+//        HAS_ENROLMENTS(Set(SA)).key -> "false"
+//        ))
+//      val expectedTransactionName = "sent to business tax account"
+//      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-affinity-group-unavailable")
+//    }
   }
 
   def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
