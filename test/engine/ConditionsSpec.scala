@@ -24,8 +24,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
-import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -36,8 +35,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
-    "self-assessment-enrolments" -> "enr3",
-    "vat-enrolments" -> "enr4,enr5"
+    "self-assessment-enrolments" -> "enr3"
   )
 
   override lazy val fakeApplication: FakeApplication = FakeApplication(additionalConfiguration = configuration)
@@ -77,14 +75,14 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasEnrolments" should {
 
     "have an audit type specified" in {
-      HasEnrolments(SA, VAT).auditType.get.key shouldBe "has-self-assessment-enrolments-vat-enrolments"
+      HasEnrolments(SA).auditType.get.key shouldBe "has-self-assessment-enrolments"
     }
 
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("return false when user does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
-        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
+        ("return false when user does not have at least one enrolment from each enrolment type", Set("enr1"), false),
+        ("return true when user has at least one enrolment of each enrolment type", Set("enr3", "enr4"), true),
         ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
       )
 
@@ -96,7 +94,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
-        val result = await(HasEnrolments(SA, VAT).isTrue(ruleContext))
+        val result = await(HasEnrolments(SA).isTrue(ruleContext))
 
         result shouldBe expectedResult
       }
@@ -294,74 +292,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasSaUtr" should {
-
-    "have an audit type specified" in {
-      HasSaUtr.auditType shouldBe Some(HAS_SA_UTR)
-    }
-
-    val scenarios =
-      Table(
-        ("scenario", "saUtrPresent", "expectedResult"),
-        ("user has a SAUTR", true, true),
-        ("user has no SAUTR", false, false)
-      )
-
-    forAll(scenarios) { (scenario: String, saUtrPresent: Boolean, expectedResult: Boolean) =>
-
-      s"be true whether the user has SAUTR - scenario: $scenario" in {
-        val ruleContext = mock[RuleContext]
-        val authMock = mock[UserAuthority]
-        when(ruleContext.authority).thenReturn(Future.successful(authMock))
-        val saUtr = if (saUtrPresent) Some(SaUtr("saUtr")) else None
-        when(authMock.saUtr).thenReturn(Future.successful(saUtr))
-
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        val result = await(HasSaUtr.isTrue(ruleContext))
-        result shouldBe expectedResult
-
-        verify(ruleContext).authority
-        verifyNoMoreInteractions(ruleContext)
-      }
-    }
-  }
-
-  "HasStrongCredentials" should {
-
-    "have an audit type specified" in {
-      HasStrongCredentials.auditType shouldBe Some(HAS_STRONG_CREDENTIALS)
-    }
-
-    val scenarios =
-      Table(
-        ("scenario", "credentialStrength", "expected"),
-        ("return false when credential strength None", CredentialStrength.None, false),
-        ("return false when credential strength Weak", CredentialStrength.Weak, false),
-        ("return true when credential strength Strong", CredentialStrength.Strong, true)
-      )
-
-    forAll(scenarios) { (scenario: String, credentialStrength: CredentialStrength, expected: Boolean) =>
-
-      scenario in {
-        val authMock = mock[UserAuthority]
-        val ruleContext = mock[RuleContext]
-        when(ruleContext.authority).thenReturn(Future.successful(authMock))
-        when(authMock.credentialStrength).thenReturn(Future.successful(credentialStrength))
-
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        val result = await(HasStrongCredentials.isTrue(ruleContext))
-        result shouldBe expected
-
-        verify(ruleContext).authority
-        verifyNoMoreInteractions(ruleContext)
-      }
-    }
-  }
-
   "GGEnrolmentsAvailable" should {
 
     "have an audit type specified" in {
@@ -544,32 +474,4 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasOnlyEnrolmentsCondition" should {
-    "have an audit type specified" in {
-      HasOnlyEnrolments(SA, VAT).auditType.get.key shouldBe "has-only-self-assessment-enrolments-vat-enrolments"
-    }
-
-    val scenarios =
-      Table(
-        ("scenario", "enrolments", "expectedResult"),
-        ("return false when user has does not have atleast one enrolment from each enrolment type", Set("enr3"), false),
-        ("return false when user has extra enrolments other than enrolment type", Set("enr3", "enr4", "enr99"), false),
-        ("return true when user has atleast one enrolment of each enrolment type", Set("enr3", "enr4"), true),
-        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
-      )
-
-    forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
-      scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        lazy val ruleContext = mock[RuleContext]
-        when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
-
-        val result = await(HasOnlyEnrolments(SA, VAT).isTrue(ruleContext))
-
-        result shouldBe expectedResult
-      }
-    }
-  }
 }

@@ -3,9 +3,8 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import connector.AffinityGroupValue
-import connector.AffinityGroupValue.INDIVIDUAL
 import model.RoutingReason._
-import model.{AuditContext, SA, VAT}
+import model.{AuditContext, SA}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
@@ -249,8 +248,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
         HAS_PREVIOUS_RETURNS.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_ENROLMENTS(Set(SA)).key -> "true",
-        HAS_NINO.key -> "false",
-        HAS_SA_UTR.key -> "-"
+        HAS_NINO.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino")

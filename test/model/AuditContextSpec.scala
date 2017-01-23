@@ -16,7 +16,6 @@
 
 package model
 
-import helpers.SpecHelpers
 import model.RoutingReason._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
 import org.scalatest.mock.MockitoSugar
@@ -35,7 +34,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSugar{
+class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSugar {
 
   val fixedDateTime = DateTime.now(DateTimeZone.UTC)
 
@@ -63,8 +62,6 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-in-a-partnership" -> "-",
         "is-self-employed" -> "-",
         "has-nino" -> "-",
-        "has-sa-utr" -> "-",
-        "has-strong-credentials" -> "-",
         "has-individual-affinity-group" -> "-",
         "has-any-inactive-enrolment" -> "-",
         "affinity-group-available" -> "-"
@@ -85,11 +82,8 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
       auditContext.setRoutingReason(HAS_PREVIOUS_RETURNS, result = true)
       auditContext.setRoutingReason(IS_IN_A_PARTNERSHIP, result = true)
       auditContext.setRoutingReason(IS_SELF_EMPLOYED, result = true)
-      auditContext.setRoutingReason(HAS_ENROLMENTS(Set(SA, VAT)), result = true)
+      auditContext.setRoutingReason(HAS_ENROLMENTS(Set(SA)), result = true)
       auditContext.setRoutingReason(HAS_NINO, result = true)
-      auditContext.setRoutingReason(HAS_SA_UTR, result = true)
-      auditContext.setRoutingReason(HAS_STRONG_CREDENTIALS, result = true)
-      auditContext.setRoutingReason(HAS_ONLY_ENROLMENTS(Set(SA, VAT)), result = true)
       auditContext.setRoutingReason(HAS_INDIVIDUAL_AFFINITY_GROUP, result = true)
       auditContext.setRoutingReason(HAS_ANY_INACTIVE_ENROLMENT, result = true)
       auditContext.setRoutingReason(AFFINITY_GROUP_AVAILABLE, result = true)
@@ -112,13 +106,10 @@ class AuditContextSpec extends UnitSpec with WithFakeApplication with MockitoSug
         "is-in-a-partnership" -> "true",
         "is-self-employed" -> "true",
         "has-nino" -> "true",
-        "has-sa-utr" -> "true",
-        "has-strong-credentials" -> "true",
         "has-individual-affinity-group" -> "true",
         "has-any-inactive-enrolment" -> "true",
         "affinity-group-available" -> "true",
-        "has-self-assessment-enrolments-vat-enrolments" -> "true",
-        "has-only-self-assessment-enrolments-vat-enrolments" -> "true"
+        "has-self-assessment-enrolments" -> "true"
       )
 
       val throttlingMap: Map[String, String] = Map()
