@@ -72,29 +72,28 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     }
   }
 
-  "HasEnrolments" should {
+  "HasSaEnrolments" should {
 
     "have an audit type specified" in {
-      HasEnrolments(SA).auditType.get.key shouldBe "has-self-assessment-enrolments"
+      HasSaEnrolments.auditType.get.key shouldBe "has-self-assessment-enrolments"
     }
 
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("return false when user does not have at least one enrolment from each enrolment type", Set("enr1"), false),
-        ("return true when user has at least one enrolment of each enrolment type", Set("enr3", "enr4"), true),
-        ("return true when user has more than one enrolment of each enrolment type", Set("enr3", "enr4", "enr5"), true)
+        ("user does not have SA enrolments", Set("enr1"), false),
+        ("user has SA enrolments", Set("enr3", "enr4"), true)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
-      scenario in {
+      s"return $expectedResult when $scenario" in {
         implicit val fakeRequest = FakeRequest()
         implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
-        val result = await(HasEnrolments(SA).isTrue(ruleContext))
+        val result = await(HasSaEnrolments.isTrue(ruleContext))
 
         result shouldBe expectedResult
       }

@@ -49,7 +49,7 @@ object RoutingReason {
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
   val HAS_ANY_INACTIVE_ENROLMENT = Reason("has-any-inactive-enrolment")
   val AFFINITY_GROUP_AVAILABLE = Reason("affinity-group-available")
-  def HAS_ENROLMENTS(enrolmentCategories : Set[EnrolmentCategory]) = Reason(s"""has-${enrolmentCategories.map(_.enrolmentCategoryName).mkString("-")}""")
+  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
 
   val allReasons = List(
     IS_A_VERIFY_USER,
@@ -63,7 +63,8 @@ object RoutingReason {
     HAS_NINO,
     HAS_INDIVIDUAL_AFFINITY_GROUP,
     HAS_ANY_INACTIVE_ENROLMENT,
-    AFFINITY_GROUP_AVAILABLE
+    AFFINITY_GROUP_AVAILABLE,
+    HAS_SA_ENROLMENTS
   )
 }
 

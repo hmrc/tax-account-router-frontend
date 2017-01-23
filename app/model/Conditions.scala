@@ -61,32 +61,17 @@ object SAReturnAvailable extends Condition {
   override val auditType = Some(SA_RETURN_AVAILABLE)
 }
 
-sealed trait EnrolmentCategory {
-  def enrolmentCategoryName: String
+trait HasSaEnrolments extends Condition {
+  def saEnrolments: Set[String]
 
-  def enrolments: Set[String]
-}
-
-trait EnrolmentCategoryFromConf extends EnrolmentCategory {
-  def enrolments = Play.configuration.getString(enrolmentCategoryName).map(_.split(",").toSet[String].map(_.trim)).getOrElse(Set.empty[String])
-}
-
-case class ConfiguredEnrolmentCategory(enrolmentCategoryName: String) extends EnrolmentCategoryFromConf
-
-object SA extends ConfiguredEnrolmentCategory("self-assessment-enrolments")
-
-case class HasEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends Condition {
-
-  override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories))
+  override val auditType = Some(HAS_SA_ENROLMENTS)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolmentKeys.map { userEnrolments =>
-      enrolmentCategories.forall(_.enrolments.intersect(userEnrolments).nonEmpty)
-    }
+    ruleContext.activeEnrolmentKeys.map(_.intersect(saEnrolments).nonEmpty)
 }
 
-object HasEnrolments {
-  def apply(enrolmentCategories: EnrolmentCategory*): HasEnrolments = HasEnrolments(enrolmentCategories.toSet)
+object HasSaEnrolments extends HasSaEnrolments {
+  override lazy val saEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }
 
 object HasPreviousReturns extends Condition {
