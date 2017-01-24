@@ -2,9 +2,8 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
-import connector.AffinityGroupValue._
+import model.AuditContext
 import model.RoutingReason._
-import model.{AuditContext, SA}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
@@ -57,9 +56,8 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
-        HAS_ENROLMENTS(Set(SA)).key -> "true",
-        SA_RETURN_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        HAS_SA_ENROLMENTS.key -> "true",
+        SA_RETURN_AVAILABLE.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       eventually {
@@ -89,8 +87,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
-        GG_ENROLMENTS_AVAILABLE.key -> "false",
-        HAS_REGISTERED_FOR_2SV.key -> "true"
+        GG_ENROLMENTS_AVAILABLE.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-gg-unavailable")

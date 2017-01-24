@@ -10,12 +10,6 @@ import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
 
-  override lazy val app = FakeApplication(
-    additionalConfiguration = config +
-      ("two-step-verification.user-segment.sa.throttle.default" -> "1000") +
-      ("two-step-verification.uplift-locations" -> "two-step-verification-mandatory")
-  )
-
   feature("Router analytics feature") {
 
     scenario("send analytics details for mandatory 2sv registration journey") {
@@ -34,19 +28,18 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      createStubs(TwoSVMandatoryRegistrationStubPage)
+      createStubs(BtaHomeStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
 
-      Then("the user should be routed to 2SV Mandatory Registration Page with continue to BTA")
-      on(TwoSVMandatoryRegistrationPage)
+      Then("the user should be routed to BTA home page")
+      on(BtaHomePage)
 
       And("analytic details were sent to google")
       verifyAnalytics(
         AnalyticsData("GA1.4.405633776.1470748420", List(
-          GaEvent("routing", "two-step-verification", "bta-home-page-for-user-with-no-previous-return", Nil),
-          GaEvent("sos_b2sv_registration_route", "rule_sa", "mandatory", Nil)
+          GaEvent("routing", "business-tax-account", "bta-home-page-for-user-with-no-previous-return", Nil)
         ))
       )
     }

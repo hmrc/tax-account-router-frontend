@@ -33,17 +33,10 @@ trait AnalyticsEventSender {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 
-    val biz2svRegistrationLabel = if (auditContext.isSentToMandatory2SVRegister) "mandatory" else "optional"
-
-    val biz2svRegistrationEvent = auditContext.twoStepVerificationRuleApplied.fold(List[GaEvent]()) { ruleName =>
-      List(GaEvent(b2svRegistrationCategory, s"rule_$ruleName", biz2svRegistrationLabel, Nil))
-    }
-
     gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
       clientId =>
         val routingEvent = List(GaEvent(routingCategory, locationName, auditContext.ruleApplied, Nil))
-        val allEvents = routingEvent ++ biz2svRegistrationEvent
-        analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, allEvents))
+        analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
     }
   }
 }

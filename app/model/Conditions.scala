@@ -22,7 +22,6 @@ import model.RoutingReason._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
@@ -62,52 +61,17 @@ object SAReturnAvailable extends Condition {
   override val auditType = Some(SA_RETURN_AVAILABLE)
 }
 
-sealed trait EnrolmentCategory {
-  def enrolmentCategoryName: String
+trait HasSaEnrolments extends Condition {
+  def saEnrolments: Set[String]
 
-  def enrolments: Set[String]
-}
-
-trait EnrolmentCategoryFromConf extends EnrolmentCategory {
-  def enrolments = Play.configuration.getString(enrolmentCategoryName).map(_.split(",").toSet[String].map(_.trim)).getOrElse(Set.empty[String])
-}
-
-case class ConfiguredEnrolmentCategory(enrolmentCategoryName: String) extends EnrolmentCategoryFromConf
-
-object SA extends ConfiguredEnrolmentCategory("self-assessment-enrolments")
-
-object VAT extends ConfiguredEnrolmentCategory("vat-enrolments")
-
-trait HasEnrolmentsCondition extends Condition {
-
-  protected def verifyExtraEnrolments: Boolean
-
-  def enrolmentCategories: Set[EnrolmentCategory]
-
-  private def validateAllEnrolmentCategoriesExist(enrolments: Set[String]) = enrolmentCategories.forall(_.enrolments.intersect(enrolments).nonEmpty)
-
-  private def validateExtraEnrolments(enrolments: Set[String]) = !verifyExtraEnrolments || (verifyExtraEnrolments && enrolments.diff(enrolmentCategories.flatMap(_.enrolments)).isEmpty)
+  override val auditType = Some(HAS_SA_ENROLMENTS)
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.activeEnrolmentKeys.map(userEnrolments => validateAllEnrolmentCategoriesExist(userEnrolments) && validateExtraEnrolments(userEnrolments))
+    ruleContext.activeEnrolmentKeys.map(_.intersect(saEnrolments).nonEmpty)
 }
 
-case class HasOnlyEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
-  protected override val verifyExtraEnrolments = true
-  override val auditType = Some(HAS_ONLY_ENROLMENTS(enrolmentCategories))
-}
-
-case class HasEnrolments(enrolmentCategories: Set[EnrolmentCategory]) extends HasEnrolmentsCondition {
-  protected override val verifyExtraEnrolments = false
-  override val auditType = Some(HAS_ENROLMENTS(enrolmentCategories))
-}
-
-object HasOnlyEnrolments {
-  def apply(enrolmentCategories: EnrolmentCategory*): HasOnlyEnrolments = HasOnlyEnrolments(enrolmentCategories.toSet)
-}
-
-object HasEnrolments {
-  def apply(enrolmentCategories: EnrolmentCategory*): HasEnrolments = HasEnrolments(enrolmentCategories.toSet)
+object HasSaEnrolments extends HasSaEnrolments {
+  override lazy val saEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }
 
 object HasPreviousReturns extends Condition {
@@ -159,27 +123,6 @@ object AnyOtherRuleApplied extends Condition {
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future.successful(true)
 }
 
-object HasSaUtr extends Condition {
-  override val auditType = Some(HAS_SA_UTR)
-
-  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.authority.map(_.saUtr.isDefined)
-}
-
-object HasRegisteredFor2SV extends Condition {
-  override val auditType = Some(HAS_REGISTERED_FOR_2SV)
-
-  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.authority.map(_.twoFactorAuthOtpId.isDefined)
-}
-
-object HasStrongCredentials extends Condition {
-  override val auditType = Some(HAS_STRONG_CREDENTIALS)
-
-  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
-    ruleContext.authority.map(_.credentialStrength == CredentialStrength.Strong)
-}
-
 object HasIndividualAffinityGroup extends Condition {
 
   override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) =
@@ -187,7 +130,6 @@ object HasIndividualAffinityGroup extends Condition {
 
   override val auditType = Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
 }
-
 
 object HasAnyInactiveEnrolment extends Condition {
 

@@ -46,14 +46,10 @@ object RoutingReason {
   val IS_IN_A_PARTNERSHIP = Reason("is-in-a-partnership")
   val IS_SELF_EMPLOYED = Reason("is-self-employed")
   val HAS_NINO = Reason("has-nino")
-  val HAS_SA_UTR = Reason("has-sa-utr")
-  val HAS_REGISTERED_FOR_2SV = Reason("has-registered-for-2sv")
-  val HAS_STRONG_CREDENTIALS = Reason("has-strong-credentials")
   val HAS_INDIVIDUAL_AFFINITY_GROUP = Reason("has-individual-affinity-group")
   val HAS_ANY_INACTIVE_ENROLMENT = Reason("has-any-inactive-enrolment")
   val AFFINITY_GROUP_AVAILABLE = Reason("affinity-group-available")
-  def HAS_ENROLMENTS(enrolmentCategories : Set[EnrolmentCategory]) = Reason(s"""has-${enrolmentCategories.map(_.enrolmentCategoryName).mkString("-")}""")
-  def HAS_ONLY_ENROLMENTS(enrolmentCategories : Set[EnrolmentCategory]) = Reason(s"""has-only-${enrolmentCategories.map(_.enrolmentCategoryName).mkString("-")}""")
+  val HAS_SA_ENROLMENTS = Reason("has-self-assessment-enrolments")
 
   val allReasons = List(
     IS_A_VERIFY_USER,
@@ -65,12 +61,10 @@ object RoutingReason {
     IS_IN_A_PARTNERSHIP,
     IS_SELF_EMPLOYED,
     HAS_NINO,
-    HAS_SA_UTR,
-    HAS_REGISTERED_FOR_2SV,
-    HAS_STRONG_CREDENTIALS,
     HAS_INDIVIDUAL_AFFINITY_GROUP,
     HAS_ANY_INACTIVE_ENROLMENT,
-    AFFINITY_GROUP_AVAILABLE
+    AFFINITY_GROUP_AVAILABLE,
+    HAS_SA_ENROLMENTS
   )
 }
 
@@ -81,25 +75,10 @@ object AuditContext {
   def defaultRoutingReasons = mutableMap(allReasons.map(reason => reason.key -> "-"): _*)
 }
 
-case class TwoStepVerificationContext(ruleApplied: String, mandatory: Boolean)
-
 trait TAuditContext {
 
   private val routingReasons: mutableMap[String, String] = defaultRoutingReasons
   private val throttlingDetails: mutableMap[String, String] = mutableMap.empty
-  private var twoStepVerificationContext: Option[TwoStepVerificationContext] = None
-
-  def setSentToOptional2SVRegister(rule: String) = this.twoStepVerificationContext = Some(TwoStepVerificationContext(rule, false))
-
-  def setSentToMandatory2SVRegister(rule: String) = this.twoStepVerificationContext = Some(TwoStepVerificationContext(rule, true))
-
-  def isSentToOptional2SVRegister = this.twoStepVerificationContext.exists(!_.mandatory)
-
-  def isSentToMandatory2SVRegister = this.twoStepVerificationContext.exists(_.mandatory)
-
-  def twoStepVerificationRuleApplied = twoStepVerificationContext.map(_.ruleApplied)
-
-  def isSentTo2SVRegister = twoStepVerificationContext.isDefined
 
   private lazy val transactionNames = Map(
     Locations.PersonalTaxAccount -> "sent to personal tax account",
