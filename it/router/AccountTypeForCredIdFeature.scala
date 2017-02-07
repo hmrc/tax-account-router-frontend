@@ -3,15 +3,12 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
 import controllers.internal.{AccountType, AccountTypeResponse}
-import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
 class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
-
-  override lazy val app = FakeApplication(additionalConfiguration = config)
 
   val credId = "cred-id-for-the-user"
   val saUtr = "12345"
