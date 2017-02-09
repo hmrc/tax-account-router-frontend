@@ -7,7 +7,6 @@ import connector.AffinityGroupValue.INDIVIDUAL
 import model.AuditContext
 import model.RoutingReason._
 import play.api.libs.json.{JsValue, Json}
-import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
@@ -17,8 +16,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
-
-  override lazy val app = FakeApplication(additionalConfiguration = config)
 
   feature("Router audit feature") {
 
