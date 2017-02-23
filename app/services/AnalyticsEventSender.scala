@@ -17,7 +17,7 @@
 package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
-import model.TAuditContext
+import engine.AuditInfo
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -29,13 +29,13 @@ trait AnalyticsEventSender {
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  def sendEvents(locationName: String, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
+  def sendEvents(locationName: String, auditInfo: AuditInfo)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 
     gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
       clientId =>
-        val routingEvent = List(GaEvent(routingCategory, locationName, auditContext.ruleApplied, Nil))
+        val routingEvent = List(GaEvent(routingCategory, locationName, auditInfo.ruleApplied.getOrElse(""), Nil))
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
     }
   }

@@ -17,13 +17,20 @@
 package model
 
 import connector._
-import play.api.{Logger, LoggerLike}
+import play.api.mvc.{AnyContent, Request}
+import play.api.{Logger, LoggerLike, Play}
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
 import scala.concurrent.Future
 
-case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
+case class RuleContext(credId: Option[String])(implicit request: Request[AnyContent], hc: HeaderCarrier) {
+
+  import play.api.Play.current
+
+  val request_ = request
+  val hc_ = hc
+
   val logger: LoggerLike = Logger
 
   val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
@@ -71,4 +78,6 @@ case class RuleContext(credId: Option[String])(implicit hc: HeaderCarrier) {
 
   lazy val isAdmin = userDetails.map(_.isAdmin)
 
+  val businessEnrolments = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+  val saEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }

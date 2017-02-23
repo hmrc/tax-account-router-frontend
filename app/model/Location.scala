@@ -16,57 +16,51 @@
 
 package model
 
-import java.net.{URI, URLEncoder}
-
+import model.TLocation.LocationBuilder
 import play.api.Configuration
 
-case class Location(name: String, url: String, queryParams: Map[String, String] = Map.empty[String, String]) {
+case class Location(name: String, url: String)
 
-  lazy val fullUrl = {
-    def encode(value: String) = URLEncoder.encode(value, "utf-8")
+object TLocation {
 
-    def urlWithQueryParams =
-      if (queryParams.isEmpty) url
-      else {
-        val encoded = for {
-          (key, value) <- queryParams
-        } yield s"${encode(key)}=${encode(value)}"
+  import cats.instances.all._
+  import cats.syntax.flatMap._
+  import cats.syntax.functor._
 
-        s"$url?${encoded.mkString("&")}"
-      }
+  type LocationBuilder = (Configuration) => Either[String, Location]
 
-    URI.create(urlWithQueryParams).toString
+  def apply(locationName: String): LocationBuilder = {
+
+    def getString(key: String): (Configuration) => Either[String, String] = conf =>
+      conf.getString(s"locations.$locationName.$key")
+        .map(Right(_))
+        .getOrElse(Left(s"key '$key' not configured for location '$locationName'"))
+
+    for {
+      name <- getString("name")
+      url <- getString("url")
+    } yield for {
+      n <- name.right
+      u <- url.right
+    } yield Location(n, u)
   }
 }
 
-trait Locations {
-
-  def locationFromConf(location: String)(implicit app : play.api.Application) = app.configuration.getConfig(s"locations.$location").map { conf =>
-    val name = getStringConfig(conf, "name")(s"name not configured for location - $location")
-    val url = getStringConfig(conf, "url")(s"url not configured for location - $location")
-    val queryParams = conf.getConfig("queryparams").map { queryParamsConf =>
-      queryParamsConf.entrySet.foldLeft(Map.empty[String, String]) {
-        case (result, (key, value)) => result ++ Map(key -> value.unwrapped().asInstanceOf[String])
-      }
-    }.getOrElse(Map.empty[String, String])
-    Location(name, url, queryParams)
-  }.getOrElse(throw new RuntimeException(s"location configuration not defined for $location"))
-
-  private def getStringConfig[T](configuration: Configuration, key: String)(errorMessage: => String) = configuration.getString(key).getOrElse(throw new RuntimeException(errorMessage))
-}
-
-object Locations extends Locations {
+object Locations {
 
   import play.api.Play._
 
-  lazy val PersonalTaxAccount = locationFromConf("pta")
-  lazy val BusinessTaxAccount = locationFromConf("bta")
-  lazy val TaxAccountRouterHome = locationFromConf("tax-account-router")
+  def buildLocation(locationBuilder: LocationBuilder): Location =
+    locationBuilder(configuration).fold[Location](
+      error => throw new RuntimeException(error),
+      identity
+    )
 
-  def twoStepVerificationRequired(queryString: Map[String, String]) = locationFromConf("two-step-verification-required").copy(queryParams = queryString)
+  val PersonalTaxAccount = buildLocation(TLocation("pta"))
+  val BusinessTaxAccount = buildLocation(TLocation("bta"))
+  val TaxAccountRouterHome = buildLocation(TLocation("tax-account-router"))
 
-  lazy val all = List(PersonalTaxAccount, BusinessTaxAccount)
+  val all = List(PersonalTaxAccount, BusinessTaxAccount, TaxAccountRouterHome)
 
-  def find(name: String) = all.find(_.name == name)
-
+  def find(name: String): Option[Location] = all.find { case Location(n, _) => n == name }
 }

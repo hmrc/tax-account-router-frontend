@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.play.http.HeaderCarrier
+import engine._
 
 import scala.concurrent.Future
 
@@ -38,11 +39,9 @@ object RouterController extends RouterController {
 
   override val ruleEngine = TarRules
 
-  override val throttlingService = ThrottlingService
+  override val throttlingService = Throttling
 
   override val auditConnector = FrontendAuditConnector
-
-  override def createAuditContext() = AuditContext()
 
   override val analyticsEventSender = AnalyticsEventSender
 }
@@ -53,11 +52,9 @@ trait RouterController extends FrontendController with Actions {
 
   def ruleEngine: RuleEngine
 
-  def throttlingService: ThrottlingService
+  def throttlingService: Throttling
 
   def auditConnector: AuditConnector
-
-  def createAuditContext(): TAuditContext
 
   def analyticsEventSender: AnalyticsEventSender
 
@@ -65,25 +62,29 @@ trait RouterController extends FrontendController with Actions {
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
     val ruleContext = RuleContext(None)
-    val auditContext = createAuditContext()
-    getFinalDestination(ruleContext, auditContext).map(location => Redirect(location.fullUrl))
-  }
 
-  private def getFinalDestination(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], authContext: AuthContext) = for {
-    destinationAfterRulesApplied <- ruleEngine.matchRulesForLocation(ruleContext, auditContext)
-    finalDestination <- throttlingService.throttle(destinationAfterRulesApplied, auditContext, ruleContext)
-  } yield {
-    sendAuditEvent(auditContext, finalDestination)
-    metricsMonitoringService.sendMonitoringEvents(auditContext, finalDestination)
-    Logger.debug(s"routing to: ${finalDestination.name}")
-    analyticsEventSender.sendEvents(finalDestination.name, auditContext)
-    finalDestination
-  }
-
-  private def sendAuditEvent(auditContext: TAuditContext, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
-    auditContext.toAuditEvent(throttledLocation).foreach { auditEvent =>
+    def sendAuditEvent(auditInfo: AuditInfo, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
+      val auditEvent = auditInfo.toAuditEvent(throttledLocation)
       auditConnector.sendEvent(auditEvent)
       Logger.debug(s"Routing decision summary: ${auditEvent.detail \ "reasons"}")
     }
+
+    val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
+    val finalResult = throttlingService.doThrottle(destinationAfterRulesApplied, ruleContext).run
+    val futureAuditInfo = finalResult map { case (auditInfo, _) => auditInfo }
+    val futureFinalDestination = finalResult map { case (_, finalDestination) => finalDestination }
+
+    val destination = for {
+      finalDestination <- futureFinalDestination
+      auditInfo <- futureAuditInfo
+    } yield {
+      sendAuditEvent(auditInfo, finalDestination)
+      metricsMonitoringService.sendMonitoringEvents(auditInfo, finalDestination)
+      Logger.debug(s"routing to: ${finalDestination.name}")
+      analyticsEventSender.sendEvents(finalDestination.name, auditInfo)
+      finalDestination
+    }
+
+    destination.map(location => Redirect(location.url))
   }
 }

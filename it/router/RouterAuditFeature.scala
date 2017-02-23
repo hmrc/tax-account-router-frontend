@@ -5,8 +5,8 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import connector.AffinityGroupValue
 import connector.AffinityGroupValue.INDIVIDUAL
-import model.AuditContext
-import model.RoutingReason._
+import engine.AuditInfo
+import engine.RoutingReason._
 import play.api.libs.json.{JsValue, Json}
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
@@ -14,9 +14,10 @@ import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
+
+  val emptyRoutingReasons = AuditInfo.emptyReasons.map { case (k, _) => k.key -> "-" }
 
   feature("Router audit feature") {
 
@@ -35,9 +36,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
-        IS_A_VERIFY_USER.key -> "true"
-        ))
+      val expectedReasons = toJson(emptyRoutingReasons + (IS_A_VERIFY_USER.key -> "true"))
       val expectedTransactionName = "sent to personal tax account"
       verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user")
     }
@@ -60,7 +59,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -93,7 +92,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -129,7 +128,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -167,7 +166,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         IS_A_VERIFY_USER.key -> "false",
@@ -205,7 +204,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
@@ -244,7 +243,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       Then("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         SA_RETURN_AVAILABLE.key -> "true",
         IS_A_VERIFY_USER.key -> "false",
@@ -283,7 +282,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       Then("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -323,7 +322,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -356,7 +355,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -388,7 +387,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -420,7 +419,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -453,7 +452,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -491,7 +490,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons += (
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -505,7 +504,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
     }
   }
 
-  def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
+  def toJson(map: Map[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList

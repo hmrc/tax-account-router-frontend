@@ -18,7 +18,8 @@ package services
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import model.{Location, TAuditContext}
+import engine.AuditInfo
+import model.Location
 import play.api.Play
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -34,22 +35,22 @@ trait MetricsMonitoringService {
 
   val metricsRegistry: MetricRegistry
 
-  def sendMonitoringEvents(auditContext: TAuditContext, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  def sendMonitoringEvents(auditInfo: AuditInfo, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
     Future {
-      val destinationNameBeforeThrottling = auditContext.getThrottlingDetails.get("destination-name-before-throttling")
-      val destinationNameAfterThrottling = throttledLocation.name
-      val throttleKey = if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
+      val destinationNameBeforeThrottling: Option[String] = auditInfo.throttlingInfo.map(_.initialDestination.name)
+      val destinationNameAfterThrottling: String = throttledLocation.name
+      val throttleKey: String = if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
         s".throttled-from-${destinationNameBeforeThrottling.get}"
       } else ".not-throttled"
 
-      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${auditContext.ruleApplied}$throttleKey").mark()
+      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${auditInfo.ruleApplied}$throttleKey").mark()
 
-      val trueConditions = auditContext.getReasons.filter { case (k, v) => v == "true" }.keys
-      trueConditions.foreach(metricsRegistry.meter(_).mark())
+      val trueConditions = auditInfo.routingReasons.filter { case (_, Some(v)) => v }.keys
+      trueConditions.foreach(reason => metricsRegistry.meter(reason.key).mark())
 
-      val falseConditions = auditContext.getReasons.filter { case (k, v) => v == "false" }.keys
-      falseConditions.foreach(key => metricsRegistry.meter(s"not-$key").mark())
+      val falseConditions = auditInfo.routingReasons.filter { case (_, Some(v)) => !v }.keys
+      falseConditions.foreach(reason => metricsRegistry.meter(s"not-${reason.key}").mark())
     }
   }
 

@@ -16,35 +16,31 @@
 
 package engine
 
+import cats.data.WriterT
 import model.{Location, _}
-import play.api.Logger
-import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait RuleEngine {
 
-  val rules: List[Rule]
+  def rules: List[Rule[RuleContext]]
 
-  val defaultLocation: Location
+  def defaultLocation: Location
 
-  def matchRulesForLocation(ruleContext: RuleContext, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Location] = {
-    rules.foldLeft(Future[Option[Location]](None)) {
-      (location, rule) => location.flatMap(candidateLocation => if (candidateLocation.isDefined) location
-      else {
-        val ruleApplyResult: Future[Option[Location]] = rule.apply(ruleContext, auditContext)
-        ruleApplyResult.map {
-          case Some(location) =>
-            auditContext.ruleApplied = rule.name
-            Logger.debug(s"rule applied: ${rule.name}")
-            Some(location)
-          case _ =>
-            Logger.debug(s"rule evaluated but not applied: ${rule.name}")
-            None
-        }
-      })
-    }.map(nextLocation => nextLocation.getOrElse(defaultLocation))
+  def defaultRuleName: String
+
+  def getLocation(ruleContext: RuleContext): WriterT[Future, AuditInfo, Location] = {
+    rules.foldLeft(emptyRuleResult) { (result, rule) =>
+      result.flatMap {
+        case r0@Some(_) => WriterT(result.written.map(l => (l, r0)))
+        case _ => rule.evaluate(ruleContext)
+      }
+    } mapBoth { (auditInfo, location) =>
+      location match {
+        case Some(l) => (auditInfo, l)
+        case _ => (auditInfo.copy(ruleApplied = Some(defaultRuleName)), defaultLocation)
+      }
+    }
   }
 }

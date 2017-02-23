@@ -19,14 +19,13 @@ package controllers.internal
 import connector.{AffinityGroupValue, FrontendAuthConnector}
 import controllers.TarRules
 import controllers.internal.AccountType.AccountType
-import engine.RuleEngine
+import engine._
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.Action
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.play.http.HeaderCarrier
 import utils.EnumJson._
 
 import scala.concurrent.Future
@@ -52,11 +51,6 @@ object AccountTypeController extends AccountTypeController {
   override val ruleEngine = TarRules
 
   override val logger = Logger
-
-  override def createAuditContext() = AuditContext()
-
-  override def createRuleContext(credId: String)(implicit hc: HeaderCarrier): RuleContext = RuleContext(Some(credId))
-
 }
 
 trait AccountTypeController extends FrontendController with Actions {
@@ -66,20 +60,15 @@ trait AccountTypeController extends FrontendController with Actions {
 
   def ruleEngine: RuleEngine
 
-  def createAuditContext(): TAuditContext
-
-  def createRuleContext(credId: String)(implicit hc: HeaderCarrier): RuleContext
-
-  def accountTypeForCredId(credId: String): Action[AnyContent] = Action.async { implicit request =>
-    val ruleContext = createRuleContext(credId)
+  def accountTypeForCredId(credId: String) = Action.async { implicit request =>
+    val ruleContext = RuleContext(Some(credId))
 
     ruleContext.affinityGroup.flatMap {
       case AffinityGroupValue.AGENT =>
         Future.successful(Ok(Json.toJson(AccountTypeResponse(AccountType.Agent))))
       case _ =>
-        val auditContext = createAuditContext()
-        ruleEngine.matchRulesForLocation(ruleContext, auditContext) map { location =>
-          val accountType: AccountType = accountTypeBasedOnLocation(location)
+        ruleEngine.getLocation(ruleContext).value map { location =>
+          val accountType = accountTypeBasedOnLocation(location)
           Ok(Json.toJson(AccountTypeResponse(accountType)))
         }
     }.recover {
@@ -93,8 +82,7 @@ trait AccountTypeController extends FrontendController with Actions {
     case Locations.PersonalTaxAccount => AccountType.Individual
     case Locations.BusinessTaxAccount => AccountType.Organisation
     case unknownLocation: Location =>
-      logger.warn(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
+      logger.warn(s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.")
       defaultAccountType
   }
-
 }
