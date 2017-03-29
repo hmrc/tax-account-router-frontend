@@ -1,7 +1,8 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import model.AuditContext
 import model.RoutingReason._
 import play.api.libs.json.{JsValue, Json}
