@@ -1,7 +1,8 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import connector.AffinityGroupValue
 import connector.AffinityGroupValue.INDIVIDUAL
 import model.AuditContext

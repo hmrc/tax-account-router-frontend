@@ -22,13 +22,13 @@ import java.util.UUID
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import support.Env
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, CredentialStrength}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
@@ -76,7 +76,8 @@ class SessionUser(loggedInViaGateway: Boolean,
       SessionKeys.authToken -> "PGdhdGV3YXk6R2F0ZXdheVRva2VuIHhtbG5zOndzdD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNC8wNC90cnVzdCIgeG1sbnM6d3NhPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzAzL2FkZHJlc3NpbmciIHhtbG5zOndzc2U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS1zZWNleHQtMS4wLnhzZCIgeG1sbnM6d3N1PSJodHRwOi8vZG9jcy5vYXNpcy1vcGVuLm9yZy93c3MvMjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXdzc2VjdXJpdHktdXRpbGl0eS0xLjAueHNkIiB4bWxuczpzb2FwPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VudmVsb3BlLyI",
       SessionKeys.name -> "JOHN THE SAINSBURY",
       SessionKeys.affinityGroup -> affinityGroup,
-      SessionKeys.authProvider -> RouterAuthenticationProvider.id
+      SessionKeys.authProvider -> RouterAuthenticationProvider.id,
+      SessionKeys.lastRequestTimestamp -> DateTime.now(DateTimeZone.UTC).getMillis.toString
     ) ++ token
     data
   }
