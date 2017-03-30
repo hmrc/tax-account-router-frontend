@@ -145,13 +145,13 @@ trait CommonStubs {
   }
 
   def stubSaReturnWithNoPreviousReturns(saUtr: String) = {
-    stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
+    stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
       .willReturn(aResponse()
         .withStatus(404)))
   }
 
   def stubSaReturnToReturn500(saUtr: String) = {
-    stubFor(get(urlMatching(s"/sa/individual/$saUtr/last-return"))
+    stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
       .willReturn(aResponse()
         .withStatus(500)
         .withBody(
@@ -206,4 +206,12 @@ trait CommonStubs {
             """.stripMargin)
       ))
   }
+
+  def stubBusinessAccount() = stubFor(get(urlMatching("/business-account.*")).willReturn(
+    aResponse().withStatus(200)
+  ))
+
+  def stubPersonalAccount() = stubFor(get(urlMatching("/personal-account.*")).willReturn(
+    aResponse().withStatus(200)
+  ))
 }

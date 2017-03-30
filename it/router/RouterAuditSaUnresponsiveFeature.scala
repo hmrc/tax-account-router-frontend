@@ -42,6 +42,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -75,6 +76,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       stubEnrolmentsToReturnAfter2Seconds()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)

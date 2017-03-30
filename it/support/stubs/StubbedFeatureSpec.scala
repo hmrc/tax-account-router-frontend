@@ -18,6 +18,7 @@ package support.stubs
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
@@ -62,6 +63,16 @@ trait StubbedFeatureSpec
   override def beforeEach() = {
     Env.driver.manage().deleteAllCookies()
     WireMock.reset()
+    stubAudit()
+    stubPlatformAnalytics()
   }
+
+  private def stubAudit() = stubFor(post(urlMatching("/write/audit.*")).willReturn(
+    aResponse().withStatus(200)
+  ))
+
+  private def stubPlatformAnalytics() = stubFor(post(urlMatching("/platform-analytics/event.*")).willReturn(
+    aResponse().withStatus(200)
+  ))
 
 }

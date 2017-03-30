@@ -26,6 +26,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       SessionUser(loggedInViaGateway = false).stubLoggedIn()
 
       val auditEventStub = stubAuditEvent()
+      stubPersonalAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -50,6 +51,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubBusinessEnrolments()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -82,6 +84,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -117,6 +120,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -154,6 +158,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -191,6 +196,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -229,6 +235,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true)
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -267,6 +274,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturn(saUtr, previousReturns = true)
 
       val auditEventStub = stubAuditEvent()
+      stubPersonalAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -306,6 +314,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -338,6 +347,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSelfAssessmentEnrolments()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -369,6 +379,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubSelfAssessmentEnrolments()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -400,6 +411,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubMoreThanOneSAEnrolment()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -432,6 +444,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetails(affinityGroup = Some(INDIVIDUAL))
 
       val auditEventStub = stubAuditEvent()
+      stubPersonalAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
@@ -462,7 +475,6 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
 
-
       And("the user has no enrolments")
       stubNoEnrolments()
 
@@ -470,6 +482,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs {
       stubUserDetailsToReturn500()
 
       val auditEventStub = stubAuditEvent()
+      stubBusinessAccount()
 
       When("the user hits the router")
       go(RouterRootPath)
