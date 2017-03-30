@@ -22,13 +22,13 @@ import java.util.UUID
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connector.AffinityGroupValue
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import support.Env
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, CredentialStrength}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
@@ -77,7 +77,7 @@ class SessionUser(loggedInViaGateway: Boolean,
       SessionKeys.name -> "JOHN THE SAINSBURY",
       SessionKeys.affinityGroup -> affinityGroup,
       SessionKeys.authProvider -> RouterAuthenticationProvider.id,
-      SessionKeys.lastRequestTimestamp -> DateTime.now().getMillis.toString
+      SessionKeys.lastRequestTimestamp -> DateTime.now(DateTimeZone.UTC).getMillis.toString
     ) ++ token
     data
   }
@@ -123,7 +123,6 @@ class SessionUser(loggedInViaGateway: Boolean,
   }
 
   private def stubGGSignIn() = {
-    //http://localhost:11111/gg/sign-in?continue=/account
     stubFor(get(urlEqualTo("/gg/sign-in?continue=/account"))
       .willReturn(aResponse()
         .withStatus(303)
