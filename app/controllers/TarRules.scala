@@ -23,9 +23,7 @@ import model.RuleContext
 
 object TarRules extends RuleEngine {
 
-  import engine.Condition._
-  import engine.Rule._
-  import engine.When._
+  import engine.dsl._
 
   override val defaultLocation = BusinessTaxAccount
 
