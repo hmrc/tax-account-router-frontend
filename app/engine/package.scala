@@ -142,8 +142,9 @@ package object engine {
   implicit def futureFlatMap(implicit ec: ExecutionContext): FlatMap[Future] = new FlatMap[Future] {
     override def flatMap[A, B](fa: Future[A])(f: (A) => Future[B]): Future[B] = fa flatMap f
 
-    override def tailRecM[A, B](a: A)(f: (A) => Future[Either[A, B]]): Future[B] = f(a).map {
-      case Right(v) => v
+    override def tailRecM[A, B](a: A)(f: (A) => Future[Either[A, B]]): Future[B] = f(a).flatMap {
+      case Right(b) => Future.successful(b)
+      case Left(aa) => tailRecM(aa)(f)
     }
 
     override def map[A, B](fa: Future[A])(f: (A) => B): Future[B] = fa map f
