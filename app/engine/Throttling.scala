@@ -85,10 +85,10 @@ trait Throttling {
       for {
         percentage <- throttlePercentage
         throttleDestination <- findFallbackFor(location)
-        randomNumber = random.nextInt(100) + 1
+        shouldThrottle = Throttler.shouldThrottle(userId, 100)
         throttlingInfo = ThrottlingInfo(percentage = Some(percentage), location != throttleDestination, location, throttlingEnabled)
       } yield {
-        if (randomNumber <= percentage) {
+        if (shouldThrottle) {
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
         } else {
           (auditInfo, location)
@@ -98,7 +98,7 @@ trait Throttling {
     currentResult flatMap { location =>
 
       val result: Future[(AuditInfo, Location)] = for {
-        userIdentifier <- ruleContext.internalUserIdentifier  // left to eventually provide sticky routing based on hash of user identifier
+        userIdentifier <- ruleContext.internalUserIdentifier
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case None => (auditInfo, location)
