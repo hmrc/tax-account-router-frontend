@@ -18,13 +18,11 @@ package engine
 
 import cats.data.WriterT
 import connector.InternalUserIdentifier
-import model.Locations.{BusinessTaxAccount, PersonalTaxAccount}
+import model.Locations.PersonalTaxAccount
 import model._
-import org.joda.time.DateTime
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
 import play.api.{Configuration, Play}
-import services.{Duration, Instant}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -37,16 +35,8 @@ trait Throttling {
   def configuration: Configuration
 
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
-  val stickyRoutingEnabled = Play.configuration.getBoolean("sticky-routing.enabled").getOrElse(false)
 
-  val longLiveCacheExpirationTime = Play.configuration.getString("sticky-routing.long-live-cache-expiration-time")
-  val shortLiveCacheDuration = Play.configuration.getInt("sticky-routing.short-live-cache-duration")
-
-  val documentExpirationTime = Map(
-    (PersonalTaxAccount, PersonalTaxAccount) -> longLiveCacheExpirationTime.map(t => Instant(DateTime.parse(t))),
-    (BusinessTaxAccount, BusinessTaxAccount) -> shortLiveCacheDuration.map(t => Duration(t)),
-    (PersonalTaxAccount, BusinessTaxAccount) -> shortLiveCacheDuration.map(t => Duration(t))
-  )
+  val hundredPercent = 100
 
   def throttle(currentResult: EngineResult, ruleContext: RuleContext): EngineResult = {
 
@@ -85,7 +75,7 @@ trait Throttling {
       for {
         percentage <- throttlePercentage
         throttleDestination <- findFallbackFor(location)
-        shouldThrottle = Throttler.shouldThrottle(userId, 100)
+        shouldThrottle = Throttler.shouldThrottle(userId, hundredPercent)
         throttlingInfo = ThrottlingInfo(percentage = Some(percentage), location != throttleDestination, location, throttlingEnabled)
       } yield {
         if (shouldThrottle) {

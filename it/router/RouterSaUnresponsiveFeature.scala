@@ -1,7 +1,6 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.AffinityGroupValue
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
@@ -43,17 +42,21 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
-      And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
+      eventually {
 
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
+        And("the authority object should be fetched once for AuthenticatedBy")
+        verifyAuthorityObjectIsFetched()
 
-      And("user's details should be fetched from User Details")
-      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+        And("user's enrolments should be fetched from Auth")
+        verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
-      verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+        And("user's details should be fetched from User Details")
+        verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+
+        And("sa returns should be fetched from Sa micro service")
+        verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
+
+      }
     }
 
     scenario("a user logged in through GG and gg is unresponsive should be redirected to BTA") {
@@ -74,17 +77,21 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to BTA Home Page")
       on(BtaHomePage)
 
-      And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
+      eventually {
 
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
+        And("the authority object should be fetched once for AuthenticatedBy")
+        verifyAuthorityObjectIsFetched()
 
-      And("user's details should be fetched from User Details")
-      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+        And("user's enrolments should be fetched from Auth")
+        verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("Sa micro service should not be invoked")
-      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
+        And("user's details should be fetched from User Details")
+        verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+
+        And("Sa micro service should not be invoked")
+        verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
+
+      }
     }
   }
 
