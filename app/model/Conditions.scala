@@ -24,54 +24,54 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object Conditions {
-  object functions {
-    type ConditionF = (RuleContext) => Future[Boolean]
-    val ggEnrolmentsAvailableF: ConditionF = rc =>
+  object predicates {
+    type ConditionPredicate = (RuleContext) => Future[Boolean]
+    val ggEnrolmentsAvailableF: ConditionPredicate = rc =>
       rc.enrolments.map(_ => true).recover { case _ => false }
 
-    val affinityGroupAvailableF: ConditionF = rc =>
+    val affinityGroupAvailableF: ConditionPredicate = rc =>
       rc.affinityGroup.map(_ => true).recover { case _ => false }
 
-    val loggedInViaVerifyF: ConditionF = rc =>
+    val loggedInViaVerifyF: ConditionPredicate = rc =>
       Future.successful(!rc.request_.session.data.contains("token") && rc.credId.isEmpty)
 
-    val hasAnyBusinessEnrolmentF: ConditionF = rc =>
+    val hasAnyBusinessEnrolmentF: ConditionPredicate = rc =>
       rc.activeEnrolmentKeys.map(_.intersect(rc.businessEnrolments).nonEmpty)
 
-    val SAReturnAvailableF: ConditionF = rc =>
+    val SAReturnAvailableF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_ => true).recover { case _ => false }
 
-    val hasSaEnrolmentsF: ConditionF = rc =>
+    val hasSaEnrolmentsF: ConditionPredicate = rc =>
       rc.activeEnrolmentKeys.map(_.intersect(rc.saEnrolments).nonEmpty)
 
-    val hasPreviousReturnsF: ConditionF = rc =>
+    val hasPreviousReturnsF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.previousReturns)
 
-    val isInAPartnershipF: ConditionF = rc =>
+    val isInAPartnershipF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.partnership)
 
-    val isSelfEmployedF: ConditionF = rc =>
+    val isSelfEmployedF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.selfEmployment)
 
-    val isAGovernmentGatewayUserF: ConditionF = rc =>
+    val isAGovernmentGatewayUserF: ConditionPredicate = rc =>
       Future.successful(rc.request_.session.data.contains("token") || rc.credId.isDefined)
 
-    val hasNinoF: ConditionF = rc =>
+    val hasNinoF: ConditionPredicate = rc =>
       rc.authority.map(_.nino.isDefined)
 
-    val hasIndividualAffinityGroupF: ConditionF = rc =>
+    val hasIndividualAffinityGroupF: ConditionPredicate = rc =>
     rc.affinityGroup.map(_ == AffinityGroupValue.INDIVIDUAL)
 
-    val hasAnyInactiveEnrolmentF: ConditionF = rc =>
+    val hasAnyInactiveEnrolmentF: ConditionPredicate = rc =>
       rc.notActivatedEnrolmentKeys.map(_.nonEmpty)
 
-    val anyOtherRuleAppliedF: ConditionF = _ =>
+    val anyOtherRuleAppliedF: ConditionPredicate = _ =>
       Future.successful(true)
   }
 
-  import functions._
+  import predicates._
 
-  val ggEnrolmentsAvailable: Condition[RuleContext] = Pure(ggEnrolmentsAvailableF, GG_ENROLMENTS_AVAILABLE)
+  val ggEnrolmentsAvailable = Pure(ggEnrolmentsAvailableF, GG_ENROLMENTS_AVAILABLE)
   val affinityGroupAvailable = Pure(affinityGroupAvailableF, AFFINITY_GROUP_AVAILABLE)
   val loggedInViaVerify = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
   val hasAnyBusinessEnrolment = Pure(hasAnyBusinessEnrolmentF, HAS_BUSINESS_ENROLMENTS)

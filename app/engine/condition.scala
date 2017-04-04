@@ -28,7 +28,7 @@ sealed trait Expr[Context, Result] {
   def evaluate[A <: AuditInfo: Semigroup](context: Context): WriterT[Future, AuditInfo, Result]
 }
 
-case class Pure[C](f: C => Future[Boolean], routingReason: RoutingReason) extends Condition[C] with Reason
+case class Pure[C](predicate: C => Future[Boolean], routingReason: RoutingReason) extends Condition[C] with Reason
 case class And[C](c1: Condition[C], c2: Condition[C]) extends Condition[C]
 case class Or[C](c1: Condition[C], c2: Condition[C]) extends Condition[C]
 case class Not[C](condition: Condition[C]) extends Condition[C]
@@ -42,9 +42,9 @@ sealed trait Condition[C] extends Expr[C, Boolean] {
 
     this match {
 
-      case Pure(f, auditType) =>
+      case Pure(predicate, auditType) =>
         WriterT {
-          f(context)
+          predicate(context)
             .map(isTrue => (AuditInfo(Map(auditType -> Some(isTrue))), isTrue))
         }
 

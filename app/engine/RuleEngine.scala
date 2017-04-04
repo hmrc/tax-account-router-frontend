@@ -33,12 +33,12 @@ trait RuleEngine {
   def getLocation(ruleContext: RuleContext): WriterT[Future, AuditInfo, Location] = {
     rules.foldLeft(emptyRuleResult) { (result, rule) =>
       result.flatMap {
-        case r0@Some(_) => WriterT(result.written.map(l => (l, r0)))
+        case someLocation@Some(_) => WriterT(result.written.map(auditInfo => (auditInfo, someLocation)))
         case _ => rule.evaluate(ruleContext)
       }
-    } mapBoth { (auditInfo, location) =>
-      location match {
-        case Some(l) => (auditInfo, l)
+    } mapBoth { (auditInfo, maybeLocation) =>
+      maybeLocation match {
+        case Some(location) => (auditInfo, location)
         case _ => (auditInfo.copy(ruleApplied = Some(defaultRuleName)), defaultLocation)
       }
     }
