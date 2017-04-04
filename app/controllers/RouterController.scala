@@ -70,7 +70,7 @@ trait RouterController extends FrontendController with Actions {
     }
 
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
-    val finalResult = throttlingService.doThrottle(destinationAfterRulesApplied, ruleContext).run
+    val finalResult = throttlingService.throttle(destinationAfterRulesApplied, ruleContext).run
     val futureAuditInfo = finalResult map { case (auditInfo, _) => auditInfo }
     val futureFinalDestination = finalResult map { case (_, finalDestination) => finalDestination }
 

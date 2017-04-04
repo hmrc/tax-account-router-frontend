@@ -96,8 +96,7 @@ package object engine {
               },
               "throttling" -> throttlingInfo.map(info => Map(
                 "enabled" -> info.throttlingEnabled.toString,
-                "sticky-routing-applied" -> info.stickyRoutingApplied.toString,
-                "throttlingPercentage" -> info.throttlingPercentage.map(_.toString).getOrElse("-"),
+                "percentage" -> info.percentage.map(_.toString).getOrElse("-"),
                 "throttled" -> info.throttled.toString,
                 "destination-url-before-throttling" -> info.initialDestination.url,
                 "destination-name-before-throttling" -> info.initialDestination.name
@@ -113,11 +112,10 @@ package object engine {
                        ruleApplied: Option[String],
                        throttlingInfo: Option[ThrottlingInfo]) extends TAuditInfo
 
-  case class ThrottlingInfo(throttlingPercentage: Option[Int],
+  case class ThrottlingInfo(percentage: Option[Int],
                             throttled: Boolean,
                             initialDestination: Location,
-                            throttlingEnabled: Boolean,
-                            stickyRoutingApplied: Boolean)
+                            throttlingEnabled: Boolean)
 
   object AuditInfo {
 
@@ -130,7 +128,8 @@ package object engine {
     implicit val mergeAudit: Semigroup[AuditInfo] = new Semigroup[AuditInfo] {
       override def combine(x: AuditInfo, y: AuditInfo): AuditInfo = x.copy(
         routingReasons = x.routingReasons ++ y.routingReasons,
-        ruleApplied = x.ruleApplied orElse y.ruleApplied
+        ruleApplied = x.ruleApplied orElse y.ruleApplied,
+        throttlingInfo = x.throttlingInfo orElse y.throttlingInfo
       )
     }
   }
