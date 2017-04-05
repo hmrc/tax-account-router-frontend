@@ -72,12 +72,12 @@ trait ThrottlingService {
 
     def throttle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier): (Configuration) => (AuditInfo, Location) =
       for {
-        percentage <- throttlePercentage
+        throttleUpperBound <- throttlePercentage
         throttleDestination <- findFallbackFor(location)
-        shouldThrottle = Throttler.shouldThrottle(userId, percentage)
-        throttlingInfo = ThrottlingInfo(percentage = Some(percentage), location != throttleDestination, location, throttlingEnabled)
+        shouldThrottle = Throttler.shouldThrottle(userId, throttleUpperBound)
       } yield {
         if (shouldThrottle) {
+          val throttlingInfo = ThrottlingInfo(percentage = Some(throttleUpperBound), location != throttleDestination, location, throttlingEnabled)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
         } else {
           (auditInfo, location)
@@ -90,12 +90,11 @@ trait ThrottlingService {
         userIdentifier <- ruleContext.internalUserIdentifier
         auditInfo <- currentResult.written
       } yield userIdentifier match {
-        case None => (auditInfo, location)
         case Some(userId) if throttlingEnabled =>
           val locationConfiguration = configurationForLocation(location, ruleContext.request_)
           throttle(auditInfo, location, userId)(locationConfiguration)
-        case Some(_) =>
-          val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled)
+        case _ =>
+          val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)
       }
 

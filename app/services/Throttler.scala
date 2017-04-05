@@ -22,7 +22,7 @@ object Throttler {
 
   private val bucketSize = 100
 
-  def shouldThrottle(discriminator: String, threshold: Int) = {
+  def shouldThrottle(discriminator: String, upperBound: Int) = {
 
     implicit class MD5(value: String) {
       def toMD5 = {
@@ -32,6 +32,6 @@ object Throttler {
     }
 
     val userValue = Math.abs((discriminator.toMD5.hashCode % bucketSize).toDouble)
-    userValue <= threshold
+    userValue <= upperBound
   }
 }
