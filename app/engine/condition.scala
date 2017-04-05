@@ -48,6 +48,7 @@ sealed trait Condition[C] extends Expr[C, Boolean] {
             .map(isTrue => (AuditInfo(Map(auditType -> Some(isTrue))), isTrue))
         }
 
+      // lazy behaviour: does not evaluate c2 if c1 is false
       case And(c1, c2) => WriterT {
         c1.evaluate(context).run.flatMap { case (info1, result1) =>
           if (result1) {
@@ -55,10 +56,11 @@ sealed trait Condition[C] extends Expr[C, Boolean] {
               (auditInfoSemigroup.combine(info1, info2), result1 && result2)
             }
           }
-          else Future.successful(info1, result1)
+          else Future.successful((info1, result1))
         }
       }
 
+      // lazy behaviour: does not evaluate c2 if c1 is true
       case Or(c1, c2) => WriterT {
         c1.evaluate(context).run.flatMap { case (info1, result1) =>
           if (!result1) {
@@ -66,7 +68,7 @@ sealed trait Condition[C] extends Expr[C, Boolean] {
               (auditInfoSemigroup.combine(info1, info2), result1 || result2)
             }
           }
-          else Future.successful(info1, result1)
+          else Future.successful((info1, result1))
         }
       }
 

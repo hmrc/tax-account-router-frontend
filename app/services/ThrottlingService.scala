@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package engine
+package services
 
 import cats.data.WriterT
 import connector.InternalUserIdentifier
+import engine.{AuditInfo, EngineResult, ThrottlingInfo}
 import model.Locations.PersonalTaxAccount
 import model._
 import play.api.Play.current
@@ -28,15 +29,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 
-trait Throttling {
+trait ThrottlingService {
 
   def random: Random
 
   def configuration: Configuration
 
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
-
-  val hundredPercent = 100
 
   def throttle(currentResult: EngineResult, ruleContext: RuleContext): EngineResult = {
 
@@ -75,7 +74,7 @@ trait Throttling {
       for {
         percentage <- throttlePercentage
         throttleDestination <- findFallbackFor(location)
-        shouldThrottle = Throttler.shouldThrottle(userId, hundredPercent)
+        shouldThrottle = Throttler.shouldThrottle(userId, percentage)
         throttlingInfo = ThrottlingInfo(percentage = Some(percentage), location != throttleDestination, location, throttlingEnabled)
       } yield {
         if (shouldThrottle) {
@@ -105,7 +104,7 @@ trait Throttling {
   }
 }
 
-object Throttling extends Throttling {
+object ThrottlingService extends ThrottlingService {
 
   override lazy val random: Random = Random
 

@@ -17,7 +17,7 @@
 package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
-import model.AuditContext
+import engine.AuditInfo
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import play.api.mvc.Cookie
@@ -29,8 +29,8 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
   "AnalyticsEventSender" should {
     "send event to GA" in new Setup {
-      analyticsEventSender.sendEvents(locationName, auditContext)
-      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, auditContext.ruleApplied, Nil))))
+      analyticsEventSender.sendEvents(locationName, auditInfo)
+      verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, ruleApplied, Nil))))
     }
   }
 
@@ -43,7 +43,11 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
       override val analyticsPlatformConnector = mockAnalyticsPlatformConnector
     }
     val locationName = "some-location"
-    val auditContext = AuditContext()
-    auditContext.ruleApplied = "some rule"
+    val ruleApplied = "some rule"
+    val auditInfo = AuditInfo(
+      routingReasons = Map.empty,
+      ruleApplied = Some(ruleApplied),
+      throttlingInfo = None
+    )
   }
 }

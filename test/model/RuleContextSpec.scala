@@ -16,39 +16,41 @@
 
 package model
 
+import ch.qos.logback.classic.Level
 import connector._
-import helpers.VerifyLogger
 import org.mockito.Mockito._
+import org.scalatest.LoneElement
 import org.scalatest.mock.MockitoSugar
+import play.api.Logger
+import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication with LogCapturing with LoneElement {
 
-  sealed trait Setup extends VerifyLogger {
+  sealed trait Setup {
 
     implicit val hc = HeaderCarrier()
+    implicit val request = FakeRequest()
     val mockAuthConnector: FrontendAuthConnector = mock[FrontendAuthConnector]
     val mockUserDetailsConnector = mock[UserDetailsConnector]
     val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]
 
-    val allMocks = Seq(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector, mockLogger)
+    val allMocks = Seq(mockAuthConnector, mockUserDetailsConnector, mockSelfAssessmentConnector)
     val credId = "credId"
 
     val ruleContextWithCredId = new RuleContext(Some(credId)) {
-      override val logger = mockLogger
       override val authConnector = mockAuthConnector
       override val userDetailsConnector = mockUserDetailsConnector
       override val selfAssessmentConnector = mockSelfAssessmentConnector
     }
 
     val ruleContextWithNoCredId = new RuleContext(None) {
-      override val logger = mockLogger
       override val authConnector = mockAuthConnector
       override val userDetailsConnector = mockUserDetailsConnector
       override val selfAssessmentConnector = mockSelfAssessmentConnector
@@ -179,18 +181,24 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
   "userDetails" should {
     "return future failed and log a warning message when userDetailsLink is empty" in new Setup {
-      reset(mockAuthConnector)
-      val authorityWithNoUserDetailsLink = expectedAuthority.copy(userDetailsUri = None)
-      when(mockAuthConnector.userAuthority(credId)).thenReturn(Future.successful(authorityWithNoUserDetailsLink))
+      withCaptureOfLoggingFrom(Logger) { logEvents =>
+        reset(mockAuthConnector)
+        val authorityWithNoUserDetailsLink = expectedAuthority.copy(userDetailsUri = None)
+        when(mockAuthConnector.userAuthority(credId)).thenReturn(Future.successful(authorityWithNoUserDetailsLink))
 
-      val expectedException = intercept[RuntimeException] {
-        await(ruleContextWithCredId.userDetails)
+        val expectedException = intercept[RuntimeException] {
+          await(ruleContextWithCredId.userDetails)
+        }
+        expectedException.getMessage shouldBe "userDetailsUri is not defined"
+
+        verify(mockAuthConnector).userAuthority(credId)
+
+        val loggedEvent = logEvents.loneElement
+        loggedEvent.getMessage shouldBe "failed to get user details because userDetailsUri is not defined"
+        loggedEvent.getLevel shouldBe Level.WARN
+
+        verifyNoMoreInteractions(allMocks: _*)
       }
-      expectedException.getMessage shouldBe "userDetailsUri is not defined"
-
-      verify(mockAuthConnector).userAuthority(credId)
-      verifyWarningLogging("failed to get user details because userDetailsUri is not defined")
-      verifyNoMoreInteractions(allMocks: _*)
     }
   }
 }

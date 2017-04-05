@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package engine
+package services
 
 import org.scalatest.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
@@ -26,7 +26,7 @@ class ThrottlerSpec extends UnitSpec with Matchers {
   "shouldThrottle" should {
 
     // expected user modulus is always 50
-    val discriminator = "f3c48669-ecd2-41a4-ac51-aa6b9898b462" // Math.abs("82be396f-81c1-4d72-bdf6-b924e0c75ec0".md5.hashCode % 100) = 50
+    val discriminator = "f3c48669-ecd2-41a4-ac51-aa6b9898b462" // Math.abs("f3c48669-ecd2-41a4-ac51-aa6b9898b462".md5.hashCode % 100) = 50
 
     val scenarios = Table[String, Int, Boolean](
       ("scenario", "expectedThreshold", "expectedResult"),

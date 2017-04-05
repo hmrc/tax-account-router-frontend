@@ -39,7 +39,7 @@ object RouterController extends RouterController {
 
   override val ruleEngine = TarRules
 
-  override val throttlingService = Throttling
+  override val throttlingService = ThrottlingService
 
   override val auditConnector = FrontendAuditConnector
 
@@ -52,7 +52,7 @@ trait RouterController extends FrontendController with Actions {
 
   def ruleEngine: RuleEngine
 
-  def throttlingService: Throttling
+  def throttlingService: ThrottlingService
 
   def auditConnector: AuditConnector
 

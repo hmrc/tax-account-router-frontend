@@ -25,7 +25,6 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 trait AnalyticsEventSender {
 
   private val routingCategory = "routing"
-  private val b2svRegistrationCategory = "sos_b2sv_registration_route"
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 

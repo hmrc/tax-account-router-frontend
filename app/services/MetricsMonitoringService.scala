@@ -44,7 +44,9 @@ trait MetricsMonitoringService {
         s".throttled-from-${destinationNameBeforeThrottling.get}"
       } else ".not-throttled"
 
-      metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-${auditInfo.ruleApplied}$throttleKey").mark()
+      auditInfo.ruleApplied.foreach { ruleApplied =>
+        metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-$ruleApplied$throttleKey").mark()
+      }
 
       val trueConditions = auditInfo.routingReasons.filter { case (_, Some(v)) => v }.keys
       trueConditions.foreach(reason => metricsRegistry.meter(reason.key).mark())
