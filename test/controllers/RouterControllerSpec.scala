@@ -16,16 +16,15 @@
 
 package controllers
 
-import engine.{Condition, RuleEngine, When}
-import model.Locations._
+import cats.data.WriterT
+import engine.{AuditInfo, EngineResult, RuleEngine}
 import model.{Location, _}
-import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
-import org.scalatest.concurrent.Eventually
+import org.scalatest.LoneElement
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.mock.MockitoSugar
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
@@ -33,201 +32,110 @@ import play.api.test.{FakeApplication, FakeRequest, Helpers}
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
-import scala.collection.mutable.{Map => mutableMap}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures with Eventually with LoneElement with LogCapturing {
 
   val location1 = Location("location1", "/location1")
   val location2 = Location("location2", "/location2")
 
   private val gaToken = "GA-TOKEN"
-  override lazy val fakeApplication = FakeApplication(additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url))
+  override lazy val fakeApplication = FakeApplication(
+    additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url)
+  )
 
-  "router controller" should {
+  def withExpectedLogMessages(expectedLogMessages: List[String])(block: => Unit) {
 
-    "return location when location is provided by rules and there is an origin for this location" in new Setup {
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(location1)
-      val origin = "some-origin"
-      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService)
-
-      //when
-      val route = controller.route
-
-      //then
-      val locationWithOrigin = Location(location1.name, location1.url)
-      checkResult(route, locationWithOrigin, "none")
-
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-    }
-
-    "return location without origin when location is provided by rules and there is not an origin for this location" in new Setup {
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(location1)
-
-      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningSomeLocation, throttlingService = mockThrottlingService)
-
-      //when
-      val route = controller.route
-
-      //then
-      checkResult(route, location1, "none")
-
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-    }
-
-    "return default location when location provided by rules is not defined" in new Setup {
-      //given
-      val expectedLocation = BusinessTaxAccount
-
-      //and
-      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
-
-      val controller = new TestRouterController(ruleEngine = ruleEngineStubReturningNoneLocation, throttlingService = mockThrottlingService)
-
-      //when
-      val route = controller.route
-
-      //then
-      checkResult(route, BusinessTaxAccount, "")
-
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-    }
-
-    "send events to graphite and GA" in new Setup {
-      //given
-      val expectedLocation = BusinessTaxAccount
-      //and
-      when(mockThrottlingService.throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedLocation)
-
-      val ruleApplied = "some-rule"
-      auditContext.ruleApplied = ruleApplied
-
-      val controller = new TestRouterController(
-        ruleEngine = ruleEngineStubReturningNoneLocation,
-        throttlingService = mockThrottlingService,
-        metricsMonitoringService = mockMetricsMonitoringService,
-        auditContext = Some(auditContext),
-        analyticsEventSender = mockAnalyticsEventSender
-      )
-
-      //when
-      val route = controller.route
-
-      //then
-      checkResult(route, BusinessTaxAccount, ruleApplied)
-
-      verify(mockThrottlingService).throttle(eqTo(expectedLocation), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
-
-      verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(auditContext), eqTo(expectedLocation))(eqTo(fakeRequest), any[HeaderCarrier])
-
-      verify(mockAnalyticsEventSender).sendEvents(eqTo(expectedLocation.name), eqTo(auditContext))(eqTo(fakeRequest), any[HeaderCarrier])
-    }
-
-    "audit the event before redirecting" in new Setup {
-      //given
-      override val auditContext = mock[TAuditContext]
-
-      val ruleApplied = "rule-applied"
-      val mockAuditEvent = mock[ExtendedDataEvent]
-      when(mockAuditEvent.detail).thenReturn(Json.parse("{}"))
-      when(auditContext.ruleApplied).thenReturn(ruleApplied)
-
-      val auditContextToAuditEventResult = Future(mockAuditEvent)
-      when(auditContext.toAuditEvent(any[Location])(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditContextToAuditEventResult)
-      when(auditContext.getReasons).thenReturn(mutableMap.empty[String, String])
-      when(auditContext.getThrottlingDetails).thenReturn(mutableMap.empty[String, String])
-
-      val expectedThrottledLocation: Location = PersonalTaxAccount
-      when(mockThrottlingService.throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])).thenReturn(expectedThrottledLocation)
-
-      val mockAuditConnector = mock[AuditConnector]
-      val controller = new TestRouterController(
-        ruleEngine = ruleEngineStubReturningSomeLocation,
-        auditConnector = mockAuditConnector,
-        auditContext = Some(auditContext),
-        throttlingService = mockThrottlingService
-      )
-
-      //then
-      val route = await(controller.route)
-
-      checkResult(route, PersonalTaxAccount, ruleApplied)
-
-      //and
-      verify(auditContext).toAuditEvent(eqTo(expectedThrottledLocation))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])
+    withCaptureOfLoggingFrom(Logger) { logEvents =>
+      block
 
       eventually {
-        val auditEventCaptor: ArgumentCaptor[ExtendedDataEvent] = ArgumentCaptor.forClass(classOf[ExtendedDataEvent])
-        verify(mockAuditConnector).sendEvent(auditEventCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
-        auditEventCaptor.getValue shouldBe mockAuditEvent
+        val logMessages = logEvents.map(_.getMessage)
+        expectedLogMessages.foreach { expectedLogMessage =>
+          logMessages should contain(expectedLogMessage)
+        }
       }
-
-      verify(mockThrottlingService).throttle(eqTo(location1), eqTo(auditContext), eqTo(ruleContext))(eqTo(fakeRequest), any[ExecutionContext])
     }
   }
 
-  case class TestCondition(truth: Boolean) extends Condition {
-    override val auditType = None
+  "router controller" should {
 
-    override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = Future(truth)
+    "return location" in new Setup {
+      val mockAuditInfo = mock[AuditInfo]
+      val engineResult = WriterT(Future.successful((mockAuditInfo, location1)))
+
+      when(mockThrottlingService.throttle(any[EngineResult], eqTo(ruleContext))).thenReturn(engineResult)
+
+      val mockAuditEvent = mock[ExtendedDataEvent]
+      when(mockAuditInfo.toAuditEvent(eqTo(location1))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(mockAuditEvent)
+
+      val detail = Json.obj(
+        "reasons" -> Json.obj(
+          "a" -> "b",
+          "c" -> "d"
+        )
+      )
+
+      when(mockAuditEvent.detail).thenReturn(detail)
+
+      when(mockRuleEngine.getLocation(ruleContext)).thenReturn(engineResult)
+
+      val origin = "some-origin"
+      val controller = new TestRouterController()
+
+      withExpectedLogMessages(List(
+        """Routing decision summary: {"a":"b","c":"d"}""",
+        "Routing to: location1"
+      )) {
+        //when
+        val route = controller.route(authContext, fakeRequest)
+
+        //then
+        status(route) shouldBe 303
+        Helpers.redirectLocation(route) should contain(location1.url)
+
+        verify(mockThrottlingService).throttle(any[EngineResult], eqTo(ruleContext))
+      }
+
+      eventually {
+        verify(mockAuditConnector).sendEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
+        verify(mockAnalyticsEventSender).sendEvents(eqTo(location1.name), eqTo(mockAuditInfo))(eqTo(fakeRequest), any[HeaderCarrier])
+        verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(mockAuditInfo), eqTo(location1))(eqTo(fakeRequest), any[HeaderCarrier])
+      }
+    }
   }
 
   trait Setup {
 
-    val ruleEngineStubReturningSomeLocation = new RuleEngine {
-      override val defaultLocation: Location = BusinessTaxAccount
-      override val rules = List(When(TestCondition(true)).thenGoTo(location1))
-    }
-
-    val ruleEngineStubReturningNoneLocation = new RuleEngine {
-      override val defaultLocation: Location = BusinessTaxAccount
-      override val rules = List(When(TestCondition(false)).thenGoTo(location2))
-    }
+    val mockAnalyticsEventSender = mock[AnalyticsEventSender]
+    val mockThrottlingService = mock[ThrottlingService]
+    val mockAuditConnector = mock[AuditConnector]
+    val mockMetricsMonitoringService = mock[MetricsMonitoringService]
+    val mockAuthConnector = mock[AuthConnector]
+    val mockRuleEngine = mock[RuleEngine]
 
     val gaClientId = "gaClientId"
+
     implicit val fakeRequest = FakeRequest().withCookies(Cookie("_ga", gaClientId))
     implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
     implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None, None, None, None)
-    implicit lazy val ruleContext = RuleContext(None)
-    val auditContext: TAuditContext = AuditContext()
-    val mockThrottlingService = mock[ThrottlingService]
-    val mockMetricsMonitoringService = mock[MetricsMonitoringService]
-    val mockAnalyticsEventSender = mock[AnalyticsEventSender]
+    implicit lazy val ruleContext = RuleContext(None)(fakeRequest, hc)
 
-    def checkResult(route: Future[Result], location: Location, eventName: String) = {
-      status(route) shouldBe 303
-      Helpers.redirectLocation(route) should contain(location.fullUrl)
+    class TestRouterController(override val metricsMonitoringService: MetricsMonitoringService = mockMetricsMonitoringService,
+                               override val ruleEngine: RuleEngine = mockRuleEngine,
+                               override val throttlingService: ThrottlingService = mockThrottlingService,
+                               override val auditConnector: AuditConnector = mockAuditConnector,
+                               override val analyticsEventSender: AnalyticsEventSender = mockAnalyticsEventSender
+                              ) extends RouterController {
+
+      override protected def authConnector = ???
     }
   }
-
-}
-
-object Mocks extends MockitoSugar {
-  def mockThrottlingService = mock[ThrottlingService]
-
-  def mockAuditConnector = mock[AuditConnector]
-
-  def mockMetricsMonitoringService = mock[MetricsMonitoringService]
-
-  def mockAnalyticsEventSender = mock[AnalyticsEventSender]
-
-}
-
-class TestRouterController(override val metricsMonitoringService: MetricsMonitoringService = Mocks.mockMetricsMonitoringService,
-                           override val ruleEngine: RuleEngine,
-                           override val throttlingService: ThrottlingService = Mocks.mockThrottlingService,
-                           override val auditConnector: AuditConnector = Mocks.mockAuditConnector,
-                           override val analyticsEventSender: AnalyticsEventSender = Mocks.mockAnalyticsEventSender,
-                           auditContext: Option[TAuditContext] = None) extends RouterController {
-
-  override protected def authConnector = ???
-
-  override def createAuditContext() = auditContext.getOrElse(AuditContext())
 }

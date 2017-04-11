@@ -16,124 +16,90 @@
 
 package engine
 
-import controllers.TarRules
-import helpers.SpecHelpers
-import model.Locations._
-import model.RoutingReason.RoutingReason
+import engine.RoutingReason.Reason
 import model.{Location, _}
-import org.mockito.Matchers.{eq => eqTo, _}
-import org.mockito.Mockito.{when, _}
+import org.mockito.Matchers.{eq => eqTo}
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
-import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication{
+class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures {
 
-  case class BooleanCondition(b: Boolean) extends Condition {
-    override val auditType: Option[RoutingReason] = None
+  "rule engine" should {
 
-    override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] =
-      Future(b)
-  }
+    "rule matched" in new Setup {
+      implicit lazy val fakeRequest = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-  val trueLocation: Location = evaluateUsingPlay(Location("/true", "true"))
-  val trueRule = When(BooleanCondition(true)).thenGoTo(trueLocation) withName "true-rule"
-  val falseLocation: Location = evaluateUsingPlay(Location("/false", "false"))
-  val falseRule = When(BooleanCondition(false)).thenGoTo(falseLocation) withName "false-rule"
+      implicit lazy val ruleContext = RuleContext(None)(fakeRequest, hc)
 
-  val theDefaultLocation = Location("default-location", "/default-location")
+      val result = ruleEngineStubReturningLocation1.getLocation(ruleContext).run.futureValue
 
+      val (auditInfo, location) = result
 
-  "a rule engine" should {
+      val evaluatedReasons = auditInfo.routingReasons.filter { case (reason, evaluationResult)  => evaluationResult.isDefined }
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /second/location" in {
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
-
-      val auditContext: AuditContext = AuditContext()
-
-      //when
-      val locationFuture: Future[Location] = new RuleEngine {
-        override val defaultLocation = theDefaultLocation
-        override val rules: List[Rule] = List(falseRule, trueRule)
-      }.matchRulesForLocation(mock[RuleContext], auditContext)(request, hc)
-
-      //then
-      await(locationFuture) shouldBe trueLocation
-
-      auditContext.ruleApplied shouldBe trueRule.name
+      evaluatedReasons shouldBe Map(Reason("alwaysTrue") -> Some(true))
+      location shouldBe location1
     }
 
-    "evaluate empty rules and return with default location" in {
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
+    "rule not matched" in new Setup {
+      implicit lazy val fakeRequest = FakeRequest()
+      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
-      val auditContext: AuditContext = AuditContext()
+      implicit lazy val ruleContext = RuleContext(None)(fakeRequest, hc)
 
-      //when
-      val locationFuture: Future[Location] = new RuleEngine {
-        override val defaultLocation = theDefaultLocation
-        override val rules: List[Rule] = List()
-      }.matchRulesForLocation(mock[RuleContext], auditContext)(request, hc)
+      val result = ruleEngineStubReturningLocation2.getLocation(ruleContext).run.futureValue
 
-      //then
-      await(locationFuture) shouldBe theDefaultLocation
+      val (auditInfo, location) = result
 
-      auditContext.ruleApplied shouldBe ""
-    }
+      val evaluatedReasons = auditInfo.routingReasons.filter { case (reason, evaluationResult)  => evaluationResult.isDefined }
 
-    "evaluate rules in order skipping those that should not be evaluated - should return /first/location" in {
+      evaluatedReasons shouldBe Map(Reason("alwaysFalse") -> Some(false))
 
-      //given
-      val firstRule = mock[Rule]
-      val expectedLocation: Location = BusinessTaxAccount
-      when(firstRule.apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(Some(expectedLocation))
-      when(firstRule.name) thenReturn "first-rule"
-      val secondRule = mock[Rule]
-      when(secondRule.apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])) thenReturn Future(None)
-
-      //and
-      implicit lazy val request = FakeRequest()
-      implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers)
-
-      val auditContext = AuditContext()
-
-      //when
-      val locationFuture: Future[Location] = new RuleEngine {
-        override val defaultLocation = theDefaultLocation
-        override val rules: List[Rule] = List(firstRule, secondRule)
-      }.matchRulesForLocation(mock[RuleContext], auditContext)(request, hc)
-
-      //then
-      await(locationFuture) shouldBe expectedLocation
-
-      //then
-      verify(firstRule).apply(any[RuleContext], any[AuditContext])(eqTo(request), eqTo(hc))
-      verify(secondRule, never()).apply(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-
-      auditContext.ruleApplied shouldBe "first-rule"
+      location shouldBe testDefaultLocation
     }
   }
 
-  "the TAR rule engine" should {
-    "have as last rule a tautology that redirects to BTA" in {
+  trait Setup {
 
-      val lastRule: Rule = TarRules.rules.last
+    val testDefaultLocation = Location("default-location", "/default-location")
+    val location1 = Location("location1", "/location1")
+    val location2 = Location("location2", "/location2")
 
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+    type ConditionPredicate = (RuleContext) => Future[Boolean]
+    val alwaysTrueF: ConditionPredicate = rc => Future.successful(true)
+    val alwaysFalseF: ConditionPredicate = rc => Future.successful(false)
 
-      val mockRuleContext = mock[RuleContext]
-      val mockAuditContext = mock[TAuditContext]
+    val alwaysTrueCondition = Pure(alwaysTrueF, Reason("alwaysTrue"))
+    val alwaysFalseCondition = Pure(alwaysFalseF, Reason("alwaysFalse"))
 
-      val location: Option[Location] = await(lastRule.apply(mockRuleContext, mockAuditContext))
+    val ruleEngineStubReturningLocation1 = new RuleEngine {
+      override val defaultLocation: Location = testDefaultLocation
+      override val rules: List[Rule[RuleContext]] = {
+        import engine.dsl._
+        List(
+          when(alwaysTrueCondition) thenReturn location1 withName "always-true-rule"
+        )
+      }
 
-      location shouldBe Some(BusinessTaxAccount)
+      override def defaultRuleName: String = "test1"
+    }
+
+    val ruleEngineStubReturningLocation2 = new RuleEngine {
+      override val defaultLocation: Location = testDefaultLocation
+      override val rules: List[Rule[RuleContext]] = {
+        import engine.dsl._
+        List(
+          when(alwaysFalseCondition) thenReturn location2 withName "always-false-rule"
+        )
+      }
+
+      override def defaultRuleName: String = "test2"
     }
   }
 }

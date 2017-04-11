@@ -22,10 +22,11 @@ import controllers.internal.AccountType.AccountType
 import engine._
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.Action
+import play.api.mvc.{Action, AnyContent, Request}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
+import uk.gov.hmrc.play.http.HeaderCarrier
 import utils.EnumJson._
 
 import scala.concurrent.Future
@@ -51,6 +52,8 @@ object AccountTypeController extends AccountTypeController {
   override val ruleEngine = TarRules
 
   override val logger = Logger
+
+  override def createRuleContext(credId: String)(implicit request: Request[AnyContent], hc: HeaderCarrier) = RuleContext(Some(credId))
 }
 
 trait AccountTypeController extends FrontendController with Actions {
@@ -60,8 +63,10 @@ trait AccountTypeController extends FrontendController with Actions {
 
   def ruleEngine: RuleEngine
 
+  def createRuleContext(credId: String)(implicit request: Request[AnyContent], hc: HeaderCarrier): RuleContext
+
   def accountTypeForCredId(credId: String) = Action.async { implicit request =>
-    val ruleContext = RuleContext(Some(credId))
+    val ruleContext: RuleContext = createRuleContext(credId)
 
     ruleContext.affinityGroup.flatMap {
       case AffinityGroupValue.AGENT =>

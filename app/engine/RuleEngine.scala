@@ -20,7 +20,6 @@ import cats.data.WriterT
 import model.{Location, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 trait RuleEngine {
 
@@ -30,7 +29,7 @@ trait RuleEngine {
 
   def defaultRuleName: String
 
-  def getLocation(ruleContext: RuleContext): WriterT[Future, AuditInfo, Location] = {
+  def getLocation(ruleContext: RuleContext): EngineResult = {
     rules.foldLeft(emptyRuleResult) { (result, rule) =>
       result.flatMap {
         case someLocation@Some(_) => WriterT(result.written.map(auditInfo => (auditInfo, someLocation)))

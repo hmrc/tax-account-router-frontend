@@ -64,9 +64,6 @@ object Conditions {
 
     val hasAnyInactiveEnrolmentF: ConditionPredicate = rc =>
       rc.notActivatedEnrolmentKeys.map(_.nonEmpty)
-
-    val anyOtherRuleAppliedF: ConditionPredicate = _ =>
-      Future.successful(true)
   }
 
   import predicates._

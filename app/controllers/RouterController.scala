@@ -29,6 +29,7 @@ import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.play.http.HeaderCarrier
 import engine._
+import play.api.libs.json.{JsNull, JsValue, Json}
 
 import scala.concurrent.Future
 
@@ -58,7 +59,11 @@ trait RouterController extends FrontendController with Actions {
 
   def analyticsEventSender: AnalyticsEventSender
 
-  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit user => request => route(user, request) }
+  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async {
+    implicit user =>
+      request =>
+        route(user, request)
+  }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
     val ruleContext = RuleContext(None)
@@ -66,7 +71,8 @@ trait RouterController extends FrontendController with Actions {
     def sendAuditEvent(auditInfo: AuditInfo, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
       val auditEvent = auditInfo.toAuditEvent(throttledLocation)
       auditConnector.sendEvent(auditEvent)
-      Logger.debug(s"Routing decision summary: ${auditEvent.detail \ "reasons"}")
+      val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
+      Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
     }
 
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
@@ -80,8 +86,9 @@ trait RouterController extends FrontendController with Actions {
     } yield {
       sendAuditEvent(auditInfo, finalDestination)
       metricsMonitoringService.sendMonitoringEvents(auditInfo, finalDestination)
-      Logger.debug(s"routing to: ${finalDestination.name}")
       analyticsEventSender.sendEvents(finalDestination.name, auditInfo)
+
+      Logger.debug(s"Routing to: ${finalDestination.name}")
       finalDestination
     }
 

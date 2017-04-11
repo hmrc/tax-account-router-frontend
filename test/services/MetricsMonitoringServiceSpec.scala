@@ -118,5 +118,4 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
     when(mockMetricRegistry.meter(any[String])).thenReturn(mock[Meter])
   }
-
 }

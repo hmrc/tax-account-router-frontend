@@ -27,13 +27,33 @@ import play.api.{Configuration, Play}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Random
+
+trait LocationConfigurationFactory {
+
+  val configuration: Configuration
+
+  def configurationForLocation(location: Location, request: Request[AnyContent]): Configuration = {
+
+    def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
+      location match {
+        case PersonalTaxAccount =>
+          if (request.session.data.contains("token")) {
+            "-gg"
+          } else {
+            "-verify"
+          }
+        case _ => ""
+      }
+    }
+
+    val suffix = getLocationSuffix(location, request)
+    configuration.getConfig(s"throttling.locations.${location.name}$suffix").getOrElse(Configuration.empty)
+  }
+}
 
 trait ThrottlingService {
 
-  def random: Random
-
-  def configuration: Configuration
+  def locationConfigurationFactory: LocationConfigurationFactory
 
   val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
 
@@ -43,34 +63,25 @@ trait ThrottlingService {
     import cats.syntax.flatMap._
     import cats.syntax.functor._
 
-    def configurationForLocation(location: Location, request: Request[AnyContent]): Configuration = {
-
-      def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
-        location match {
-          case PersonalTaxAccount =>
-            if (request.session.data.contains("token")) "-gg"
-            else "-verify"
-          case _ => ""
-        }
+    def throttlePercentage: (Configuration) => Int = {
+      configurationForLocation => {
+        configurationForLocation
+          .getInt("percentageBeToThrottled")
+          .getOrElse(0)
       }
-
-      val suffix = getLocationSuffix(location, request)
-      configuration.getConfig(s"throttling.locations.${location.name}$suffix").getOrElse(Configuration.empty)
     }
 
-    def throttlePercentage: (Configuration) => Int = configurationForLocation => {
-      configurationForLocation.getString("percentageBeToThrottled").map(_.toInt).getOrElse(0)
+    def findFallbackFor(location: Location): (Configuration) => Location = {
+      configurationForLocation => {
+        val fallback = for {
+          fallbackName <- configurationForLocation.getString("fallback")
+          fallback <- Locations.find(fallbackName)
+        } yield fallback
+        fallback.getOrElse(location)
+      }
     }
 
-    def findFallbackFor(location: Location): (Configuration) => Location = configurationForLocation => {
-      val fallback = for {
-        fallbackName <- configurationForLocation.getString("fallback")
-        fallback <- Locations.find(fallbackName)
-      } yield fallback
-      fallback.getOrElse(location)
-    }
-
-    def throttle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier): (Configuration) => (AuditInfo, Location) =
+    def doThrottle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier): (Configuration) => (AuditInfo, Location) = {
       for {
         throttleUpperBound <- throttlePercentage
         throttleDestination <- findFallbackFor(location)
@@ -83,6 +94,7 @@ trait ThrottlingService {
           (auditInfo, location)
         }
       }
+    }
 
     currentResult flatMap { location =>
 
@@ -91,8 +103,8 @@ trait ThrottlingService {
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case Some(userId) if throttlingEnabled =>
-          val locationConfiguration = configurationForLocation(location, ruleContext.request_)
-          throttle(auditInfo, location, userId)(locationConfiguration)
+          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, ruleContext.request_)
+          doThrottle(auditInfo, location, userId)(locationConfiguration)
         case _ =>
           val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)
@@ -105,7 +117,7 @@ trait ThrottlingService {
 
 object ThrottlingService extends ThrottlingService {
 
-  override lazy val random: Random = Random
-
-  override val configuration: Configuration = Play.configuration
+  override val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
+    override val configuration: Configuration = Play.current.configuration
+  }
 }

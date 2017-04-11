@@ -31,7 +31,7 @@ object Throttler {
       }
     }
 
-    val userValue = Math.abs((discriminator.toMD5.hashCode % bucketSize).toDouble)
-    userValue <= upperBound
+    val userModulus = Math.abs((discriminator.toMD5.hashCode % bucketSize).toDouble)
+    userModulus <= upperBound
   }
 }

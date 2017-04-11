@@ -17,9 +17,9 @@
 package engine
 
 import connector._
-import model.RoutingReason._
 import model._
 import org.mockito.Mockito._
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures {
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
@@ -43,7 +43,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasAnyBusinessEnrolment" should {
 
     "have an audit type specified" in {
-      HasAnyBusinessEnrolment.auditType shouldBe Some(HAS_BUSINESS_ENROLMENTS)
+      Conditions.hasAnyBusinessEnrolment.routingReason.key shouldBe "has-business-enrolments"
     }
 
     val scenarios =
@@ -55,19 +55,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
       s"be true whether the user has any business enrolments - scenario: $scenario" in {
-
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
-        val hasAnyBusinessEnrolment = new HasAnyBusinessEnrolment {
-          override val businessEnrolments = Set("enr1", "enr2")
-        }
+        when(ruleContext.businessEnrolments).thenReturn(Future(Set("enr1", "enr2")))
 
-        val result = await(hasAnyBusinessEnrolment.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.hasAnyBusinessEnrolment.evaluate(ruleContext).run.futureValue
 
-        result shouldBe expectedResult
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -75,7 +69,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasSaEnrolments" should {
 
     "have an audit type specified" in {
-      HasSaEnrolments.auditType.get.key shouldBe "has-self-assessment-enrolments"
+      Conditions.hasSaEnrolments.routingReason.key shouldBe "has-self-assessment-enrolments"
     }
 
     val scenarios =
@@ -87,24 +81,21 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
       s"return $expectedResult when $scenario" in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
+        when(ruleContext.saEnrolments).thenReturn(Future(Set("enr3")))
 
-        val result = await(HasSaEnrolments.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.hasSaEnrolments.evaluate(ruleContext).run.futureValue
 
-        result shouldBe expectedResult
+        evaluationResult shouldBe expectedResult
       }
     }
-
   }
 
   "HasPreviousReturns" should {
 
     "have an audit type specified" in {
-      HasPreviousReturns.auditType shouldBe Some(HAS_PREVIOUS_RETURNS)
+      Conditions.hasPreviousReturns.routingReason.key shouldBe "has-previous-returns"
     }
 
     val scenarios =
@@ -115,17 +106,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       )
 
     forAll(scenarios) { (scenario: String, lastSaReturn: SaReturn, expectedResult: Boolean) =>
-
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
       s"be true whether the user has any self assessment enrolment - scenario: $scenario" in {
 
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(HasPreviousReturns.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.hasPreviousReturns.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -133,7 +120,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "IsInAPartnership" should {
 
     "have an audit type specified" in {
-      IsInAPartnership.auditType shouldBe Some(IS_IN_A_PARTNERSHIP)
+      Conditions.isInAPartnership.routingReason.key shouldBe "is-in-a-partnership"
     }
 
     val scenarios =
@@ -153,8 +140,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(IsInAPartnership.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.isInAPartnership.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -162,7 +149,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "IsSelfEmployed" should {
 
     "have an audit type specified" in {
-      IsSelfEmployed.auditType shouldBe Some(IS_SELF_EMPLOYED)
+      Conditions.isSelfEmployed.routingReason.key shouldBe "is-self-employed"
     }
 
     val scenarios =
@@ -174,16 +161,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, lastSaReturn: SaReturn, expectedResult: Boolean) =>
 
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
       s"be true whether the user has a self employment supplementary schedule - scenario: $scenario" in {
 
         val ruleContext = mock[RuleContext]
         when(ruleContext.lastSaReturn).thenReturn(Future(lastSaReturn))
 
-        val result = await(IsSelfEmployed.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.isSelfEmployed.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -191,7 +175,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "LoggedInViaVerify" should {
 
     "have an audit type specified" in {
-      LoggedInViaVerify.auditType shouldBe Some(IS_A_VERIFY_USER)
+      Conditions.loggedInViaVerify.routingReason.key shouldBe "is-a-verify-user"
     }
 
     val scenarios =
@@ -211,13 +195,12 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
           case true => FakeRequest().withSession(("token", "token"))
         }
 
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         val ruleContext = mock[RuleContext]
         when(ruleContext.credId).thenReturn(if(comingWithCredId) Some("credId") else None)
+        when(ruleContext.request_).thenReturn(fakeRequest)
 
-        val result = await(LoggedInViaVerify.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.loggedInViaVerify.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -225,7 +208,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "IsAGovernmentGatewayUser" should {
 
     "have an audit type specified" in {
-      IsAGovernmentGatewayUser.auditType shouldBe Some(IS_A_GOVERNMENT_GATEWAY_USER)
+      Conditions.isAGovernmentGatewayUser.routingReason.key shouldBe "is-a-government-gateway-user"
     }
 
     val scenarios =
@@ -245,13 +228,12 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
           case true => FakeRequest().withSession(("token", "token"))
         }
 
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         val ruleContext = mock[RuleContext]
         when(ruleContext.credId).thenReturn(if(comingWithCredId) Some("credId") else None)
+        when(ruleContext.request_).thenReturn(fakeRequest)
 
-        val result = await(IsAGovernmentGatewayUser.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.isAGovernmentGatewayUser.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -259,7 +241,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasNino" should {
 
     "have an audit type specified" in {
-      HasNino.auditType shouldBe Some(HAS_NINO)
+      Conditions.hasNino.routingReason.key shouldBe "has-nino"
     }
 
     val scenarios =
@@ -279,11 +261,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         when(authMock.nino).thenReturn(Future.successful(nino))
         when(ruleContext.authority).thenReturn(Future.successful(authMock))
 
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-        val result = await(HasNino.isTrue(ruleContext))
-        result shouldBe expectedResult
+        val (auditInfo, evaluationResult) = Conditions.hasNino.evaluate(ruleContext).run.futureValue
+        evaluationResult shouldBe expectedResult
 
         verify(ruleContext).authority
         verifyNoMoreInteractions(ruleContext)
@@ -294,7 +273,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "GGEnrolmentsAvailable" should {
 
     "have an audit type specified" in {
-      GGEnrolmentsAvailable.auditType shouldBe Some(GG_ENROLMENTS_AVAILABLE)
+      Conditions.ggEnrolmentsAvailable.routingReason.key shouldBe "gg-enrolments-available"
     }
 
     val scenarios =
@@ -307,20 +286,18 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, ggEnrolmentsAvailable: Boolean) =>
 
       scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         val ruleContext = mock[RuleContext]
 
         val expectedResult = ggEnrolmentsAvailable match {
           case true => Future.successful(Seq.empty[GovernmentGatewayEnrolment])
           case false => Future.failed(new RuntimeException())
         }
+
         when(ruleContext.enrolments).thenReturn(expectedResult)
 
-        val result = await(GGEnrolmentsAvailable.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.ggEnrolmentsAvailable.evaluate(ruleContext).run.futureValue
 
-        result shouldBe ggEnrolmentsAvailable
+        evaluationResult shouldBe ggEnrolmentsAvailable
         verify(ruleContext).enrolments
         verifyNoMoreInteractions(ruleContext)
       }
@@ -330,7 +307,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "AffinityGroupNotAvailable" should {
 
     "have an audit type specified" in {
-      AffinityGroupAvailable.auditType shouldBe Some(AFFINITY_GROUP_AVAILABLE)
+      Conditions.affinityGroupAvailable.routingReason.key shouldBe "affinity-group-available"
     }
 
     val scenarios =
@@ -343,9 +320,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, affinityGroupAvailable: Boolean) =>
 
       scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         val ruleContext = mock[RuleContext]
 
         val expectedResult = affinityGroupAvailable match {
@@ -354,9 +328,9 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
         }
         when(ruleContext.affinityGroup).thenReturn(expectedResult)
 
-        val result = await(AffinityGroupAvailable.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.affinityGroupAvailable.evaluate(ruleContext).run.futureValue
 
-        result shouldBe affinityGroupAvailable
+        evaluationResult shouldBe affinityGroupAvailable
         verify(ruleContext).affinityGroup
         verifyNoMoreInteractions(ruleContext)
       }
@@ -366,61 +340,36 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "SAReturnAvailable" should {
 
     "have an audit type specified" in {
-      SAReturnAvailable.auditType shouldBe Some(SA_RETURN_AVAILABLE)
+      Conditions.saReturnAvailable.routingReason.key shouldBe "sa-return-available"
     }
 
     val scenarios =
       Table(
-        ("scenario", "saReturnAvailable"),
-        ("be true when SA is available", true),
-        ("be false SA is not available", false)
+        ("scenario", "eventualSaReturn", "expectedResult"),
+        ("be true when SA is available", Future.successful(mock[SaReturn]), true),
+        ("be false SA is not available", Future.failed(new RuntimeException()), false)
       )
 
-    forAll(scenarios) { (scenario: String, saReturnAvailable: Boolean) =>
+    forAll(scenarios) { (scenario: String, eventualSaReturn: Future[SaReturn], expectedResult: Boolean) =>
 
       scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
         val ruleContext = mock[RuleContext]
+        when(ruleContext.lastSaReturn).thenReturn(eventualSaReturn)
 
-        val expectedResult = saReturnAvailable match {
-          case true => Future.successful(mock[SaReturn])
-          case false => Future.failed(new RuntimeException())
-        }
-        when(ruleContext.lastSaReturn).thenReturn(expectedResult)
+        val (auditInfo, evaluationResult) = Conditions.saReturnAvailable.evaluate(ruleContext).run.futureValue
 
-        val result = await(SAReturnAvailable.isTrue(ruleContext))
-
-        result shouldBe saReturnAvailable
+        evaluationResult shouldBe expectedResult
         verify(ruleContext).lastSaReturn
         verifyNoMoreInteractions(ruleContext)
       }
     }
   }
 
-  "AnyOtherRuleApplied" should {
-
-    "not have any audit type specified" in {
-      AnyOtherRuleApplied.auditType shouldBe None
-    }
-
-    "always be true" in {
-
-      implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
-      val ruleContext = mock[RuleContext]
-
-      val result = await(AnyOtherRuleApplied.isTrue(ruleContext))
-      result shouldBe true
-    }
-  }
-
   "HasIndividualAffinityGroup" should {
 
     "have an audit type specified" in {
-      HasIndividualAffinityGroup.auditType shouldBe Some(HAS_INDIVIDUAL_AFFINITY_GROUP)
+      Conditions.hasIndividualAffinityGroup.routingReason.key shouldBe "has-individual-affinity-group"
     }
 
     val scenarios =
@@ -432,15 +381,12 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, affinityGroup: String, expectedResult: Boolean) =>
       scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.affinityGroup).thenReturn(Future(affinityGroup))
 
-        val result = await(HasIndividualAffinityGroup.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.hasIndividualAffinityGroup.evaluate(ruleContext).run.futureValue
 
-        result shouldBe expectedResult
+        evaluationResult shouldBe expectedResult
       }
     }
   }
@@ -448,7 +394,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
   "HasAnyInactiveEnrolment" should {
 
     "have an audit type specified" in {
-      HasAnyInactiveEnrolment.auditType shouldBe Some(HAS_ANY_INACTIVE_ENROLMENT)
+      Conditions.hasAnyInactiveEnrolment.routingReason.key shouldBe "has-any-inactive-enrolment"
     }
 
     val scenarios =
@@ -460,17 +406,13 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
       scenario in {
-        implicit val fakeRequest = FakeRequest()
-        implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
-
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.notActivatedEnrolmentKeys).thenReturn(Future.successful(enrolments))
 
-        val result = await(HasAnyInactiveEnrolment.isTrue(ruleContext))
+        val (auditInfo, evaluationResult) = Conditions.hasAnyInactiveEnrolment.evaluate(ruleContext).run.futureValue
 
-        result shouldBe expectedResult
+        evaluationResult shouldBe expectedResult
       }
     }
   }
-
 }
