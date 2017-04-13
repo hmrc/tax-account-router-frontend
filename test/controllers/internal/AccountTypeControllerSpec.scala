@@ -16,6 +16,7 @@
 
 package controllers.internal
 
+import connector.AffinityGroupValue
 import engine.RuleEngine
 import helpers.VerifyLogger
 import model.{Location, Locations, RuleContext, TAuditContext}
@@ -40,6 +41,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
     "return type Organisation when BTA location is provided by rules and there is an origin for this location" in new Setup {
       // given
       when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.BusinessTaxAccount))
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.ORGANISATION))
+
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
 
@@ -51,13 +54,13 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Organisation
 
       verify(mockRuleEngine).matchRulesForLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-      ruleContextCaptor.getValue.credId shouldBe Some(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
 
     "return type Individual when PTA location is provided by rules and there is an origin for this location" in new Setup {
       // given
       when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(Locations.PersonalTaxAccount))
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.INDIVIDUAL))
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
 
@@ -69,7 +72,6 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Individual
 
       verify(mockRuleEngine).matchRulesForLocation(ruleContextCaptor.capture(), any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-      ruleContextCaptor.getValue.credId shouldBe Some(credId)
       verifyNoMoreInteractions(allMocks: _*)
     }
 
@@ -77,6 +79,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
       // given
       val unknownLocation = Location("unkonwn-location", "/unknown-location")
       when(mockRuleEngine.matchRulesForLocation(any[RuleContext], any[TAuditContext])(any[Request[AnyContent]], any[HeaderCarrier])).thenReturn(Future.successful(unknownLocation))
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.ORGANISATION))
       // when
       val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
 
@@ -91,7 +94,23 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
 
       verifyWarningLogging(s"Location is ${unknownLocation.fullUrl} is not recognised as PTA or BTA. Returning default type.")
 
-      ruleContextCaptor.getValue.credId shouldBe Some(credId)
+      verifyNoMoreInteractions(allMocks: _*)
+    }
+
+    "return agent account type when the affinity group is agent" in new Setup {
+      // given
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.AGENT))
+
+      // when
+      val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
+
+      // then
+      status(result) shouldBe 200
+
+      import AccountTypeResponse.accountTypeReads
+
+      (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Agent
+
       verifyNoMoreInteractions(allMocks: _*)
     }
 
@@ -101,6 +120,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
     val mockRuleEngine = mock[RuleEngine]
     val mockAuthConnector = mock[AuthConnector]
     val mockAuditContext = mock[TAuditContext]
+    val mockRuleContext = mock[RuleContext]
 
     val allMocks = Seq(mockRuleEngine, mockAuthConnector, mockAuditContext, mockLogger)
 
@@ -125,6 +145,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFake
         *
         */
       override def createAuditContext(): TAuditContext = mockAuditContext
+
+      override def createRuleContext(credId: String)(implicit hc: HeaderCarrier): RuleContext = mockRuleContext
 
       override protected def authConnector: AuthConnector = mockAuthConnector
     }
