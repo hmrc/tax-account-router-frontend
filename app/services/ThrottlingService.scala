@@ -65,9 +65,16 @@ trait ThrottlingService {
 
     def throttlePercentage: (Configuration) => Int = {
       configurationForLocation => {
+        // FIXME currently retained only for backwards compatibility reasons prior to deployment.
+        // can be removed once all app config projects are updated with correct configuration.
+        val incorrectConfigurationKey = "percentageBeToThrottled"
+
+        val configurationKey = "percentageToBeThrottled"
         configurationForLocation
-          .getInt("percentageBeToThrottled")
-          .getOrElse(0)
+          .getInt(configurationKey)
+          .getOrElse(
+            configurationForLocation.getInt(incorrectConfigurationKey).getOrElse(0)
+          )
       }
     }
 

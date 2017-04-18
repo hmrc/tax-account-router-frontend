@@ -60,7 +60,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
   def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageToBeThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false) = {
     Map[String, Any](
       "throttling.enabled" -> enabled,
-      s"throttling.locations.$locationName.percentageBeToThrottled" -> percentageToBeThrottled,
+      s"throttling.locations.$locationName.percentageToBeThrottled" -> percentageToBeThrottled,
       s"throttling.locations.$locationName.fallback" -> fallbackLocation,
       "sticky-routing.enabled" -> stickyRoutingEnabled,
       "sticky-routing.long-live-cache-expiration-time" -> longLiveDocumentExpirationTime,
