@@ -128,7 +128,8 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         location shouldBe initialLocation
 
         //and
-        auditInfo.throttlingInfo shouldBe None // FIXME there should be some ThrottleInfo
+        val expectedThrottlingInfo = ThrottlingInfo(Some(0), throttled = false, initialLocation, throttlingEnabled = true)
+        auditInfo.throttlingInfo shouldBe Some(expectedThrottlingInfo)
       }
     }
   }

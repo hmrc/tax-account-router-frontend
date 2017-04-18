@@ -98,7 +98,8 @@ trait ThrottlingService {
           val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), location != throttleDestination, location, throttlingEnabled)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
         } else {
-          (auditInfo, location)
+          val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), throttled = false, location, throttlingEnabled = throttlingEnabled)
+          (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)
         }
       }
     }
