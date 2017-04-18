@@ -29,15 +29,38 @@ class ThrottlerSpec extends UnitSpec with Matchers {
     val discriminator = "f3c48669-ecd2-41a4-ac51-aa6b9898b462" // Math.abs("f3c48669-ecd2-41a4-ac51-aa6b9898b462".md5.hashCode % 100) = 50
 
     val scenarios = Table[String, Int, Boolean](
-      ("scenario", "expectedThreshold", "expectedResult"),
-      ("return false when threshold is same as user modulus", 50, true),
-      ("return false when user modulus is lower than threshold", 51, true),
-      ("return true when user modulus is greater than threshold", 49, false)
+      ("scenario", "percentageToBeThrottled", "expectedResult"),
+
+      ("threshold is lower than user modulus", 49, false),
+      ("threshold is same as user modulus", 50, false),
+      ("threshold is greater than user modulus", 51, true)
     )
 
-    forAll(scenarios) { (scenario, expectedThreshold, expectedResult) =>
-      scenario in {
-        Throttler.shouldThrottle(discriminator, expectedThreshold) shouldBe expectedResult
+    forAll(scenarios) { (scenario, percentageToBeThrottled, expectedResult) =>
+      s"return $expectedResult in scenario: $scenario" in {
+        Throttler.shouldThrottle(discriminator, percentageToBeThrottled) shouldBe expectedResult
+      }
+    }
+  }
+
+  it should {
+
+    val discriminator99 = "c2103cec-03f5-4605-b980-dd2d309d48e9" // Math.abs("c2103cec-03f5-4605-b980-dd2d309d48e9".md5.hashCode % 100) = 99
+    val discriminator0 = "4c72d67c-df80-4967-953d-c64ffc22d720" // Math.abs("4c72d67c-df80-4967-953d-c64ffc22d720".md5.hashCode % 100) = 0
+
+    val scenarios = Table[String, String, Int, Boolean](
+      ("scenario", "discriminator", "percentageToBeThrottled", "expectedResult"),
+
+      ("threshold is same as user modulus of 0", discriminator0, 0, false),
+      ("threshold is higher than user modulus of 0", discriminator0, 1, true),
+
+      ("threshold is same as user modulus of 99", discriminator99, 99, false),
+      ("threshold is higher than user modulus of 99", discriminator99, 100, true)
+    )
+
+    forAll(scenarios) { (scenario, discriminator, percentageToBeThrottled, expectedResult) =>
+      s"return $expectedResult in scenario: $scenario" in {
+        Throttler.shouldThrottle(discriminator, percentageToBeThrottled) shouldBe expectedResult
       }
     }
   }

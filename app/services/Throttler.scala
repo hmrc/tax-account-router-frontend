@@ -31,7 +31,7 @@ object Throttler {
       }
     }
 
-    val percentage = Math.abs((discriminator.toMD5.hashCode % percentageDivisor).toDouble)
+    val percentage = Math.abs((discriminator.toMD5.hashCode % percentageDivisor).toDouble) + 1
     percentage <= percentageToBeThrottled
   }
 }
