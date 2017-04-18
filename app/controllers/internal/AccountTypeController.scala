@@ -22,7 +22,7 @@ import controllers.internal.AccountType.AccountType
 import engine.RuleEngine
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.{Action, AnyContent, Result}
+import play.api.mvc.{Action, AnyContent}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
@@ -84,9 +84,8 @@ trait AccountTypeController extends FrontendController with Actions {
         }
     }.recover {
       case e =>
-        e.printStackTrace()
-        logger.error(s"Failed to get user details due to downstream failure.", e)
-        InternalServerError("Failed to get user details due to downstream failure.")
+        logger.error("Unable to get user details from downstream.", e)
+        InternalServerError("Unable to get user details from downstream.")
     }
   }
 

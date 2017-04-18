@@ -49,10 +49,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
@@ -81,10 +81,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -115,10 +115,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -144,10 +144,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
@@ -176,10 +176,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -207,10 +207,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -239,10 +239,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -271,10 +271,10 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should not be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      And("user's details should be fetched from User Details")
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from Sa micro service")
+      And("sa returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -302,9 +302,9 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should be fetched from User Details")
-      verify(1, getRequestedFor(urlEqualTo("/user-details-uri")))
+      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
@@ -334,7 +334,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
@@ -343,7 +343,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
 
-      And("the user has no inactive enrolments and affinity group is not available")
+      And("the user's affinity group is not available")
       stubUserDetailsToReturn500()
 
       When("the destination for cred id is fetched")
@@ -362,7 +362,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
@@ -387,7 +387,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("Sa micro service should not be invoked")
+      And("SA micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
   }
