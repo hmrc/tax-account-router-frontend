@@ -20,9 +20,9 @@ import java.security.MessageDigest
 
 object Throttler {
 
-  private val bucketSize = 100
+  private val percentageDivisor = 100
 
-  def shouldThrottle(discriminator: String, upperBound: Int) = {
+  def shouldThrottle(discriminator: String, percentageToBeThrottled: Int) = {
 
     implicit class MD5(value: String) {
       def toMD5 = {
@@ -31,7 +31,7 @@ object Throttler {
       }
     }
 
-    val userModulus = Math.abs((discriminator.toMD5.hashCode % bucketSize).toDouble)
-    userModulus <= upperBound
+    val percentage = Math.abs((discriminator.toMD5.hashCode % percentageDivisor).toDouble)
+    percentage <= percentageToBeThrottled
   }
 }

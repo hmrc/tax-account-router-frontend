@@ -63,7 +63,7 @@ trait ThrottlingService {
     import cats.syntax.flatMap._
     import cats.syntax.functor._
 
-    def throttlePercentage: (Configuration) => Int = {
+    def percentageToBeThrottledForLocation: Configuration => Int = {
       configurationForLocation => {
         // FIXME currently retained only for backwards compatibility reasons prior to deployment.
         // can be removed once all app config projects are updated with correct configuration.
@@ -78,7 +78,7 @@ trait ThrottlingService {
       }
     }
 
-    def findFallbackFor(location: Location): (Configuration) => Location = {
+    def findFallbackFor(location: Location): Configuration => Location = {
       configurationForLocation => {
         val fallback = for {
           fallbackName <- configurationForLocation.getString("fallback")
@@ -90,12 +90,12 @@ trait ThrottlingService {
 
     def doThrottle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier): (Configuration) => (AuditInfo, Location) = {
       for {
-        throttleUpperBound <- throttlePercentage
+        percentageToBeThrottled <- percentageToBeThrottledForLocation
         throttleDestination <- findFallbackFor(location)
-        shouldThrottle = Throttler.shouldThrottle(userId, throttleUpperBound)
+        shouldThrottle = Throttler.shouldThrottle(userId, percentageToBeThrottled)
       } yield {
         if (shouldThrottle) {
-          val throttlingInfo = ThrottlingInfo(percentage = Some(throttleUpperBound), location != throttleDestination, location, throttlingEnabled)
+          val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), location != throttleDestination, location, throttlingEnabled)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
         } else {
           (auditInfo, location)
