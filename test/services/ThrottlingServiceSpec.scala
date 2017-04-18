@@ -97,7 +97,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         location shouldBe initialLocation
 
         //and
-        auditInfo.throttlingInfo shouldBe Some(ThrottlingInfo(None, false, initialLocation, false))
+        auditInfo.throttlingInfo shouldBe Some(ThrottlingInfo(None, throttled = false, initialLocation, throttlingEnabled = false))
       }
     }
 
@@ -139,19 +139,19 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     val scenarios = evaluateUsingPlay {
       Table(
-        ("scenario", "percentageBeToThrottled", "randomNumber", "expectedLocation", "throttled"),
-        ("Should throttle to fallback when random number is less than percentage", 50, 10, PersonalTaxAccount, true),
-        ("Should throttle to fallback when random number is equal than percentage", 50, 49, PersonalTaxAccount, true),
-        ("Should not throttle to fallback when random number is equal than percentage", 50, 70, initialLocation, false)
+        ("scenario", "percentageBeToThrottled", "fallbackLocation", "expectedLocation", "throttled"),
+        ("not throttle to fallback when user modulus is above threshold", 50, PersonalTaxAccount.name, BusinessTaxAccount, false),
+        ("throttle to fallback when user modulus is equal to threshold", 51, PersonalTaxAccount.name, PersonalTaxAccount, true),
+        ("throttle (but set throttle=false in audit event) when throttleLocation and initialLocation are the same", 51, initialLocation.name, initialLocation, false)
       )
     }
 
-    forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, randomNumber: Int, expectedLocation: Location, throttled: Boolean) =>
-      s"return the correct location and update audit context - scenario: $scenario" in {
+    forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, fallbackLocation, expectedLocation: Location, throttled: Boolean) =>
+      scenario in {
         val fakeApplication = FakeApplication(additionalConfiguration = createConfiguration(
           locationName = initialLocation.name,
           percentageToBeThrottled = percentageBeToThrottled,
-          fallbackLocation = expectedLocation.name
+          fallbackLocation = fallbackLocation
         ))
 
         running(fakeApplication) {
