@@ -16,51 +16,39 @@
 
 package model
 
-import model.TLocation.LocationBuilder
-import play.api.Configuration
+import config.{AppConfig, FrontendAppConfig}
 
 case class Location(name: String, url: String)
 
-object TLocation {
+trait Locations {
+  def appConfig: AppConfig
 
-  import cats.instances.all._
-  import cats.syntax.flatMap._
-  import cats.syntax.functor._
+  lazy val PersonalTaxAccount = buildLocation("pta")
+  lazy val BusinessTaxAccount = buildLocation("bta")
+  lazy val TaxAccountRouterHome = buildLocation("tax-account-router")
 
-  type LocationBuilder = (Configuration) => Either[String, Location]
+  lazy val all = List(PersonalTaxAccount, BusinessTaxAccount, TaxAccountRouterHome)
 
-  def apply(locationName: String): LocationBuilder = {
+  def verifyConfiguration() = {
+    assert(all.nonEmpty)
+  }
 
-    def getString(key: String): (Configuration) => Either[String, String] = conf =>
-      conf.getString(s"locations.$locationName.$key")
-        .map(Right(_))
-        .getOrElse(Left(s"key '$key' not configured for location '$locationName'"))
+  def find(name: String): Option[Location] = all.find { case Location(n, _) => n == name }
 
-    for {
-      name <- getString("name")
-      url <- getString("url")
-    } yield for {
-      n <- name.right
-      u <- url.right
-    } yield Location(n, u)
+  private def buildLocation(locationName: String): Location = {
+
+    def getString(key: String): String = {
+      appConfig.getLocationConfig(locationName, key)
+        .getOrElse(throw new RuntimeException(s"key '$key' not configured for location '$locationName'"))
+    }
+
+    val name = getString("name")
+    val url = getString("url")
+
+    Location(name, url)
   }
 }
 
-object Locations {
-
-  import play.api.Play._
-
-  def buildLocation(locationBuilder: LocationBuilder): Location =
-    locationBuilder(configuration).fold[Location](
-      error => throw new RuntimeException(error),
-      identity
-    )
-
-  val PersonalTaxAccount = buildLocation(TLocation("pta"))
-  val BusinessTaxAccount = buildLocation(TLocation("bta"))
-  val TaxAccountRouterHome = buildLocation(TLocation("tax-account-router"))
-
-  val all = List(PersonalTaxAccount, BusinessTaxAccount, TaxAccountRouterHome)
-
-  def find(name: String): Option[Location] = all.find { case Location(n, _) => n == name }
+object Locations extends Locations {
+  val appConfig = FrontendAppConfig
 }
