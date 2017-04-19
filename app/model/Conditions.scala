@@ -16,14 +16,18 @@
 
 package model
 
+import config.{AppConfig, FrontendAppConfig}
 import connector.AffinityGroupValue
 import engine._
 import engine.RoutingReason._
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object Conditions {
+trait Conditions {
+
+  val config: AppConfig
+
   object predicates {
     type ConditionPredicate = (RuleContext) => Future[Boolean]
     val ggEnrolmentsAvailableF: ConditionPredicate = rc =>
@@ -36,13 +40,13 @@ object Conditions {
       Future.successful(!rc.request_.session.data.contains("token") && rc.credId.isEmpty)
 
     val hasAnyBusinessEnrolmentF: ConditionPredicate = rc =>
-      rc.activeEnrolmentKeys.map(_.intersect(rc.businessEnrolments).nonEmpty)
+      rc.activeEnrolmentKeys.map(_.intersect(config.businessEnrolments).nonEmpty)
 
     val SAReturnAvailableF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_ => true).recover { case _ => false }
 
     val hasSaEnrolmentsF: ConditionPredicate = rc =>
-      rc.activeEnrolmentKeys.map(_.intersect(rc.saEnrolments).nonEmpty)
+      rc.activeEnrolmentKeys.map(_.intersect(config.saEnrolments).nonEmpty)
 
     val hasPreviousReturnsF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.previousReturns)
@@ -81,4 +85,9 @@ object Conditions {
   val hasNino = Pure(hasNinoF, HAS_NINO)
   val hasIndividualAffinityGroup = Pure(hasIndividualAffinityGroupF, HAS_INDIVIDUAL_AFFINITY_GROUP)
   val hasAnyInactiveEnrolment = Pure(hasAnyInactiveEnrolmentF, HAS_ANY_INACTIVE_ENROLMENT)
+
+}
+
+object Conditions extends Conditions {
+  override val config: AppConfig = FrontendAppConfig
 }

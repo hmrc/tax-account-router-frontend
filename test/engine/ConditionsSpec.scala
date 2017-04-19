@@ -57,7 +57,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       s"be true whether the user has any business enrolments - scenario: $scenario" in {
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
-        when(ruleContext.businessEnrolments).thenReturn(Future(Set("enr1", "enr2")))
 
         val (auditInfo, evaluationResult) = Conditions.hasAnyBusinessEnrolment.evaluate(ruleContext).run.futureValue
 
@@ -83,7 +82,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       s"return $expectedResult when $scenario" in {
         lazy val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
-        when(ruleContext.saEnrolments).thenReturn(Future(Set("enr3")))
 
         val (auditInfo, evaluationResult) = Conditions.hasSaEnrolments.evaluate(ruleContext).run.futureValue
 

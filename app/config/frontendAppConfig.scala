@@ -33,6 +33,9 @@ trait AppConfig extends AppConfigHelpers {
   val reportAProblemPartialUrl: String
   val reportAProblemNonJSUrl: String
 
+  val businessEnrolments: Set[String]
+  val saEnrolments: Set[String]
+
   def getLocationConfig(locationName: String, key: String): Option[String]
 }
 
@@ -47,4 +50,7 @@ object FrontendAppConfig extends AppConfig with ServicesConfig {
   override lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
 
   override def getLocationConfig(locationName: String, key: String) = getConfigurationStringOption(s"locations.$locationName.$key")
+
+  override val businessEnrolments = getConfigurationStringOption("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
+  override val saEnrolments = getConfigurationStringOption("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }

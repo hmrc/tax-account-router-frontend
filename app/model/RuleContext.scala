@@ -77,7 +77,4 @@ case class RuleContext(credId: Option[String])(implicit request: Request[AnyCont
   lazy val affinityGroup = userDetails.map(_.affinityGroup)
 
   lazy val isAdmin = userDetails.map(_.isAdmin)
-
-  val businessEnrolments = Play.configuration.getString("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
-  val saEnrolments = Play.configuration.getString("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
 }
