@@ -16,21 +16,24 @@
 
 package controllers.internal
 
-import connector.FrontendAuthConnector
+import connector.{AffinityGroupValue, FrontendAuthConnector}
 import controllers.TarRules
 import controllers.internal.AccountType.AccountType
 import engine.RuleEngine
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.Action
+import play.api.mvc.{Action, AnyContent}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
+import uk.gov.hmrc.play.http.HeaderCarrier
 import utils.EnumJson._
+
+import scala.concurrent.Future
 
 object AccountType extends Enumeration {
   type AccountType = Value
-  val Individual, Organisation = Value
+  val Individual, Organisation, Agent = Value
 }
 
 case class AccountTypeResponse(`type`: AccountType)
@@ -52,6 +55,8 @@ object AccountTypeController extends AccountTypeController {
 
   override def createAuditContext() = AuditContext()
 
+  override def createRuleContext(credId: String)(implicit hc: HeaderCarrier): RuleContext = RuleContext(Some(credId))
+
 }
 
 trait AccountTypeController extends FrontendController with Actions {
@@ -63,12 +68,24 @@ trait AccountTypeController extends FrontendController with Actions {
 
   def createAuditContext(): TAuditContext
 
-  def accountTypeForCredId(credId: String) = Action.async { implicit request =>
-    val ruleContext = RuleContext(Some(credId))
-    val auditContext = createAuditContext()
-    ruleEngine.matchRulesForLocation(ruleContext, auditContext) map { location =>
-      val accountType = accountTypeBasedOnLocation(location)
-      Ok(Json.toJson(AccountTypeResponse(accountType)))
+  def createRuleContext(credId: String)(implicit hc: HeaderCarrier): RuleContext
+
+  def accountTypeForCredId(credId: String): Action[AnyContent] = Action.async { implicit request =>
+    val ruleContext = createRuleContext(credId)
+
+    ruleContext.affinityGroup.flatMap {
+      case AffinityGroupValue.AGENT =>
+        Future.successful(Ok(Json.toJson(AccountTypeResponse(AccountType.Agent))))
+      case _ =>
+        val auditContext = createAuditContext()
+        ruleEngine.matchRulesForLocation(ruleContext, auditContext) map { location =>
+          val accountType: AccountType = accountTypeBasedOnLocation(location)
+          Ok(Json.toJson(AccountTypeResponse(accountType)))
+        }
+    }.recover {
+      case e =>
+        logger.error("Unable to get user details from downstream.", e)
+        InternalServerError("Unable to get user details from downstream.")
     }
   }
 
