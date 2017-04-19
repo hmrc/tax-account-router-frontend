@@ -84,11 +84,11 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and sa returning 500 should get Organisation as account type") {
+    scenario("a user logged in through GG and SA returning 500 should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(accounts = saAccounts, internalUserIdentifier = Some(credId)).stubLoggedOut()
@@ -97,7 +97,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the sa is returning 500")
+      And("the SA is returning 500")
       stubSaReturnToReturn500(saUtr)
 
       createStubs(BtaHomeStubPage)
@@ -118,7 +118,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -179,7 +179,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -210,7 +210,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -242,7 +242,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
@@ -274,11 +274,11 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's details should be fetched from User Details")
       verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
-      And("sa returns should be fetched from SA micro service")
+      And("SA returns should be fetched from SA micro service")
       verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should get Organisation as account type") {
+    scenario("a user logged in through GG and has no SA and no business enrolment with individual affinity group and inactive enrolments should get Organisation as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
@@ -308,7 +308,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
 
-    scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should get Individual as account type") {
+    scenario("a user logged in through GG and has no SA and no business enrolment with individual affinity group and no inactive enrolments should get Individual as account type") {
 
       Given("a user logged in through Government Gateway")
       SessionUser(internalUserIdentifier = Some(credId), affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedOut()
@@ -351,7 +351,7 @@ class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
       Then("the response should be 500")
       response.status shouldBe 500
-      response.body shouldBe "Failed to get user details due to downstream failure."
+      response.body shouldBe "Unable to get user details from downstream."
 
       And("the authority object should be fetched once for AuthenticatedBy")
       verify(getRequestedFor(urlEqualTo(s"/auth/gg/$credId")))
