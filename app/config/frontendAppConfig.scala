@@ -16,6 +16,7 @@
 
 package config
 
+import play.api.Configuration
 import play.api.Play.{configuration, current}
 import uk.gov.hmrc.play.config.ServicesConfig
 
@@ -25,6 +26,7 @@ trait AppConfigHelpers {
   def getConfigurationString(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
 
   def getConfigurationBoolean(key: String) = configuration.getBoolean(key).getOrElse(false)
+  def getConfiguration(key: String) = configuration.getConfig(key).getOrElse(Configuration.empty)
 }
 
 trait AppConfig extends AppConfigHelpers {
@@ -37,6 +39,7 @@ trait AppConfig extends AppConfigHelpers {
   val saEnrolments: Set[String]
 
   def getLocationConfig(locationName: String, key: String): Option[String]
+  def getThrottlingConfig(locationWithSuffix: String): Configuration
 }
 
 object FrontendAppConfig extends AppConfig with ServicesConfig {
@@ -50,6 +53,8 @@ object FrontendAppConfig extends AppConfig with ServicesConfig {
   override lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
 
   override def getLocationConfig(locationName: String, key: String) = getConfigurationStringOption(s"locations.$locationName.$key")
+
+  override def getThrottlingConfig(locationWithSuffix: String) = getConfiguration(s"throttling.locations.${locationWithSuffix}")
 
   override val businessEnrolments = getConfigurationStringOption("business-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]
   override val saEnrolments = getConfigurationStringOption("self-assessment-enrolments").getOrElse("").split(",").map(_.trim).toSet[String]

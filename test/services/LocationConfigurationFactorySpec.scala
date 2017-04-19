@@ -16,84 +16,66 @@
 
 package services
 
+import config.AppConfig
+import org.mockito.Mockito._
 import model.{Location, Locations}
+import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Configuration
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.test.UnitSpec
 
-class LocationConfigurationFactorySpec extends UnitSpec with OneAppPerSuite {
+class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with OneAppPerSuite {
 
   "configurationForLocation" should {
-    "retrieve appropriate configuration" in {
-
+    "retrieve appropriate configuration" in new Setup {
       implicit val fakeRequest = FakeRequest()
-      val testConfiguration = Configuration.from(Map(
-        "throttling.locations.name1.key1" -> "value1",
-        "throttling.locations.name1.key2" -> "value2"
-      ))
 
-      val location = Location("name1", "url")
+      when(mockAppConfig.getThrottlingConfig("name1")).thenReturn(testConfiguration)
 
-      val locationConfigurationFactory = new LocationConfigurationFactory {
-        override val configuration: Configuration = testConfiguration
-      }
+      val location = Location("name1", "some-url")
 
       val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      val expectedConfiguration = Configuration.from(Map(
-        "key1" -> "value1",
-        "key2" -> "value2"
-      ))
-
-      result shouldBe expectedConfiguration
+      result shouldBe testConfiguration
     }
 
-    "retrieve appropriate configuration for PTA" in {
+    "retrieve appropriate configuration for PTA" in new Setup {
       implicit val fakeRequest = FakeRequest()
-      val testConfiguration = Configuration.from(Map(
-        "throttling.locations.personal-tax-account-verify.key1" -> "value1",
-        "throttling.locations.personal-tax-account-verify.key2" -> "value2"
-      ))
+
+      when(mockAppConfig.getThrottlingConfig("personal-tax-account-verify")).thenReturn(testConfiguration)
 
       val location = Locations.PersonalTaxAccount
 
-      val locationConfigurationFactory = new LocationConfigurationFactory {
-        override val configuration: Configuration = testConfiguration
-      }
-
       val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      val expectedConfiguration = Configuration.from(Map(
-        "key1" -> "value1",
-        "key2" -> "value2"
-      ))
-
-      result shouldBe expectedConfiguration
+      result shouldBe testConfiguration
     }
 
-    "retrieve appropriate configuration for PTA with token in session" in {
+    "retrieve appropriate configuration for PTA with token in session" in new Setup {
 
       implicit val fakeRequest = FakeRequest().withSession("token" -> "some-token")
-      val testConfiguration = Configuration.from(Map(
-        "throttling.locations.personal-tax-account-gg.key1" -> "value1",
-        "throttling.locations.personal-tax-account-gg.key2" -> "value2"
-      ))
+
+      when(mockAppConfig.getThrottlingConfig("personal-tax-account-gg")).thenReturn(testConfiguration)
 
       val location = Locations.PersonalTaxAccount
 
-      val locationConfigurationFactory = new LocationConfigurationFactory {
-        override val configuration: Configuration = testConfiguration
-      }
-
       val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      val expectedConfiguration = Configuration.from(Map(
-        "key1" -> "value1",
-        "key2" -> "value2"
-      ))
+      result shouldBe testConfiguration
+    }
+  }
 
-      result shouldBe expectedConfiguration
+  class Setup {
+    val mockAppConfig = mock[AppConfig]
+
+    val testConfiguration = Configuration.from(Map(
+      "key1" -> "value1",
+      "key2" -> "value2"
+    ))
+
+    val locationConfigurationFactory = new LocationConfigurationFactory {
+      override val configuration: AppConfig = mockAppConfig
     }
   }
 }

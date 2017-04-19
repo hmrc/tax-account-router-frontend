@@ -17,6 +17,7 @@
 package services
 
 import cats.data.WriterT
+import config.{AppConfig, FrontendAppConfig}
 import connector.InternalUserIdentifier
 import engine.{AuditInfo, ThrottlingInfo}
 import helpers.SpecHelpers
@@ -86,7 +87,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
         val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: Configuration = fakeApplication.configuration
+          override val configuration: AppConfig = FrontendAppConfig
         }
 
         //when
@@ -117,7 +118,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
         val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: Configuration = fakeApplication.configuration
+          override val configuration: AppConfig = FrontendAppConfig
         }
 
         //when
@@ -164,18 +165,18 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
           val locationConfigurationFactory = new LocationConfigurationFactory {
-            override val configuration: Configuration = fakeApplication.configuration
+            override val configuration: AppConfig = FrontendAppConfig
           }
 
           //when
-          val throttlingServiceTest = new ThrottlingServiceTest(locationConfigurationFactory)
-          val (auditInfo, returnedLocation) = throttlingServiceTest.throttle(ruleEngineResult, mockRuleContext).run.futureValue
+          val throttler = new ThrottlingServiceTest(locationConfigurationFactory)
+          val (auditInfo, returnedLocation) = throttler.throttle(ruleEngineResult, mockRuleContext).run.futureValue
 
           //then
           returnedLocation shouldBe expectedLocation
 
           //and
-          auditInfo.throttlingInfo shouldBe Some(ThrottlingInfo(Some(percentageBeToThrottled), throttled, initialLocation, throttlingServiceTest.throttlingEnabled))
+          auditInfo.throttlingInfo shouldBe Some(ThrottlingInfo(Some(percentageBeToThrottled), throttled, initialLocation, throttler.throttlingEnabled))
         }
       }
     }

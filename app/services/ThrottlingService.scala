@@ -17,6 +17,7 @@
 package services
 
 import cats.data.WriterT
+import config.{AppConfig, FrontendAppConfig}
 import connector.InternalUserIdentifier
 import engine.{AuditInfo, EngineResult, ThrottlingInfo}
 import model.Locations.PersonalTaxAccount
@@ -30,7 +31,7 @@ import scala.concurrent.Future
 
 trait LocationConfigurationFactory {
 
-  val configuration: Configuration
+  val configuration: AppConfig
 
   def configurationForLocation(location: Location, request: Request[AnyContent]): Configuration = {
 
@@ -47,7 +48,7 @@ trait LocationConfigurationFactory {
     }
 
     val suffix = getLocationSuffix(location, request)
-    configuration.getConfig(s"throttling.locations.${location.name}$suffix").getOrElse(Configuration.empty)
+    configuration.getThrottlingConfig(s"${location.name}$suffix")
   }
 }
 
@@ -126,6 +127,6 @@ trait ThrottlingService {
 object ThrottlingService extends ThrottlingService {
 
   override val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
-    override val configuration: Configuration = Play.current.configuration
+    override val configuration: AppConfig = FrontendAppConfig
   }
 }
