@@ -150,6 +150,11 @@ trait CommonStubs {
         .withStatus(404)))
   }
 
+  def stubAuthToReturn401() = stubFor(get(urlEqualTo("/auth/authority"))
+    .willReturn(
+      aResponse()
+        .withStatus(401)))
+
   def stubSaReturnToReturn500(saUtr: String) = {
     stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
       .willReturn(aResponse()

@@ -35,9 +35,12 @@ trait RouterAuthenticationProvider extends AuthenticationProvider {
   override def redirectToLogin(implicit request: Request[_]): Future[FailureResult] = Future.successful(Redirect(login))
 
   override def handleNotAuthenticated(implicit request: Request[_]): PartialFunction[UserCredentials, Future[Either[AuthContext, RouterAuthenticationProvider.FailureResult]]] = {
-    case UserCredentials(None, token@_) =>
-      Logger.info(s"No userId found - redirecting to login. user: None token : $token")
-      redirectToLogin.map(Right(_))
+   case UserCredentials(None, token@_) =>
+     Logger.info(s"No userId found - redirecting to login. user: None token: $token")
+     redirectToLogin.map(Right(_))
+   case UserCredentials(None, None) =>
+     Logger.info(s"No userId found - redirecting to login. user: None token: None")
+     redirectToLogin.map(Right(_))
   }
 }
 

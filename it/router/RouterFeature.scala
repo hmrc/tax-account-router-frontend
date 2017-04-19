@@ -11,6 +11,23 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   feature("Router feature") {
 
+    scenario("unauthorised response from auth should be handled with redirecting to login page") {
+
+      Given("a user logged in through Verify")
+      createStubs(TaxAccountUser(tokenPresent = false))
+
+      Given("auth returns Unauthorised")
+      stubAuthToReturn401()
+
+      createStubs(LoginPageStub)
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to Login page")
+      on(LoginPage)
+    }
+
     scenario("a user logged in through Verify should be redirected to PTA") {
 
       Given("a user logged in through Verify")
