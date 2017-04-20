@@ -47,25 +47,48 @@ class FrontendAppConfigSpec extends UnitSpec {
 
   "businessEnrolments" should {
 
-    val scenarios = Tables.Table[String, Set[String]](
-      ("businessEnrolments", "expectedEnrolments"),
-      ("a", Set("a")),
-      ("a,b,c", Set("a","b","c")),
-      (",  a ,, b  ,c,", Set("a","b","c"))
+    val scenarios = Tables.Table[Map[String, Any], Set[String]](
+      ("testConfiguration", "expectedEnrolments"),
+      (Map.empty, Set.empty[String]),
+      (Map("business-enrolments" -> ""), Set.empty[String]),
+      (Map("business-enrolments" -> "a"), Set("a")),
+      (Map("business-enrolments" -> "a,b,c"), Set("a","b","c")),
+      (Map("business-enrolments" -> ",  a ,, b  ,c,"), Set("a","b","c"))
     )
 
-    TableDrivenPropertyChecks.forAll(scenarios) { (businessEnrolments, expectedEnrolments) =>
+    TableDrivenPropertyChecks.forAll(scenarios) { (testConfiguration, expectedEnrolments) =>
 
-      s"return enrolments for configuration - $businessEnrolments" in {
-        val testConfiguration = Map[String, Any](
-          "business-enrolments" -> businessEnrolments
-        )
-
+      s"return enrolments for configuration - $testConfiguration" in {
         val appConfig = new AppConfig {
           override lazy val config = Configuration.from(testConfiguration)
         }
 
         val result = appConfig.businessEnrolments
+
+        result shouldBe expectedEnrolments
+      }
+    }
+  }
+
+  "saEnrolments" should {
+
+    val scenarios = Tables.Table[Map[String, Any], Set[String]](
+      ("testConfiguration", "expectedEnrolments"),
+      (Map.empty, Set.empty[String]),
+      (Map("self-assessment-enrolments" -> ""), Set.empty[String]),
+      (Map("self-assessment-enrolments" -> "a"), Set("a")),
+      (Map("self-assessment-enrolments" -> "a,b,c"), Set("a","b","c")),
+      (Map("self-assessment-enrolments" -> ",  a ,, b  ,c,"), Set("a","b","c"))
+    )
+
+    TableDrivenPropertyChecks.forAll(scenarios) { (testConfiguration, expectedEnrolments) =>
+
+      s"return enrolments for configuration - $testConfiguration" in {
+        val appConfig = new AppConfig {
+          override lazy val config = Configuration.from(testConfiguration)
+        }
+
+        val result = appConfig.saEnrolments
 
         result shouldBe expectedEnrolments
       }
