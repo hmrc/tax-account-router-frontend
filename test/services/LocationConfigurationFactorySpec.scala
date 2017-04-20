@@ -21,7 +21,6 @@ import org.mockito.Mockito._
 import model.{Location, Locations}
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
-import play.api.Configuration
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -31,48 +30,45 @@ class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with O
     "retrieve appropriate configuration" in new Setup {
       implicit val fakeRequest = FakeRequest()
 
-      when(mockAppConfig.getThrottlingConfig("name1")).thenReturn(testConfiguration)
+      when(mockAppConfig.getThrottlingConfig("name1")).thenReturn(testThrottlingConfig)
 
       val location = Location("name1", "some-url")
 
-      val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      result shouldBe testConfiguration
+      result shouldBe testThrottlingConfig
     }
 
     "retrieve appropriate configuration for PTA" in new Setup {
       implicit val fakeRequest = FakeRequest()
 
-      when(mockAppConfig.getThrottlingConfig("personal-tax-account-verify")).thenReturn(testConfiguration)
+      when(mockAppConfig.getThrottlingConfig("personal-tax-account-verify")).thenReturn(testThrottlingConfig)
 
       val location = Locations.PersonalTaxAccount
 
-      val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      result shouldBe testConfiguration
+      result shouldBe testThrottlingConfig
     }
 
     "retrieve appropriate configuration for PTA with token in session" in new Setup {
 
       implicit val fakeRequest = FakeRequest().withSession("token" -> "some-token")
 
-      when(mockAppConfig.getThrottlingConfig("personal-tax-account-gg")).thenReturn(testConfiguration)
+      when(mockAppConfig.getThrottlingConfig("personal-tax-account-gg")).thenReturn(testThrottlingConfig)
 
       val location = Locations.PersonalTaxAccount
 
-      val result:Configuration = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
-      result shouldBe testConfiguration
+      result shouldBe testThrottlingConfig
     }
   }
 
   class Setup {
     val mockAppConfig = mock[AppConfig]
 
-    val testConfiguration = Configuration.from(Map(
-      "key1" -> "value1",
-      "key2" -> "value2"
-    ))
+    val testThrottlingConfig = ThrottlingConfig(100, Some("some-fallback"))
 
     val locationConfigurationFactory = new LocationConfigurationFactory {
       override val configuration: AppConfig = mockAppConfig

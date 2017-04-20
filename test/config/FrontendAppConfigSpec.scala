@@ -18,6 +18,7 @@ package config
 
 import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.Configuration
+import services.ThrottlingConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
 class FrontendAppConfigSpec extends UnitSpec {
@@ -26,8 +27,8 @@ class FrontendAppConfigSpec extends UnitSpec {
     "return configuration for throttling location" in {
 
       val testConfiguration = Map[String, Any](
-        "throttling.locations.some-location.key1" -> "value1",
-        "throttling.locations.some-location.key2" -> "value2"
+        "throttling.locations.some-location.percentageToBeThrottled" -> "100",
+        "throttling.locations.some-location.fallback" -> "some-fallback"
       )
 
       val appConfig = new AppConfig {
@@ -36,12 +37,17 @@ class FrontendAppConfigSpec extends UnitSpec {
 
       val result = appConfig.getThrottlingConfig("some-location")
 
-      val expectedConfiguration = Configuration.from(Map[String, Any](
-        "key1" -> "value1",
-        "key2" -> "value2"
-      ))
+      result shouldBe ThrottlingConfig(100, Some("some-fallback"))
+    }
 
-      result shouldBe expectedConfiguration
+    "return default values if configuration absent" in {
+      val appConfig = new AppConfig {
+        override lazy val config = Configuration.empty
+      }
+
+      val result = appConfig.getThrottlingConfig("some-location")
+
+      result shouldBe ThrottlingConfig(0, None)
     }
   }
 

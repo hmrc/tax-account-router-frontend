@@ -22,18 +22,20 @@ import connector.InternalUserIdentifier
 import engine.{AuditInfo, EngineResult, ThrottlingInfo}
 import model.Locations.PersonalTaxAccount
 import model._
+import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
-import play.api.{Configuration, Play}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+case class ThrottlingConfig(percentageToBeThrottled: Int, fallback: Option[String])
 
 trait LocationConfigurationFactory {
 
   val configuration: AppConfig
 
-  def configurationForLocation(location: Location, request: Request[AnyContent]): Configuration = {
+  def configurationForLocation(location: Location, request: Request[AnyContent]): ThrottlingConfig = {
 
     def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
       location match {
@@ -60,60 +62,40 @@ trait ThrottlingService {
 
   def throttle(currentResult: EngineResult, ruleContext: RuleContext): EngineResult = {
 
-    import cats.instances.all._
-    import cats.syntax.flatMap._
-    import cats.syntax.functor._
-
-    def percentageToBeThrottledForLocation: Configuration => Int = {
-      configurationForLocation => {
-        // FIXME currently retained only for backwards compatibility reasons prior to deployment.
-        // can be removed once all app config projects are updated with correct configuration.
-        val incorrectConfigurationKey = "percentageBeToThrottled"
-
-        val configurationKey = "percentageToBeThrottled"
-        configurationForLocation
-          .getInt(configurationKey)
-          .getOrElse(
-            configurationForLocation.getInt(incorrectConfigurationKey).getOrElse(0)
-          )
-      }
-    }
-
-    def findFallbackFor(location: Location): Configuration => Location = {
-      configurationForLocation => {
-        val fallback = for {
-          fallbackName <- configurationForLocation.getString("fallback")
-          fallback <- Locations.find(fallbackName)
-        } yield fallback
-        fallback.getOrElse(location)
-      }
-    }
-
-    def doThrottle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier): (Configuration) => (AuditInfo, Location) = {
-      for {
-        percentageToBeThrottled <- percentageToBeThrottledForLocation
-        throttleDestination <- findFallbackFor(location)
-        shouldThrottle = Throttler.shouldThrottle(userId, percentageToBeThrottled)
+    def findFallbackFor(location: Location, throttlingConfig: ThrottlingConfig): Location = {
+      val fallback = for {
+        fallbackName <- throttlingConfig.fallback
+        fallback <- Locations.find(fallbackName)
       } yield {
-        if (shouldThrottle) {
-          val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), location != throttleDestination, location, throttlingEnabled)
-          (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
-        } else {
-          val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), throttled = false, location, throttlingEnabled = throttlingEnabled)
-          (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)
-        }
+        fallback
+      }
+
+      fallback.getOrElse(location)
+    }
+
+    def doThrottle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier, throttlingConfig: ThrottlingConfig): (AuditInfo, Location) = {
+      val percentageToBeThrottled = throttlingConfig.percentageToBeThrottled
+
+      if (Throttler.shouldThrottle(userId, percentageToBeThrottled)) {
+        val throttleDestination = findFallbackFor(location, throttlingConfig)
+        val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), location != throttleDestination, location, throttlingEnabled)
+        (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), throttleDestination)
+      } else {
+        val throttlingInfo = ThrottlingInfo(percentage = Some(percentageToBeThrottled), throttled = false, location, throttlingEnabled = throttlingEnabled)
+        (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)
       }
     }
+
+    import cats.instances.all._
 
     currentResult flatMap { location =>
-
       val result: Future[(AuditInfo, Location)] = for {
         userIdentifier <- ruleContext.internalUserIdentifier
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case Some(userId) if throttlingEnabled =>
           val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, ruleContext.request_)
-          doThrottle(auditInfo, location, userId)(locationConfiguration)
+          doThrottle(auditInfo, location, userId, locationConfiguration)
         case _ =>
           val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)
           (auditInfo.copy(throttlingInfo = Some(throttlingInfo)), location)

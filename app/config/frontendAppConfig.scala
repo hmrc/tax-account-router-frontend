@@ -18,16 +18,18 @@ package config
 
 import play.api.Configuration
 import play.api.Play.{configuration, current}
+import services.ThrottlingConfig
 
 trait AppConfigHelpers {
 
-  lazy val config = configuration
+  lazy val config: Configuration = configuration
 
   def getConfigurationStringOption(key: String): Option[String] = config.getString(key)
 
   def getConfigurationString(key: String): String = config.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
 
   def getConfigurationBoolean(key: String): Boolean = config.getBoolean(key).getOrElse(false)
+
   def getConfiguration(key: String): Configuration = config.getConfig(key).getOrElse(Configuration.empty)
 
   def getConfigurationStringSet(key: String): Set[String] = {
@@ -39,23 +41,37 @@ trait AppConfigHelpers {
 
 trait AppConfig extends AppConfigHelpers {
 
-  private val contactHost = getConfigurationStringOption("contact-frontend.host").getOrElse("")
-  private val contactFormServiceIdentifier = "MyService"
+  private val contactHost: String = getConfigurationStringOption("contact-frontend.host").getOrElse("")
+  private val contactFormServiceIdentifier: String = "MyService"
 
-  lazy val analyticsToken = getConfigurationString("google-analytics.token")
-  lazy val analyticsHost = getConfigurationString("google-analytics.host")
-  lazy val reportAProblemPartialUrl = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
-  lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
+  lazy val analyticsToken: String = getConfigurationString("google-analytics.token")
+  lazy val analyticsHost: String = getConfigurationString("google-analytics.host")
+  lazy val reportAProblemPartialUrl: String = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
+  lazy val reportAProblemNonJSUrl: String = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
 
-  def getLocationConfig(locationName: String, key: String) = getConfigurationStringOption(s"locations.$locationName.$key")
+  def getLocationConfig(locationName: String, key: String): Option[String] = getConfigurationStringOption(s"locations.$locationName.$key")
 
-  def getThrottlingConfig(locationWithSuffix: String) = getConfiguration(s"throttling.locations.${locationWithSuffix}")
+  def getThrottlingConfig(locationWithSuffix: String): ThrottlingConfig = {
+    val config = getConfiguration(s"throttling.locations.$locationWithSuffix")
 
-  lazy val businessEnrolments = getConfigurationStringSet("business-enrolments")
-  lazy val saEnrolments = getConfigurationStringSet("self-assessment-enrolments")
+    val incorrectConfigurationKey = "percentageBeToThrottled"
+    val configurationKey = "percentageToBeThrottled"
+
+    val percentageToBeThrottled = config.getInt(configurationKey)
+      .getOrElse(
+        config.getInt(incorrectConfigurationKey)
+          .getOrElse(0)
+      )
+
+    val fallback = config.getString("fallback")
+
+    ThrottlingConfig(percentageToBeThrottled, fallback)
+  }
+
+  lazy val businessEnrolments: Set[String] = getConfigurationStringSet("business-enrolments")
+  lazy val saEnrolments: Set[String] = getConfigurationStringSet("self-assessment-enrolments")
 }
 
 object FrontendAppConfig extends AppConfig {
-
   override lazy val config = configuration
 }
