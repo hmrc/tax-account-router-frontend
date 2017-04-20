@@ -87,7 +87,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
         val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: AppConfig = FrontendAppConfig
+          override val configuration: AppConfig = new AppConfig {
+            override lazy val config = fakeApplication.configuration
+          }
         }
 
         //when
@@ -118,7 +120,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
         val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: AppConfig = FrontendAppConfig
+          override val configuration: AppConfig = new AppConfig {
+            override lazy val config = fakeApplication.configuration
+          }
         }
 
         //when
@@ -165,7 +169,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
           val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
           val locationConfigurationFactory = new LocationConfigurationFactory {
-            override val configuration: AppConfig = FrontendAppConfig
+            override val configuration: AppConfig =  new AppConfig {
+              override lazy val config = fakeApplication.configuration
+            }
           }
 
           //when
