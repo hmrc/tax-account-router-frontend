@@ -42,7 +42,7 @@ trait Conditions {
     val hasAnyBusinessEnrolmentF: ConditionPredicate = rc =>
       rc.activeEnrolmentKeys.map(_.intersect(config.businessEnrolments).nonEmpty)
 
-    val SAReturnAvailableF: ConditionPredicate = rc =>
+    val saReturnAvailableF: ConditionPredicate = rc =>
       rc.lastSaReturn.map(_ => true).recover { case _ => false }
 
     val hasSaEnrolmentsF: ConditionPredicate = rc =>
@@ -76,7 +76,7 @@ trait Conditions {
   val affinityGroupAvailable = Pure(affinityGroupAvailableF, AFFINITY_GROUP_AVAILABLE)
   val loggedInViaVerify = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
   val hasAnyBusinessEnrolment = Pure(hasAnyBusinessEnrolmentF, HAS_BUSINESS_ENROLMENTS)
-  val saReturnAvailable = Pure(SAReturnAvailableF, SA_RETURN_AVAILABLE)
+  val saReturnAvailable = Pure(saReturnAvailableF, SA_RETURN_AVAILABLE)
   val hasSaEnrolments = Pure(hasSaEnrolmentsF, HAS_SA_ENROLMENTS)
   val hasPreviousReturns = Pure(hasPreviousReturnsF, HAS_PREVIOUS_RETURNS)
   val isInAPartnership = Pure(isInAPartnershipF, IS_IN_A_PARTNERSHIP)
