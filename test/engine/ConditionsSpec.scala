@@ -49,12 +49,12 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("has business enrolments", Set("enr1"), true),
-        ("has no business enrolments", Set.empty[String], false)
+        ("business enrolments", Set("enr1"), true),
+        ("no business enrolments", Set.empty[String], false)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
-      s"be true whether the user has any business enrolments - scenario: $scenario" in {
+      s"return $expectedResult when user has $scenario" in {
         val ruleContext = mock[RuleContext]
         when(ruleContext.activeEnrolmentKeys).thenReturn(Future(enrolments))
 
@@ -398,8 +398,8 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     val scenarios =
       Table(
         ("scenario", "enrolments", "expectedResult"),
-        ("return false when no inactive enrolments", Set.empty[String], false),
-        ("return true when there's at least one inactive enrolment", Set("enr1"), true)
+        ("return false given no inactive enrolments", Set.empty[String], false),
+        ("return true given at least one inactive enrolment", Set("enr1"), true)
       )
 
     forAll(scenarios) { (scenario: String, enrolments: Set[String], expectedResult: Boolean) =>
