@@ -8,10 +8,11 @@ import connector.AffinityGroupValue.INDIVIDUAL
 import engine.AuditInfo
 import engine.RoutingReason._
 import org.scalatest.Matchers
+import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
-import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
+import support.stubs._
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
@@ -613,68 +614,44 @@ class RouterAuditFeatureWithThrottling extends StubbedFeatureSpec with CommonStu
   val discriminator99 = "c2103cec-03f5-4605-b980-dd2d309d48e9" // Math.abs("c2103cec-03f5-4605-b980-dd2d309d48e9".md5.hashCode % 100) = 99
   val discriminator0 = "4c72d67c-df80-4967-953d-c64ffc22d720" // Math.abs("4c72d67c-df80-4967-953d-c64ffc22d720".md5.hashCode % 100) = 0
 
-  scenario("redirect user to fallback when throttled") {
+  val scenarios = Tables.Table[String, String, Stub, WebPage, Boolean, String](
+    ("scenario", "userId", "stubPage", "expectedDestination", "expectedThrottledFlag", "expectedTransactionName"),
+    ("redirect user to fallback when throttled", discriminator0, BtaHomeStubPage, BtaHomePage, true, "sent to business tax account"),
+    ("route to original destination when not throttled", discriminator99, PtaHomeStubPage, PtaHomePage, false, "sent to personal tax account")
+  )
+  
+  TableDrivenPropertyChecks.forAll(scenarios) { (scenarioName, userId, stubPage, expectedDestination, expectedThrottledFlag, expectedTransactionName) =>
 
-    Given("a user logged in through Verify supposed to go to PTA")
-    SessionUser(loggedInViaGateway = false, internalUserIdentifier = Some(discriminator0)).stubLoggedIn()
+    scenario(scenarioName) {
 
-    val auditEventStub = stubAuditEvent()
+      Given("a user logged in through Verify supposed to go to PTA")
+      SessionUser(loggedInViaGateway = false, internalUserIdentifier = Some(userId)).stubLoggedIn()
 
-    createStubs(BtaHomeStubPage)
+      val auditEventStub = stubAuditEvent()
 
-    When("the user hits the router")
-    go(RouterRootPath)
+      createStubs(stubPage)
 
-    Then("the user should be routed to BTA Home Page")
-    on(BtaHomePage)
+      When("the user hits the router")
+      go(RouterRootPath)
 
-    And("user is sent to BTA an audit event should be sent")
-    verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+      Then("the user should be routed to BTA Home Page")
+      on(expectedDestination)
 
-    And("the audit event raised should be the expected one")
-    val expectedReasons = toJson(emptyRoutingReasons + (IS_A_VERIFY_USER.key -> "true"))
-    val expectedTransactionName = "sent to business tax account"
-    val expectedThrottlingDetails = ThrottlingDetails(
-      enabled = true,
-      percentage = "50",
-      throttled = true,
-      destinationUrlBeforeThrottling = "/personal-account",
-      destinationNameBeforeThrottling = "personal-tax-account"
-    )
-    verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user", expectedThrottlingDetails)
+      And("user is sent to BTA an audit event should be sent")
+      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
+
+      And("the audit event raised should be the expected one")
+      val expectedReasons = toJson(emptyRoutingReasons + (IS_A_VERIFY_USER.key -> "true"))
+      val expectedThrottlingDetails = ThrottlingDetails(
+        enabled = true,
+        percentage = "50",
+        throttled = expectedThrottledFlag,
+        destinationUrlBeforeThrottling = "/personal-account",
+        destinationNameBeforeThrottling = "personal-tax-account"
+      )
+      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user", expectedThrottlingDetails)
+    }
   }
-
-  scenario("route to original destination when not throttled") {
-
-    Given("a user logged in through Verify supposed to go to PTA")
-    SessionUser(loggedInViaGateway = false, internalUserIdentifier = Some(discriminator99)).stubLoggedIn()
-
-    val auditEventStub = stubAuditEvent()
-
-    createStubs(PtaHomeStubPage)
-
-    When("the user hits the router")
-    go(RouterRootPath)
-
-    Then("the user should be routed to PTA Home Page")
-    on(PtaHomePage)
-
-    And("user is sent to BTA an audit event should be sent")
-    verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-    And("the audit event raised should be the expected one")
-    val expectedReasons = toJson(emptyRoutingReasons + (IS_A_VERIFY_USER.key -> "true"))
-    val expectedTransactionName = "sent to personal tax account"
-    val expectedThrottlingDetails = ThrottlingDetails(
-      enabled = true,
-      percentage = "50",
-      throttled = false,
-      destinationUrlBeforeThrottling = "/personal-account",
-      destinationNameBeforeThrottling = "personal-tax-account"
-    )
-    verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user", expectedThrottlingDetails)
-  }
-
 }
 
 trait AuditTools { self: Matchers =>
