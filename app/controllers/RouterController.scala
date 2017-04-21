@@ -60,9 +60,9 @@ trait RouterController extends FrontendController with Actions {
   def analyticsEventSender: AnalyticsEventSender
 
   val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async {
-    implicit user =>
+    implicit authContext =>
       request =>
-        route(user, request)
+        route(authContext, request)
   }
 
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
