@@ -38,11 +38,12 @@ trait MetricsMonitoringService {
   def sendMonitoringEvents(auditInfo: AuditInfo, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
     Future {
-      val destinationNameBeforeThrottling: Option[String] = auditInfo.throttlingInfo.map(_.initialDestination.name)
-      val destinationNameAfterThrottling: String = throttledLocation.name
-      val throttleKey: String = if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-        s".throttled-from-${destinationNameBeforeThrottling.get}"
-      } else ".not-throttled"
+      val destinationNameBeforeThrottling = auditInfo.throttlingInfo.map(_.initialDestination.name)
+
+      val throttleKey = destinationNameBeforeThrottling match {
+        case Some(name) if name != throttledLocation.name => s".throttled-from-$name"
+        case _ => ".not-throttled"
+      }
 
       auditInfo.ruleApplied.foreach { ruleApplied =>
         metricsRegistry.meter(s"routed.to-${throttledLocation.name}.because-$ruleApplied$throttleKey").mark()
