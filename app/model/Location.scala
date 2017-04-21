@@ -42,10 +42,7 @@ trait Locations {
         .getOrElse(throw new RuntimeException(s"key '$key' not configured for location '$locationName'"))
     }
 
-    val name = getString("name")
-    val url = getString("url")
-
-    Location(name, url)
+    Location(getString("name"), getString("url"))
   }
 }
 
