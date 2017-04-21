@@ -105,7 +105,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
       eventually {
         verify(mockAuditConnector).sendEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
-        verify(mockAnalyticsEventSender).sendEvents(eqTo(location1.name), eqTo(mockAuditInfo))(eqTo(fakeRequest), any[HeaderCarrier])
+        verify(mockAnalyticsEventSender).sendEvents(eqTo(mockAuditInfo), eqTo(location1.name))(eqTo(fakeRequest), any[HeaderCarrier])
         verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(mockAuditInfo), eqTo(location1))(eqTo(fakeRequest), any[HeaderCarrier])
       }
     }

@@ -29,7 +29,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
   "AnalyticsEventSender" should {
     "send event to GA" in new Setup {
-      analyticsEventSender.sendEvents(locationName, auditInfo)
+      analyticsEventSender.sendEvents(auditInfo, locationName)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, ruleApplied, Nil))))
     }
   }

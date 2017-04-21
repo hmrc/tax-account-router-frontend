@@ -86,7 +86,7 @@ trait RouterController extends FrontendController with Actions {
     } yield {
       sendAuditEvent(auditInfo, finalDestination)
       metricsMonitoringService.sendMonitoringEvents(auditInfo, finalDestination)
-      analyticsEventSender.sendEvents(finalDestination.name, auditInfo)
+      analyticsEventSender.sendEvents(auditInfo, finalDestination.name)
 
       Logger.debug(s"Routing to: ${finalDestination.name}")
       finalDestination
