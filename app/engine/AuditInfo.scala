@@ -38,7 +38,7 @@ sealed trait TAuditInfo {
   def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): ExtendedDataEvent = {
     this match {
       case AuditInfo(routingReasons, ruleApplied, throttlingInfo) =>
-        val accounts: Accounts = authContext.principal.accounts
+        val accounts = authContext.principal.accounts
         val accountMap = accounts.toMap
         val accountsAsJson: Seq[(String, JsValueWrapper)] = accountMap
           .map { case (k, v) => (k, Json.toJsFieldJsValueWrapper(v.toString)) }

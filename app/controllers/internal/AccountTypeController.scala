@@ -66,7 +66,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def createRuleContext(credId: String)(implicit request: Request[AnyContent], hc: HeaderCarrier): RuleContext
 
   def accountTypeForCredId(credId: String) = Action.async { implicit request =>
-    val ruleContext: RuleContext = createRuleContext(credId)
+    val ruleContext = createRuleContext(credId)
 
     ruleContext.affinityGroup.flatMap {
       case AffinityGroupValue.AGENT =>
