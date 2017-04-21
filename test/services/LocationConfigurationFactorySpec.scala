@@ -39,7 +39,7 @@ class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with O
       result shouldBe testThrottlingConfig
     }
 
-    "retrieve appropriate configuration for PTA" in new Setup {
+    "retrieve appropriate configuration for PTA without token in session" in new Setup {
       implicit val fakeRequest = FakeRequest()
 
       when(mockAppConfig.getThrottlingConfig("personal-tax-account-verify")).thenReturn(testThrottlingConfig)
