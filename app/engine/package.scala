@@ -40,6 +40,6 @@ package object engine {
   type ConditionResult = WriterT[Future, AuditInfo, Boolean]
   type RuleResult = WriterT[Future, AuditInfo, Option[Location]]
   type EngineResult = WriterT[Future, AuditInfo, Location]
-  val emptyRuleResult: RuleResult = WriterT(Future.successful((AuditInfo.Empty, None)))
 
+  val emptyRuleResult: RuleResult = WriterT(Future.successful((AuditInfo.Empty, None)))
 }
