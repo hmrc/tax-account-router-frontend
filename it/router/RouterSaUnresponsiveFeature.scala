@@ -21,7 +21,7 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
   feature("Router with SA unresponsive") {
 
-    scenario("a user logged in through GG and sa is unresponsive should be redirected to BTA") {
+    scenario("a user logged in through GG, SA is unresponsive, user should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
@@ -31,7 +31,7 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
 
-      And("the sa is unresponsive")
+      And("the SA is unresponsive")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
       createStubs(BtaHomeStubPage)
@@ -39,34 +39,32 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       When("the user hits the router")
       go(RouterRootPath)
 
-      Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
-
       eventually {
-
-        And("the authority object should be fetched once for AuthenticatedBy")
+        Then("the authority object should be fetched once for AuthenticatedBy")
         verifyAuthorityObjectIsFetched()
 
         And("user's enrolments should be fetched from Auth")
         verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-        And("user's details should be fetched from User Details")
-        verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
-
-        And("sa returns should be fetched from Sa micro service")
+        And("SA returns should be fetched from SA micro service")
         verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
-
       }
+
+      And("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("user's details should be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
     }
 
-    scenario("a user logged in through GG and gg is unresponsive should be redirected to BTA") {
+    scenario("a user logged in through GG, GG is unresponsive, user should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
       val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
       SessionUser(accounts = accounts).stubLoggedIn()
 
-      And("gg is unresponsive")
+      And("GG is unresponsive")
       stubEnrolmentsToReturnAfter2Seconds()
 
       createStubs(BtaHomeStubPage)
@@ -74,24 +72,22 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
       When("the user hits the router")
       go(RouterRootPath)
 
-      Then("the user should be routed to BTA Home Page")
-      on(BtaHomePage)
-
       eventually {
-
-        And("the authority object should be fetched once for AuthenticatedBy")
+        Then("the authority object should be fetched once for AuthenticatedBy")
         verifyAuthorityObjectIsFetched()
 
         And("user's enrolments should be fetched from Auth")
         verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
-        And("user's details should be fetched from User Details")
-        verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
-
-        And("Sa micro service should not be invoked")
-        verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
-
       }
+
+      And("the user should be routed to BTA Home Page")
+      on(BtaHomePage)
+
+      And("user's details should be fetched from User Details")
+      verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
+
+      And("SA micro service should not be invoked")
+      verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
     }
   }
 
