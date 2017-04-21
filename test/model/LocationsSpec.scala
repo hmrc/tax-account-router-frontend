@@ -53,6 +53,7 @@ class LocationsSpec extends UnitSpec with MockitoSugar {
       }
 
       caught shouldNot be(null)
+      caught.getMessage shouldBe "key 'url' not configured for location 'tax-account-router'"
     }
 
     "return Location when config has no missing name key" in {
@@ -68,6 +69,7 @@ class LocationsSpec extends UnitSpec with MockitoSugar {
       }
 
       caught shouldNot be(null)
+      caught.getMessage shouldBe "key 'name' not configured for location 'bta'"
     }
   }
 }
