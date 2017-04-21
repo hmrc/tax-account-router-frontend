@@ -31,7 +31,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
 
   "rule engine" should {
 
-    "rule matched" in new Setup {
+    "return location from rule when a rule is matched" in new Setup {
       implicit lazy val fakeRequest = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
@@ -47,7 +47,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication
       location shouldBe location1
     }
 
-    "rule not matched" in new Setup {
+    "return default location when no rules are matched" in new Setup {
       implicit lazy val fakeRequest = FakeRequest()
       implicit lazy val hc: HeaderCarrier = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
 
