@@ -24,7 +24,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.TableFor3
+import org.scalatest.prop.TableFor4
 import org.scalatest.prop.Tables.Table
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -34,33 +34,33 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
   "MetricsMonitoringService" should {
 
-    val scenarios: TableFor3[String, Option[Location], Location] = Table(
-      ("scenario", "destinationNameBeforeThrottling", "destinationNameAfterThrottling"),
-      ("destination not throttled", Some(Location(name = "a", url = "/a")), Location(name = "a", url = "/a")),
-      ("destination throttled", Some(Location(name = "a", url = "/a")), Location(name = "b", url = "/b")),
-      ("destination before throttling not present", None, Location(name = "b", url = "/b"))
+    val ruleApplied = "rule-applied"
+
+    val scenarios: TableFor4[String, Option[Location], Location, String] = Table(
+      ("scenario", "destinationNameBeforeThrottling", "destinationNameAfterThrottling", "expectedMeterName"),
+      ("destination not throttled", Some(Location(name = "a", url = "/a")), Location(name = "a", url = "/a"), "routed.to-a.because-rule-applied.not-throttled"),
+      ("destination throttled", Some(Location(name = "a", url = "/a")), Location(name = "b", url = "/b"), "routed.to-b.because-rule-applied.throttled-from-a"),
+      ("destination before throttling not present", None, Location(name = "b", url = "/b"), "routed.to-b.because-rule-applied.not-throttled")
     )
 
-    forAll(scenarios) { (scenario, destinationNameBeforeThrottling, destinationNameAfterThrottling) =>
+    forAll(scenarios) { (scenario, destinationNameBeforeThrottling, destinationNameAfterThrottling, expectedMeterName) =>
 
       s"send monitoring events - scenario: $scenario" in new Setup {
 
         import engine.RoutingReason._
 
         // given
-        val c1 = IS_A_VERIFY_USER
-        val c2 = IS_A_GOVERNMENT_GATEWAY_USER
-        val c3 = IS_IN_A_PARTNERSHIP
-        val c4 = IS_SELF_EMPLOYED
+        val trueCondition1 = Reason("trueCondition1")
+        val trueCondition2 = Reason("trueCondition2")
+        val falseCondition1 = Reason("falseCondition1")
+        val falseCondition2 = Reason("falseCondition2")
 
         val routingReasons = Map(
-          c1 -> Some(true),
-          c2 -> Some(true),
-          c3 -> Some(false),
-          c4 -> Some(false)
+          trueCondition1 -> Some(true),
+          trueCondition2 -> Some(true),
+          falseCondition1 -> Some(false),
+          falseCondition2 -> Some(false)
         )
-
-        val ruleApplied = "rule-applied"
 
         val throttlingInfo = ThrottlingInfo(None, true, Location("a", "/a"), true)
 
@@ -70,38 +70,33 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
 
         val mockRoutedToMeter = mock[Meter]
 
-        if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.throttled-from-${destinationNameBeforeThrottling.get}"))).thenReturn(mockRoutedToMeter)
-        } else {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.not-throttled"))).thenReturn(mockRoutedToMeter)
-        }
+        when(mockMetricRegistry.meter(eqTo(expectedMeterName))).thenReturn(mockRoutedToMeter)
 
-        val c1Meter = mock[Meter]
-        val c2Meter = mock[Meter]
-        val c3Meter = mock[Meter]
-        val c4Meter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo(c1.key))).thenReturn(c1Meter)
-        when(mockMetricRegistry.meter(eqTo(c2.key))).thenReturn(c2Meter)
-        when(mockMetricRegistry.meter(eqTo(s"not-${c3.key}"))).thenReturn(c3Meter)
-        when(mockMetricRegistry.meter(eqTo(s"not-${c4.key}"))).thenReturn(c4Meter)
+        val trueCondition1Meter = mock[Meter]
+        val trueCondition2Meter = mock[Meter]
+        val falseCondition1Meter = mock[Meter]
+        val falseCondition2Meter = mock[Meter]
+        when(mockMetricRegistry.meter(eqTo(trueCondition1.key))).thenReturn(trueCondition1Meter)
+        when(mockMetricRegistry.meter(eqTo(trueCondition2.key))).thenReturn(trueCondition2Meter)
+        when(mockMetricRegistry.meter(eqTo(s"not-${falseCondition1.key}"))).thenReturn(falseCondition1Meter)
+        when(mockMetricRegistry.meter(eqTo(s"not-${falseCondition2.key}"))).thenReturn(falseCondition2Meter)
 
         // when
         metricsMonitoringService.sendMonitoringEvents(auditInfo, throttledLocation)
 
         // then
         eventually {
-
-          verify(c1Meter).mark()
-          verify(c2Meter).mark()
-          verify(c3Meter).mark()
-          verify(c4Meter).mark()
+          verify(trueCondition1Meter).mark()
+          verify(trueCondition2Meter).mark()
+          verify(falseCondition1Meter).mark()
+          verify(falseCondition2Meter).mark()
 
           verifyNoMoreInteractions(
             mockRoutedToMeter,
-            c1Meter,
-            c2Meter,
-            c3Meter,
-            c4Meter
+            trueCondition1Meter,
+            trueCondition2Meter,
+            falseCondition1Meter,
+            falseCondition2Meter
           )
         }
       }
