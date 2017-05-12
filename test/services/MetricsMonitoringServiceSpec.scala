@@ -17,95 +17,93 @@
 package services
 
 import com.codahale.metrics.{Meter, MetricRegistry}
-import model.{AuditContext, Location, TAuditContext}
+import engine.{AuditInfo, ThrottlingInfo}
+import model.Location
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.TableFor4
 import org.scalatest.prop.Tables.Table
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.collection.mutable.{Map => mutableMap}
-
 class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Eventually {
 
   "MetricsMonitoringService" should {
 
-    val scenarios = Table(
-      ("scenario", "destinationNameBeforeThrottling", "destinationNameAfterThrottling"),
-      ("destination not throttled", Some("some-destination"), "some-destination"),
-      ("destination throttled", Some("some-destination"), "some-other-destination"),
-      ("destination before throttling not present", None, "some-other-destination")
+    val ruleApplied = "rule-applied"
+
+    val scenarios: TableFor4[String, Option[Location], Location, String] = Table(
+      ("scenario", "destinationNameBeforeThrottling", "destinationNameAfterThrottling", "expectedMeterName"),
+      ("destination not throttled", Some(Location(name = "a", url = "/a")), Location(name = "a", url = "/a"), "routed.to-a.because-rule-applied.not-throttled"),
+      ("destination throttled", Some(Location(name = "a", url = "/a")), Location(name = "b", url = "/b"), "routed.to-b.because-rule-applied.throttled-from-a"),
+      ("destination before throttling not present", None, Location(name = "b", url = "/b"), "routed.to-b.because-rule-applied.not-throttled")
     )
 
-    forAll(scenarios) { (scenario: String, destinationNameBeforeThrottling: Option[String], destinationNameAfterThrottling: String) =>
+    forAll(scenarios) { (scenario, destinationNameBeforeThrottling, destinationNameAfterThrottling, expectedMeterName) =>
 
       s"send monitoring events - scenario: $scenario" in new Setup {
 
-        val mockAuditContext = mock[TAuditContext]
+        import engine.RoutingReason._
 
-        val mockThrottledLocation = mock[Location]
-        when(mockThrottledLocation.name).thenReturn(destinationNameAfterThrottling)
+        // given
+        val trueCondition1 = Reason("trueCondition1")
+        val trueCondition2 = Reason("trueCondition2")
+        val falseCondition1 = Reason("falseCondition1")
+        val falseCondition2 = Reason("falseCondition2")
 
-        val routingReasons = mutableMap(
-          "c1" -> "true",
-          "c2" -> "true",
-          "c3" -> "false",
-          "c4" -> "false"
+        val routingReasons = Map(
+          trueCondition1 -> Some(true),
+          trueCondition2 -> Some(true),
+          falseCondition1 -> Some(false),
+          falseCondition2 -> Some(false)
         )
-        when(mockAuditContext.getReasons).thenReturn(routingReasons)
 
-        val ruleApplied = "condition-applied"
-        when(mockAuditContext.ruleApplied).thenReturn(ruleApplied)
+        val throttlingInfo = ThrottlingInfo(None, true, Location("a", "/a"), true)
+
+        val auditInfo = AuditInfo(routingReasons, Some(ruleApplied), Some(throttlingInfo))
+
+        val throttledLocation = Location(name = "throttled", url = "/throttled")
+
         val mockRoutedToMeter = mock[Meter]
 
-        if (destinationNameBeforeThrottling.isDefined && destinationNameBeforeThrottling.get != destinationNameAfterThrottling) {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.throttled-from-${destinationNameBeforeThrottling.get}"))).thenReturn(mockRoutedToMeter)
-        } else {
-          when(mockMetricRegistry.meter(eqTo(s"routed.to-$destinationNameAfterThrottling.because-$ruleApplied.not-throttled"))).thenReturn(mockRoutedToMeter)
-        }
+        when(mockMetricRegistry.meter(eqTo(expectedMeterName))).thenReturn(mockRoutedToMeter)
 
-        val c1Meter = mock[Meter]
-        val c2Meter = mock[Meter]
-        val c3Meter = mock[Meter]
-        val c4Meter = mock[Meter]
-        when(mockMetricRegistry.meter(eqTo("c1"))).thenReturn(c1Meter)
-        when(mockMetricRegistry.meter(eqTo("c2"))).thenReturn(c2Meter)
-        when(mockMetricRegistry.meter(eqTo("not-c3"))).thenReturn(c3Meter)
-        when(mockMetricRegistry.meter(eqTo("not-c4"))).thenReturn(c4Meter)
-
-        val entry = destinationNameBeforeThrottling.fold("" -> "") { destination => "destination-name-before-throttling" -> destination }
-        val throttlingDetails = mutableMap() += entry
-        when(mockAuditContext.getThrottlingDetails).thenReturn(throttlingDetails)
+        val trueCondition1Meter = mock[Meter]
+        val trueCondition2Meter = mock[Meter]
+        val falseCondition1Meter = mock[Meter]
+        val falseCondition2Meter = mock[Meter]
+        when(mockMetricRegistry.meter(eqTo(trueCondition1.key))).thenReturn(trueCondition1Meter)
+        when(mockMetricRegistry.meter(eqTo(trueCondition2.key))).thenReturn(trueCondition2Meter)
+        when(mockMetricRegistry.meter(eqTo(s"not-${falseCondition1.key}"))).thenReturn(falseCondition1Meter)
+        when(mockMetricRegistry.meter(eqTo(s"not-${falseCondition2.key}"))).thenReturn(falseCondition2Meter)
 
         // when
-        metricsMonitoringService.sendMonitoringEvents(mockAuditContext, mockThrottledLocation)
+        metricsMonitoringService.sendMonitoringEvents(auditInfo, throttledLocation)
 
+        // then
         eventually {
-
-          verify(mockRoutedToMeter).mark()
-
-          verify(c1Meter).mark()
-          verify(c2Meter).mark()
-          verify(c3Meter).mark()
-          verify(c4Meter).mark()
+          verify(trueCondition1Meter).mark()
+          verify(trueCondition2Meter).mark()
+          verify(falseCondition1Meter).mark()
+          verify(falseCondition2Meter).mark()
 
           verifyNoMoreInteractions(
             mockRoutedToMeter,
-            c1Meter,
-            c2Meter,
-            c3Meter,
-            c4Meter
+            trueCondition1Meter,
+            trueCondition2Meter,
+            falseCondition1Meter,
+            falseCondition2Meter
           )
         }
       }
     }
   }
 
-  sealed trait Setup {
+  trait Setup {
     implicit val fakeRequest = FakeRequest()
     implicit val hc = HeaderCarrier()
     val mockMetricRegistry = mock[MetricRegistry]
@@ -113,14 +111,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       override val metricsRegistry = mockMetricRegistry
     }
 
-    val throttledLocation = "some-destination"
-    val mockMeter2SV = mock[Meter]
-    val mockMeter2SVMandatory = mock[Meter]
-    val mockMeter2SVOptional = mock[Meter]
     when(mockMetricRegistry.meter(any[String])).thenReturn(mock[Meter])
-    when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.to-$throttledLocation"))).thenReturn(mockMeter2SV)
-    when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.mandatory.to-$throttledLocation"))).thenReturn(mockMeter2SVMandatory)
-    when(mockMetricRegistry.meter(eqTo(s"passed-through-2SV.optional.to-$throttledLocation"))).thenReturn(mockMeter2SVOptional)
   }
-
 }

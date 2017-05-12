@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package services
+package utils
 
-import org.joda.time.{DateTime, DateTimeZone}
+object StringSeparationHelper {
+  implicit class Ops(value: String) {
 
-trait DocumentExpirationTime {
-  def getExpirationTime: DateTime
-}
+    def asPipeSeparatedValues = splitAndTrim("""\|""")
 
-case class Duration(seconds: Int) extends DocumentExpirationTime {
-  override def getExpirationTime: DateTime = DateTime.now().withZone(DateTimeZone.UTC).plusSeconds(seconds)
-}
+    def asCommaSeparatedValues = splitAndTrim(",")
 
-case class Instant(expirationTime: DateTime) extends DocumentExpirationTime {
-  override def getExpirationTime: DateTime = expirationTime
+    private def splitAndTrim(pattern: String) = value.split(pattern).map(_.trim).filter(_.nonEmpty)
+  }
 }

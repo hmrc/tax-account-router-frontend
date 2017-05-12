@@ -3,19 +3,20 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import model.AuditContext
-import model.RoutingReason._
+import engine.AuditInfo
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
+import engine.RoutingReason._
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{Map => mutableMap}
 
 class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
+
+  val emptyRoutingReasons = AuditInfo.emptyReasons.map { case (k, _) => k.key -> "-" }
 
   val additionalConfiguration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
@@ -51,7 +52,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "true",
@@ -85,7 +86,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       verify(postRequestedFor(urlMatching("^/write/audit.*$")))
 
       And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(AuditContext.defaultRoutingReasons +=(
+      val expectedReasons = toJson(emptyRoutingReasons + (
         IS_A_VERIFY_USER.key -> "false",
         IS_A_GOVERNMENT_GATEWAY_USER.key -> "true",
         GG_ENROLMENTS_AVAILABLE.key -> "false"
@@ -95,7 +96,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
     }
   }
 
-  def toJson(map: mutableMap[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
+  def toJson(map: Map[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList

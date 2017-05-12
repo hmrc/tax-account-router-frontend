@@ -16,31 +16,62 @@
 
 package config
 
+import play.api.Configuration
 import play.api.Play.{configuration, current}
-import uk.gov.hmrc.play.config.ServicesConfig
+import services.ThrottlingConfig
 
 trait AppConfigHelpers {
-  def getConfigurationStringOption(key: String) = configuration.getString(key)
 
-  def getConfigurationString(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
+  lazy val config: Configuration = configuration
 
-  def getConfigurationBoolean(key: String) = configuration.getBoolean(key).getOrElse(false)
+  def getConfigurationStringOption(key: String): Option[String] = config.getString(key)
+
+  def getConfigurationString(key: String): String = config.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
+
+  def getConfigurationBoolean(key: String): Boolean = config.getBoolean(key).getOrElse(false)
+
+  def getConfiguration(key: String): Configuration = config.getConfig(key).getOrElse(Configuration.empty)
+
+  def getConfigurationStringSet(key: String): Set[String] = {
+    import utils.StringSeparationHelper._
+    val values = getConfigurationStringOption(key)
+    values.map(_.asCommaSeparatedValues.toSet).getOrElse(Set.empty[String])
+  }
 }
 
 trait AppConfig extends AppConfigHelpers {
-  val analyticsToken: String
-  val analyticsHost: String
-  val reportAProblemPartialUrl: String
-  val reportAProblemNonJSUrl: String
+
+  private val contactHost: String = getConfigurationStringOption("contact-frontend.host").getOrElse("")
+  private val contactFormServiceIdentifier: String = "MyService"
+
+  lazy val analyticsToken: String = getConfigurationString("google-analytics.token")
+  lazy val analyticsHost: String = getConfigurationString("google-analytics.host")
+  lazy val reportAProblemPartialUrl: String = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
+  lazy val reportAProblemNonJSUrl: String = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
+
+  def getLocationConfig(locationName: String, key: String): Option[String] = getConfigurationStringOption(s"locations.$locationName.$key")
+
+  def getThrottlingConfig(locationWithSuffix: String): ThrottlingConfig = {
+    val config = getConfiguration(s"throttling.locations.$locationWithSuffix")
+
+    val incorrectConfigurationKey = "percentageBeToThrottled"
+    val configurationKey = "percentageToBeThrottled"
+
+    val percentageToBeThrottled = config.getInt(configurationKey)
+      .getOrElse(
+        config.getInt(incorrectConfigurationKey)
+          .getOrElse(0)
+      )
+
+    val fallback = config.getString("fallback")
+
+    ThrottlingConfig(percentageToBeThrottled, fallback)
+  }
+
+  lazy val businessEnrolments: Set[String] = getConfigurationStringSet("business-enrolments")
+  lazy val saEnrolments: Set[String] = getConfigurationStringSet("self-assessment-enrolments")
 }
 
-object FrontendAppConfig extends AppConfig with ServicesConfig {
-
-  private val contactHost = configuration.getString("contact-frontend.host").getOrElse("")
-  private val contactFormServiceIdentifier = "MyService"
-
-  override lazy val analyticsToken = getConfigurationString("google-analytics.token")
-  override lazy val analyticsHost = getConfigurationString("google-analytics.host")
-  override lazy val reportAProblemPartialUrl = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
-  override lazy val reportAProblemNonJSUrl = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
+object FrontendAppConfig extends AppConfig {
+  override lazy val config = configuration
 }

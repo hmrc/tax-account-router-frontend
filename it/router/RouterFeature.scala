@@ -321,7 +321,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       And("user's enrolments should be fetched from Auth")
       verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
-      And("user's details should be fetched from User Details")
+      And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")

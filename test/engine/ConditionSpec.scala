@@ -1,222 +1,130 @@
-/*
- * Copyright 2017 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package engine
 
-import helpers.SpecHelpers
-import model.RoutingReason._
-import model.{Location, RoutingReason, _}
-import org.mockito.Matchers.{eq => eqTo, _}
-import org.mockito.Mockito._
-import org.mockito.verification.VerificationMode
-import org.scalatest.concurrent.Eventually
-import org.scalatest.mock.MockitoSugar
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.Tables.Table
-import play.api.mvc.{AnyContent, Request}
-import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
+import engine.RoutingReason.{Reason, RoutingReason}
+import org.scalatest.Matchers
+import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class ConditionSpec extends UnitSpec with MockitoSugar with Eventually with SpecHelpers {
+class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
-  implicit val fakeRequest = FakeRequest()
-  implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+  "or condition" should {
+    "return false and evaluate both sides if both sides are false" in new Setup {
 
-  "a Condition" should {
+      val orCondition = Or(alwaysFalseCondition1, alwaysFalseCondition2)
 
-    val scenarios = Table(
-      ("scenario", "auditTypeDefined", "expectedAuditContextInteractions"),
-      ("audit type is defined", true, times(1)),
-      ("audit type is not defined", false, never())
-    )
+      val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
 
-    forAll(scenarios) { (scenario: String, auditTypeDefined: Boolean, expectedAuditContextInteractions: VerificationMode) =>
+      result shouldBe false
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysFalse1") -> Some(false),
+        Reason("alwaysFalse2") -> Some(false)
+      )
+    }
 
-      s"return and eventually audit its own truth when evaluated - scenario: $scenario" in {
-        val expectedResult = true
+    "return true and not evaluate right hand side if left hand side is true" in new Setup {
 
-        val auditEventType = RoutingReason.Reason("event-key")
+      val orCondition = Or(alwaysTrueCondition1, alwaysTrueCondition2)
 
-        val condition = new Condition {
-          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(expectedResult)
+      val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
 
-          override val auditType: Option[RoutingReason] = if (auditTypeDefined) Some(auditEventType) else None
-        }
+      result shouldBe true
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysTrue1") -> Some(true)
+      )
+    }
 
-        val mockRuleContext = mock[RuleContext]
-        val mockAuditContext = mock[TAuditContext]
+    "return true and evaluate both sides if left hand side is false" in new Setup {
 
-        val result = await(condition.evaluate(mockRuleContext, mockAuditContext))
-        result shouldBe expectedResult
+      val orCondition = Or(alwaysFalseCondition1, alwaysTrueCondition1)
 
-        eventually {
-          verify(mockAuditContext, expectedAuditContextInteractions).setRoutingReason(eqTo(auditEventType), eqTo(true))(any[ExecutionContext])
-        }
-      }
+      val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
+
+      result shouldBe true
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysFalse1") -> Some(false),
+        Reason("alwaysTrue1") -> Some(true)
+      )
     }
   }
 
-  it should {
+  "and condition" should {
+    "return false and evaluate only the left sides if the left side is false" in new Setup {
 
-    val scenarios = Table(
-      ("scenario", "condition1Truth", "condition2Truth", "expectedResultConditionTruth"),
-      ("true and true", true, true, true),
-      ("true and false", true, false, false),
-      ("false and true", false, true, false),
-      ("false and false", false, false, false)
-    )
+      val andCondition = And(alwaysFalseCondition1, alwaysFalseCondition2)
 
-    forAll(scenarios) { (scenario: String, condition1Truth: Boolean, condition2Truth: Boolean, expectedResultConditionTruth: Boolean) =>
+      val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
-      s"be combined with another condition using 'and' operator - scenario: $scenario" in {
+      result shouldBe false
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysFalse1") -> Some(false)
+      )
+    }
 
-        val mockRuleContext = mock[RuleContext]
-        val mockAuditContext = mock[TAuditContext]
+    "return false and evaluate right hand side if left hand side is true" in new Setup {
 
-        val condition1 = new Condition {
-          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
+      val andCondition = And(alwaysTrueCondition1, alwaysFalseCondition1)
 
-          override val auditType: Option[RoutingReason] = None
-        }
+      val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
-        val condition2 = mock[Condition]
-        when(condition2.evaluate(eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+      result shouldBe false
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysTrue1") -> Some(true),
+        Reason("alwaysFalse1") -> Some(false)
+      )
+    }
 
-        val resultCondition: Condition = condition1.and(condition2)
+    "return true and evaluate both sides if left hand side is true" in new Setup {
 
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
+      val andCondition = And(alwaysTrueCondition1, alwaysTrueCondition2)
 
-        resultConditionTruth shouldBe expectedResultConditionTruth
+      val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
-        if (!condition1Truth) verify(condition2, never()).evaluate(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-      }
+      result shouldBe true
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysTrue1") -> Some(true),
+        Reason("alwaysTrue2") -> Some(true)
+      )
     }
   }
 
-  it should {
-    val scenarios = Table(
-      ("scenario", "condition1Truth", "condition2Truth", "expectedResultConditionTruth"),
-      ("true and true", true, true, true),
-      ("true and false", true, false, true),
-      ("false and true", false, true, true),
-      ("false and false", false, false, false)
-    )
+  "not condition" should {
+    "return true if the condition returned false" in new Setup {
 
-    forAll(scenarios) { (scenario: String, condition1Truth: Boolean, condition2Truth: Boolean, expectedResultConditionTruth: Boolean) =>
+      val notCondition = Not(alwaysTrueCondition1)
 
-      s"be combined with another condition using 'or' operator - scenario: $scenario" in {
+      val (auditInfo, result) = notCondition.evaluate(context).run.futureValue
 
-        val mockRuleContext = mock[RuleContext]
-        val mockAuditContext = mock[TAuditContext]
+      result shouldBe false
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysTrue1") -> Some(true)
+      )
+    }
 
-        val condition1 = new Condition {
-          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(condition1Truth)
+    "return false if the condition returned true" in new Setup {
 
-          override val auditType: Option[RoutingReason] = None
-        }
+      val notCondition = Not(alwaysFalseCondition1)
 
-        val condition2 = mock[Condition]
-        when(condition2.evaluate(eqTo(mockRuleContext), eqTo(mockAuditContext))(eqTo(fakeRequest), eqTo(hc))).thenReturn(Future(condition2Truth))
+      val (auditInfo, result) = notCondition.evaluate(context).run.futureValue
 
-        val resultCondition: Condition = condition1.or(condition2)
-
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
-
-        resultConditionTruth shouldBe expectedResultConditionTruth
-
-        if (condition1Truth) verify(condition2, never()).evaluate(any[RuleContext], any[AuditContext])(any[Request[AnyContent]], any[HeaderCarrier])
-      }
+      result shouldBe true
+      auditInfo.routingReasons shouldBe Map[RoutingReason, Option[Boolean]](
+        Reason("alwaysFalse1") -> Some(false)
+      )
     }
   }
 
-  it should {
+  trait Setup {
+    val context = ""
 
-    val scenarios = Table(
-      ("scenario", "conditionTruth", "expectedResultConditionTruth"),
-      ("not true", true, false),
-      ("not false", false, true)
-    )
+    type ConditionPredicate = (String) => Future[Boolean]
+    val alwaysTrueF: ConditionPredicate = rc => Future.successful(true)
+    val alwaysFalseF: ConditionPredicate = rc => Future.successful(false)
 
-    forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedResultConditionTruth: Boolean) =>
-      s"be negated - scenario: $scenario" in {
-
-        val mockRuleContext = mock[RuleContext]
-        val mockAuditContext = mock[TAuditContext]
-
-        val condition = new Condition {
-          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
-
-          override val auditType: Option[RoutingReason] = None
-        }
-
-        val resultCondition: Condition = Condition.not(condition)
-
-        val resultConditionTruth: Boolean = await(resultCondition.evaluate(mockRuleContext, mockAuditContext))
-
-        resultConditionTruth shouldBe expectedResultConditionTruth
-      }
-    }
-  }
-
-  "a CompositeCondition" should {
-    "never be evaluated by invoking isTrue" in {
-      val compositeCondition = new CompositeCondition {}
-
-      val mockRuleContext = mock[RuleContext]
-
-      the[RuntimeException] thrownBy {
-        compositeCondition.isTrue(mockRuleContext)
-      } should have message "This should never be called"
-    }
-  }
-
-  "the 'when' operator" should {
-
-    val location = evaluateUsingPlay {
-      Location("url", "name")
-    }
-
-    val mockRuleContext = mock[RuleContext]
-    val auditContext = AuditContext()
-
-    val scenarios = Table(
-      ("scenario", "conditionTruth", "expectedLocation"),
-      ("condition is true", true, Some(location)),
-      ("condition is false", false, None)
-    )
-
-    forAll(scenarios) { (scenario: String, conditionTruth: Boolean, expectedLocation: Option[Location]) =>
-
-      s"return a rule given a condition - scenario: $scenario" in {
-        val condition = new Condition {
-          override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = Future(conditionTruth)
-
-          override val auditType: Option[RoutingReason] = None
-        }
-
-        val rule = Condition.when(condition).thenGoTo(location)
-
-        val ruleResult = await(rule.apply(mockRuleContext, auditContext))
-
-        ruleResult shouldBe expectedLocation
-      }
-    }
+    val alwaysTrueCondition1 = Pure(alwaysTrueF, Reason("alwaysTrue1"))
+    val alwaysTrueCondition2 = Pure(alwaysTrueF, Reason("alwaysTrue2"))
+    val alwaysFalseCondition1 = Pure(alwaysFalseF, Reason("alwaysFalse1"))
+    val alwaysFalseCondition2 = Pure(alwaysFalseF, Reason("alwaysFalse2"))
   }
 }

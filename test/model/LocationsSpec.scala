@@ -16,87 +16,60 @@
 
 package model
 
-import play.api.test.FakeApplication
-import play.api.test.Helpers._
+import config.AppConfig
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 
-class LocationsSpec extends UnitSpec {
+class LocationsSpec extends UnitSpec with MockitoSugar {
 
-  "Locations" should {
-    "return a Location from the configuration" in new Setup {
+  "locations" should {
 
-      implicit val fakeApplication = FakeApplication(additionalConfiguration = additionalConfiguration)
+    "return Location when config has no missing keys" in {
+      val mockAppConfig = mock[AppConfig]
+      when(mockAppConfig.getLocationConfig("pta", "name")).thenReturn(Some("some-name"))
+      when(mockAppConfig.getLocationConfig("pta", "url")).thenReturn(Some("some-url"))
 
-      running(fakeApplication) {
-        val locations = new Locations {}
-
-        val location = locations.locationFromConf("some-location")
-
-        val expectedLocation = Location(locationName, locationUrl, Map("continue" -> continueQueryParam, "failure" -> failureQueryParam, "origin" -> originQueryParam))
-
-        location shouldBe expectedLocation
+      val locations = new Locations {
+        val appConfig = mockAppConfig
       }
+
+      val result = locations.PersonalTaxAccount
+
+      result shouldBe Location("some-name", "some-url")
     }
 
-    "throw RuntimeException when expected location configuration element is not existing" in {
+    "return Location when config has no missing url key" in {
+      val mockAppConfig = mock[AppConfig]
+      when(mockAppConfig.getLocationConfig("tax-account-router", "name")).thenReturn(Some("some-name"))
+      when(mockAppConfig.getLocationConfig("tax-account-router", "url")).thenReturn(None)
 
-      implicit val application = FakeApplication()
-
-      running(application) {
-        val locations = new Locations {}
-
-        val thrown = intercept[RuntimeException] {
-          locations.locationFromConf("some-location")
-        }
-
-        thrown.getMessage shouldBe "location configuration not defined for some-location"
+      val locations = new Locations {
+        val appConfig = mockAppConfig
       }
+
+      val caught = intercept[RuntimeException] {
+        locations.TaxAccountRouterHome
+      }
+
+      caught shouldNot be(null)
+      caught.getMessage shouldBe "key 'url' not configured for location 'tax-account-router'"
     }
 
-    "throw RuntimeException when location name is missing from configuration" in new Setup {
+    "return Location when config has no missing name key" in {
+      val mockAppConfig = mock[AppConfig]
+      when(mockAppConfig.getLocationConfig("bta", "name")).thenReturn(None)
 
-      implicit val fakeApplication = FakeApplication(additionalConfiguration = additionalConfiguration - "locations.some-location.name")
-
-      running(fakeApplication) {
-        val locations = new Locations {}
-
-        val thrown = intercept[RuntimeException] {
-          locations.locationFromConf("some-location")
-        }
-
-        thrown.getMessage shouldBe "name not configured for location - some-location"
+      val locations = new Locations {
+        val appConfig = mockAppConfig
       }
-    }
 
-    "throw RuntimeException when location url is missing from configuration" in new Setup {
-
-      implicit val fakeApplication = FakeApplication(additionalConfiguration = additionalConfiguration - "locations.some-location.url")
-
-      running(fakeApplication) {
-        val locations = new Locations {}
-
-        val thrown = intercept[RuntimeException] {
-          locations.locationFromConf("some-location")
-        }
-
-        thrown.getMessage shouldBe "url not configured for location - some-location"
+      val caught = intercept[RuntimeException] {
+        locations.BusinessTaxAccount
       }
-    }
 
-    trait Setup {
-      val locationName = "some-name"
-      val locationUrl = "some-url"
-      val continueQueryParam = "continue-url"
-      val failureQueryParam = "failure-url"
-      val originQueryParam = "origin-url"
-
-      val additionalConfiguration = Map(
-        "locations.some-location.name" -> locationName,
-        "locations.some-location.url" -> locationUrl,
-        "locations.some-location.queryparams.continue" -> continueQueryParam,
-        "locations.some-location.queryparams.failure" -> failureQueryParam,
-        "locations.some-location.queryparams.origin" -> originQueryParam
-      )
+      caught shouldNot be(null)
+      caught.getMessage shouldBe "key 'name' not configured for location 'bta'"
     }
   }
 }

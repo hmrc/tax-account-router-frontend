@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package model
+package utils
 
 import uk.gov.hmrc.play.test.UnitSpec
 
-class LocationSpec extends UnitSpec {
+class StringSeparationHelperSpec extends UnitSpec {
 
-  "location" should {
+  import utils.StringSeparationHelper._
 
-    "return a url without query string when no query params are provided" in {
-      Location("test-tax-account", "/some-url").fullUrl shouldBe "/some-url"
+  "helper" should {
+    "split strings by comma" in {
+      ",, ,a,b , c, d ,  e  ,".asCommaSeparatedValues shouldBe Seq("a", "b", "c", "d", "e")
     }
 
-    "return a url with an encoded query string when query params are provided" in {
-      Location("test-tax-account", "/some-url", Map("a" -> "/b", "c" -> "/d")).fullUrl shouldBe "/some-url?a=%2Fb&c=%2Fd"
+    "split strings by pipe" in {
+      "|| |a|b | c| d |  e  |".asPipeSeparatedValues shouldBe Seq("a", "b", "c", "d", "e")
     }
   }
 }

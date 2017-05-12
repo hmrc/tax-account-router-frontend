@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package engine
+package services
 
-import model.RoutingReason.RoutingReason
-import model.RuleContext
-import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import java.security.MessageDigest
 
-import scala.concurrent.Future
+object Throttler {
 
-trait CompositeCondition extends Condition {
+  private val percentageDivisor = 100
 
-  // a composite condition is not going to send any audit event
-  override val auditType: Option[RoutingReason] = None
+  def shouldThrottle(discriminator: String, percentageToBeThrottled: Int) = {
 
-  override def isTrue(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Boolean] = throw new RuntimeException("This should never be called")
+    implicit class MD5(value: String) {
+      def toMD5 = {
+        val md5 = MessageDigest.getInstance("MD5")
+        md5.digest(value.getBytes).map("%02x".format(_)).mkString
+      }
+    }
+
+    val percentage = Math.abs((discriminator.toMD5.hashCode % percentageDivisor).toDouble) + 1
+    percentage <= percentageToBeThrottled
+  }
 }

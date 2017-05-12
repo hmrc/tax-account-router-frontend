@@ -23,7 +23,7 @@ trait StubApplicationConfiguration {
 
   val databaseName = "tar-test"
 
-  val stubbedMicroServices = Seq("auth", "cachable.short-lived-cache", "sa", "user-details", "platform-analytics")
+  val stubbedMicroServices = Seq("auth", "sa", "user-details", "platform-analytics")
     .map(service => Map(
       s"microservice.services.$service.host" -> stubHost,
       s"microservice.services.$service.port" -> stubPort

@@ -17,7 +17,7 @@
 package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
-import model.TAuditContext
+import engine.AuditInfo
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -25,17 +25,16 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 trait AnalyticsEventSender {
 
   private val routingCategory = "routing"
-  private val b2svRegistrationCategory = "sos_b2sv_registration_route"
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  def sendEvents(locationName: String, auditContext: TAuditContext)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
+  def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 
     gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
       clientId =>
-        val routingEvent = List(GaEvent(routingCategory, locationName, auditContext.ruleApplied, Nil))
+        val routingEvent = List(GaEvent(routingCategory, locationName, auditInfo.ruleApplied.getOrElse(""), Nil))
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
     }
   }
