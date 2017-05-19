@@ -19,7 +19,7 @@ package services
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
 import engine.AuditInfo
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Cookie
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrier

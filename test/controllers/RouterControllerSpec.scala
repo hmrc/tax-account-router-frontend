@@ -23,7 +23,7 @@ import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._

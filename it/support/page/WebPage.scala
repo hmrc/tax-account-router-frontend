@@ -18,11 +18,11 @@ package support.page
 
 import org.openqa.selenium.support.ui.{ExpectedCondition, WebDriverWait}
 import org.openqa.selenium.{By, WebDriver, WebElement}
-import org.scalatest.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.selenium.{Page, WebBrowser}
 import support.sugar.ImplicitWebDriverSugar
 
-trait WebPage extends Page with WebBrowser with ShouldMatchers with ImplicitWebDriverSugar {
+trait WebPage extends Page with WebBrowser with Matchers with ImplicitWebDriverSugar {
 
   def assertPageLoaded(): Unit
 

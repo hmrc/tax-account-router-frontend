@@ -16,17 +16,16 @@
 
 package controllers.internal
 
-import connector.AffinityGroupValue
 import cats.data.WriterT
+import connector.AffinityGroupValue
 import controllers.internal.AccountTypeResponse.accountTypeReads
 import engine.{AuditInfo, RuleEngine}
 import helpers.VerifyLogger
 import model.{Location, Locations, RuleContext}
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.filters.MicroserviceFilterSupport

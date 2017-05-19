@@ -16,10 +16,10 @@
 
 package support.sugar
 
-import org.scalatest.ShouldMatchers
+import org.scalatest.Matchers
 
 
-trait AssertionSugar extends ShouldMatchers {
+trait AssertionSugar extends Matchers {
   def assertContentPresent(actualContent: Option[String], expectedContent: String): Unit = {
     actualContent match {
       case Some(ac) => ac shouldBe expectedContent
