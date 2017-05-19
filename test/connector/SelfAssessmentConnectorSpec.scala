@@ -20,7 +20,7 @@ import ch.qos.logback.classic.Level
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.http._

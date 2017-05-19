@@ -18,9 +18,8 @@ package engine
 
 import engine.RoutingReason.Reason
 import model.{Location, _}
-import org.mockito.Matchers.{eq => eqTo}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}

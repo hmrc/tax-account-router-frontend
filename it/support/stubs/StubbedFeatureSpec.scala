@@ -30,7 +30,7 @@ import support.sugar._
 trait StubbedFeatureSpec
   extends FeatureSpec
   with GivenWhenThen
-  with ShouldMatchers
+  with Matchers
   with OneServerPerSuite
   with Stubs
   with BeforeAndAfterAll

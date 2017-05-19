@@ -17,7 +17,7 @@
 package helpers
 
 import org.mockito.Mockito.verify
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.LoggerLike
 
 trait VerifyLogger extends MockitoSugar {

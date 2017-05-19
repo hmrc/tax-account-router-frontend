@@ -17,7 +17,7 @@
 package services
 
 import cats.data.WriterT
-import config.{AppConfig, FrontendAppConfig}
+import config.AppConfig
 import connector.InternalUserIdentifier
 import engine.{AuditInfo, ThrottlingInfo}
 import helpers.SpecHelpers
@@ -28,10 +28,9 @@ import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
-import play.api.Configuration
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.play.test.UnitSpec
