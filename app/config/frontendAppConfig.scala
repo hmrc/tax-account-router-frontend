@@ -41,11 +41,12 @@ trait AppConfigHelpers {
 
 trait AppConfig extends AppConfigHelpers {
 
-  private val contactHost: String = getConfigurationStringOption("contact-frontend.host").getOrElse("")
-  private val contactFormServiceIdentifier: String = "MyService"
-
   lazy val analyticsToken: String = getConfigurationString("google-analytics.token")
   lazy val analyticsHost: String = getConfigurationString("google-analytics.host")
+
+  private val contactHost: String = getConfigurationStringOption("contact-frontend.host").getOrElse("")
+  private val contactFormServiceIdentifier: String = "tax-account-router-frontend"
+
   lazy val reportAProblemPartialUrl: String = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
   lazy val reportAProblemNonJSUrl: String = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
 

@@ -16,12 +16,13 @@
 
 package config
 
+import helpers.ExpectySupport
 import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.Configuration
 import services.ThrottlingConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
-class FrontendAppConfigSpec extends UnitSpec {
+class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
   "getThrottlingConfig" should {
     "return configuration for throttling location" in {
@@ -98,6 +99,17 @@ class FrontendAppConfigSpec extends UnitSpec {
 
         result shouldBe expectedEnrolments
       }
+    }
+  }
+
+  "report a problem urls" in {
+    val appConfig = new AppConfig {
+      override lazy val config = Configuration.empty
+    }
+
+    expectAll {
+      appConfig.reportAProblemPartialUrl == "/contact/problem_reports_ajax?service=tax-account-router-frontend"
+      appConfig.reportAProblemNonJSUrl == "/contact/problem_reports_nonjs?service=tax-account-router-frontend"
     }
   }
 }
