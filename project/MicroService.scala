@@ -46,6 +46,7 @@ trait MicroService {
     .settings(
       resolvers := Seq(
         Resolver.bintrayRepo("hmrc", "releases"),
+        Resolver.bintrayRepo("scf37", "maven"),
         Resolver.typesafeRepo("releases"),
         Resolver.jcenterRepo
       )

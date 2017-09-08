@@ -42,7 +42,8 @@ private object AppDependencies {
       "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope,
       "com.codeborne" % "phantomjsdriver" % "1.2.1" % scope,
       "org.mockito" % "mockito-core" % "1.9.5" % scope,
-      "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope
+      "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope,
+      "me.scf37.expecty" %% "expecty" % "1.0.2" % scope
     )
   }
 
