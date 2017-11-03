@@ -16,10 +16,12 @@
 
 package connector
 
-import config.WSHttp
+import config.{HttpClient, WSHttpClient}
 import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
+
+import scala.concurrent.ExecutionContext
 
 object AffinityGroupValue {
   val INDIVIDUAL = "Individual"
@@ -31,18 +33,18 @@ trait UserDetailsConnector {
 
   val serviceUrl: String
 
-  def http: HttpGet with HttpPost
+  def httpClient: HttpClient
 
-  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier) = http.GET[UserDetails](userDetailsUri)
+  def getUserDetails(userDetailsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = httpClient.GET[UserDetails](userDetailsUri)
 }
 
-case class CredentialRole(val value: String) extends AnyVal {
+case class CredentialRole(value: String) extends AnyVal {
   def isAdmin = value == "User"
 }
 
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
   override lazy val serviceUrl = baseUrl("user-details")
-  override lazy val http = WSHttp
+  override lazy val httpClient = WSHttpClient
 }
 
 case class UserDetails(credentialRole: Option[CredentialRole], affinityGroup: String) {

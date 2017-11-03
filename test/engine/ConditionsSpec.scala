@@ -25,11 +25,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.{FakeApplication, FakeRequest}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 
 class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures {
 
@@ -131,7 +132,7 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication
     forAll(scenarios) { (scenario: String, lastSaReturn: SaReturn, expectedResult: Boolean) =>
 
       implicit val fakeRequest = FakeRequest()
-      implicit val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+      implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
 
       s"be true whether the user has a partnership supplementary schedule - scenario: $scenario" in {
 

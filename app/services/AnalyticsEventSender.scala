@@ -20,7 +20,9 @@ import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
 import engine.AuditInfo
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.concurrent.ExecutionContext
 
 trait AnalyticsEventSender {
 
@@ -28,7 +30,7 @@ trait AnalyticsEventSender {
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier) = {
+  def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext) = {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 

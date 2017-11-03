@@ -16,18 +16,36 @@
 
 package config
 
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.hooks.HttpHooks
 import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
-import uk.gov.hmrc.play.audit.http.connector.{AuditConnector => Auditing}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.config.{AppName, RunMode}
-import uk.gov.hmrc.play.http.hooks.HttpHook
+import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
 import uk.gov.hmrc.play.http.ws._
 
-object FrontendAuditConnector extends Auditing with AppName with RunMode {
+object FrontendAuditConnector extends AuditConnector with AppName with RunMode {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
-object WSHttp extends WSGet with WSPut with WSPost with WSDelete with AppName with RunMode with HttpAuditing {
-  val auditConnector = FrontendAuditConnector
-  override val hooks: Seq[HttpHook] = Seq(AuditingHook)
+trait Hooks extends HttpHooks with HttpAuditing {
+  override val hooks = Seq(AuditingHook)
+  override lazy val auditConnector: AuditConnector = FrontendAuditConnector
 }
+
+trait HttpClient
+  extends HttpGet
+    with HttpPut
+    with HttpPost
+    with HttpDelete
+    with HttpPatch
+
+object WSHttpClient
+  extends HttpClient
+    with WSGet
+    with WSPut
+    with WSPost
+    with WSDelete
+    with WSPatch
+    with Hooks
+    with AppName

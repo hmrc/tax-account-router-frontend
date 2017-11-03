@@ -16,13 +16,15 @@
 
 package connector
 
-import config.WSHttp
+import config.WSHttpClient
 import play.api.libs.functional.syntax._
 import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
-import uk.gov.hmrc.play.http.HeaderCarrier
+
+import scala.concurrent.ExecutionContext
 
 case class EnrolmentIdentifier(key: String, value: String)
 
@@ -67,17 +69,17 @@ object EnrolmentState {
 
 trait FrontendAuthConnector extends AuthConnector {
 
-  def currentUserAuthority(implicit hc: HeaderCarrier) = http.GET[UserAuthority](s"$serviceUrl/auth/authority")
+  def currentUserAuthority(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[UserAuthority](s"$serviceUrl/auth/authority")
 
-  def userAuthority(credId: String)(implicit hc: HeaderCarrier) = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
 
-  def getIds(idsUri: String)(implicit hc: HeaderCarrier) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
+  def getIds(idsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
-  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier) =
+  def getEnrolments(enrolmentsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) =
     http.GET[Seq[GovernmentGatewayEnrolment]](s"$serviceUrl$enrolmentsUri")
 }
 
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
-  lazy val http = WSHttp
+  lazy val http = WSHttpClient
 }

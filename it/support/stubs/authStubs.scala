@@ -28,8 +28,8 @@ import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import support.Env
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
+import uk.gov.hmrc.http.SessionKeys
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
-import uk.gov.hmrc.play.http.SessionKeys
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
   override def create() = stubOut(

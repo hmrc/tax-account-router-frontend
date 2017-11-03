@@ -30,12 +30,13 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest, Helpers}
 import services._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -104,8 +105,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       }
 
       eventually {
-        verify(mockAuditConnector).sendEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
-        verify(mockAnalyticsEventSender).sendEvents(eqTo(mockAuditInfo), eqTo(location1.name))(eqTo(fakeRequest), any[HeaderCarrier])
+        verify(mockAuditConnector).sendExtendedEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
+        verify(mockAnalyticsEventSender).sendEvents(eqTo(mockAuditInfo), eqTo(location1.name))(eqTo(fakeRequest), any[HeaderCarrier], any[ExecutionContext])
         verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(mockAuditInfo), eqTo(location1))(eqTo(fakeRequest), any[HeaderCarrier])
       }
     }
@@ -123,10 +124,11 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     val gaClientId = "gaClientId"
 
     implicit val fakeRequest = FakeRequest().withCookies(Cookie("_ga", gaClientId))
-    implicit lazy val hc = HeaderCarrier.fromHeadersAndSession(fakeRequest.headers)
+    implicit lazy val hc = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
+    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
     implicit val authContext = AuthContext(mock[LoggedInUser], Principal(None, Accounts()), None, None, None, None)
-    implicit lazy val ruleContext = RuleContext(None)(fakeRequest, hc)
+    implicit lazy val ruleContext = RuleContext(None)(fakeRequest, hc, ec)
 
     class TestRouterController(override val metricsMonitoringService: MetricsMonitoringService = mockMetricsMonitoringService,
                                override val ruleEngine: RuleEngine = mockRuleEngine,

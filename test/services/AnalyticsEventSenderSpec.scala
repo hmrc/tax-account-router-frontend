@@ -22,8 +22,10 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Cookie
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
+
+import scala.concurrent.ExecutionContext
 
 class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
@@ -38,6 +40,7 @@ class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
     val gaClientId = "gaClientId"
     implicit val request = FakeRequest().withCookies(Cookie("_ga", gaClientId))
     implicit val hc = HeaderCarrier()
+    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
     val mockAnalyticsPlatformConnector = mock[AnalyticsPlatformConnector]
     val analyticsEventSender = new AnalyticsEventSender {
       override val analyticsPlatformConnector = mockAnalyticsPlatformConnector

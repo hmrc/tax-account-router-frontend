@@ -18,13 +18,13 @@ package model
 
 import connector._
 import play.api.mvc.{AnyContent, Request}
-import play.api.{Logger, LoggerLike, Play}
-import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
+import play.api.{Logger, LoggerLike}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-case class RuleContext(credId: Option[String])(implicit request: Request[AnyContent], hc: HeaderCarrier) {
+
+case class RuleContext(credId: Option[String])(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext) {
 
   val request_ = request
   val hc_ = hc

@@ -24,9 +24,9 @@ import model._
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{Action, AnyContent, Request}
 import play.api.{Logger, LoggerLike}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.play.http.HeaderCarrier
 import utils.EnumJson._
 
 import scala.concurrent.Future

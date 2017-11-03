@@ -19,15 +19,9 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "frontend-bootstrap" % "7.23.0",
-    "uk.gov.hmrc" %% "play-config" % "4.3.0",
-    "uk.gov.hmrc" %% "logback-json-logger" % "3.1.0",
-    "uk.gov.hmrc" %% "play-health" % "2.1.0",
-    "uk.gov.hmrc" %% "govuk-template" % "5.2.0",
-    "uk.gov.hmrc" %% "play-ui" % "7.2.1",
-    "uk.gov.hmrc" %% "play-authorised-frontend" % "6.3.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "6.2.0",
-    "uk.gov.hmrc" %% "mongo-caching" % "4.0.0",
+    "uk.gov.hmrc" %% "frontend-bootstrap" % "8.10.0",
+    "uk.gov.hmrc" %% "http-caching-client" % "7.0.0",
+    "uk.gov.hmrc" %% "mongo-caching" % "5.2.0",
     "org.typelevel" %% "cats" % "0.9.0"
   )
 

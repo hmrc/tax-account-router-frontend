@@ -27,9 +27,9 @@ import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import uk.gov.hmrc.play.http.HeaderCarrier
 import engine._
 import play.api.libs.json.{JsNull, JsValue, Json}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
@@ -59,9 +59,7 @@ trait RouterController extends FrontendController with Actions {
 
   def analyticsEventSender: AnalyticsEventSender
 
-  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async {
-    implicit authContext =>
-      request =>
+  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async { implicit authContext => request =>
         route(authContext, request)
   }
 
@@ -70,7 +68,7 @@ trait RouterController extends FrontendController with Actions {
 
     def sendAuditEvent(auditInfo: AuditInfo, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
       val auditEvent = auditInfo.toAuditEvent(throttledLocation)
-      auditConnector.sendEvent(auditEvent)
+      auditConnector.sendExtendedEvent(auditEvent)
       val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
       Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
     }

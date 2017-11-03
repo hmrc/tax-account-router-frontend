@@ -16,31 +16,33 @@
 
 package connector
 
+import config.HttpClient
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.http.ws.WSHttp
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost, HttpReads}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
 
   sealed trait Setup {
 
-    val mockHttp = mock[WSHttp]
+    val mockHttp = mock[HttpClient]
 
     val someServiceUrl = "/some-service-url"
 
-    val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
     val connectorUnderTest = new UserDetailsConnector {
 
-      override def http: HttpGet with HttpPost = mockHttp
+      override def httpClient: HttpClient = mockHttp
 
       override val serviceUrl = someServiceUrl
 
@@ -53,13 +55,13 @@ class UserDetailsConnectorSpec extends UnitSpec with MockitoSugar {
       val userDetailsUri = "userDetailsUri"
 
       val expected = UserDetails(Some(CredentialRole("User")), affinityGroup = "Individual")
-      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))).thenReturn(Future.successful(expected))
+      when(mockHttp.GET(eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc),eqTo(ec))).thenReturn(Future.successful(expected))
 
-      val result = await(connectorUnderTest.getUserDetails(userDetailsUri)(hc))
+      val result = await(connectorUnderTest.getUserDetails(userDetailsUri))
 
       result shouldBe expected
 
-      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc))
+      verify(mockHttp).GET[UserDetails](eqTo(userDetailsUri))(any[HttpReads[UserDetails]](), eqTo(hc), eqTo(ec))
       verifyNoMoreInteractions(mockHttp)
     }
   }

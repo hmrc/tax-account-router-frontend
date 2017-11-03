@@ -16,12 +16,12 @@
 
 package connector
 
-import config.WSHttp
+import config.{HttpClient, WSHttpClient}
 import play.api.Logger
 import play.api.libs.json._
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, NotFoundException}
 
 import scala.concurrent.Future
 
@@ -29,11 +29,11 @@ trait SelfAssessmentConnector {
 
   val serviceUrl: String
 
-  def http: HttpGet
+  def httpClient: HttpClient
 
   def lastReturn(utr: String)(implicit hc: HeaderCarrier): Future[SaReturn] = {
 
-    http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
+    httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
       case _: NotFoundException => SaReturn.empty
       case e: Throwable =>
         Logger.warn(s"Unable to retrieve last sa return details for user with utr $utr", e)
@@ -47,7 +47,7 @@ object SelfAssessmentConnector extends SelfAssessmentConnector with ServicesConf
 
   override val serviceUrl: String = baseUrl("sa")
 
-  lazy val http = WSHttp
+  lazy val httpClient = WSHttpClient
 }
 
 case class SaReturn(supplementarySchedules: List[String] = List.empty, previousReturns: Boolean = true) {
