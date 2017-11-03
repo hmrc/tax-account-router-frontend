@@ -24,12 +24,11 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication with LogCapturing with LoneElement {
 
@@ -37,6 +36,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplicatio
 
     implicit val hc = HeaderCarrier()
     implicit val request = FakeRequest()
+    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
     val mockAuthConnector: FrontendAuthConnector = mock[FrontendAuthConnector]
     val mockUserDetailsConnector = mock[UserDetailsConnector]
     val mockSelfAssessmentConnector = mock[SelfAssessmentConnector]

@@ -16,17 +16,17 @@
 
 package connector
 
+import config.HttpClient
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.libs.json.Writes
-import uk.gov.hmrc.play.http.ws.WSPost
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpReads, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
 
@@ -43,12 +43,21 @@ class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
         when(
           mockHttp.POST[AnalyticsData, HttpResponse]
           (eqTo(s"$aServiceUrl/platform-analytics/event"), eqTo(data), any[Seq[(String, String)]])
-          (any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier])
+          (any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier], any[ExecutionContext])
         ).thenReturn(response)
 
         noException should be thrownBy analyticsPlatformConnector.sendEvents(data)
 
-        verify(mockHttp).POST[AnalyticsData, HttpResponse](eqTo(s"$aServiceUrl/platform-analytics/event"), eqTo(data), eqTo(Seq.empty))(any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier])
+        verify(mockHttp).POST[AnalyticsData, HttpResponse](
+          eqTo(s"$aServiceUrl/platform-analytics/event"),
+          eqTo(data),
+          eqTo(Seq.empty)
+        )(
+          any[Writes[AnalyticsData]],
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
       }
     }
   }
@@ -57,11 +66,12 @@ class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
     val data = AnalyticsData("gaClientId", List.empty)
     val aServiceUrl = "service-url"
     implicit val hc = HeaderCarrier()
+    implicit val ec = ExecutionContext.Implicits.global
 
-    val mockHttp = mock[WSPost]
+    val mockHttp = mock[HttpClient]
     val analyticsPlatformConnector = new AnalyticsPlatformConnector {
       override val serviceUrl = aServiceUrl
-      override val http = mockHttp
+      override val httpClient = mockHttp
     }
   }
 

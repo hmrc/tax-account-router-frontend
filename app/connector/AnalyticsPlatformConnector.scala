@@ -16,11 +16,12 @@
 
 package connector
 
-import config.WSHttp
+import config.{HttpClient, WSHttpClient}
 import play.api.libs.json.{Json, Writes}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.ws.WSPost
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
+
+import scala.concurrent.ExecutionContext
 
 case class Dimension(index : String, value : String)
 
@@ -40,12 +41,12 @@ object AnalyticsData {
 trait AnalyticsPlatformConnector {
   def serviceUrl: String
 
-  def http: WSPost
+  def httpClient: HttpClient
 
-  def sendEvents(data: AnalyticsData)(implicit hc: HeaderCarrier): Unit = http.POST[AnalyticsData, HttpResponse](s"$serviceUrl/platform-analytics/event", data, Seq.empty)
+  def sendEvents(data: AnalyticsData)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = httpClient.POST[AnalyticsData, HttpResponse](s"$serviceUrl/platform-analytics/event", data, Seq.empty)
 }
 
 object AnalyticsPlatformConnector extends AnalyticsPlatformConnector with ServicesConfig {
   override val serviceUrl = baseUrl("platform-analytics")
-  override lazy val http = WSHttp
+  override lazy val httpClient = WSHttpClient
 }
