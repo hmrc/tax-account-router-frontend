@@ -45,7 +45,7 @@ private object AppDependencies {
 
   object IntegrationTest extends TestDependencies("it")
 
-  def apply() = compile ++ Test.test ++ IntegrationTest.test
+  def apply(): Seq[ModuleID] = compile ++ Test.test ++ IntegrationTest.test
 }
 
 
