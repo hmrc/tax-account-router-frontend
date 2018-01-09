@@ -26,4 +26,4 @@ db.$collectionName.find({RET_TAXPAYER_REFERENCE: {\$exists: true}}).forEach(func
     count = count + 1;
     print('RET_TAXPAYER_REFERENCE converted to String for ' + count + ' documents.');
 });
-'RET_TAXPAYER_REFERENCE converted to String for ' + count + ' documents.';"
+'RET_TAXPAYER_REFERENCE converted to String for ' + count + ' documents in total.';"
