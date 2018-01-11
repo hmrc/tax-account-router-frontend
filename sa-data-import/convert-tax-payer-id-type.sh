@@ -15,6 +15,7 @@ db.$collectionName.find({RET_TAXPAYER_REFERENCE: {\$exists: true}}).forEach(func
     x.RET_TAXPAYER_REFERENCE = '' + x.RET_TAXPAYER_REFERENCE;
     db.$collectionName.save(x);
     count = count + 1;
+    if (count % 10000 == 0) print((count / 1000) + 'K processed');
 });
 'RET_TAXPAYER_REFERENCE converted to String for ' + count + ' documents.';"
 
