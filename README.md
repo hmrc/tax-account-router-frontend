@@ -20,6 +20,7 @@ To test the application execute:
 sbt test it:test 
 ```
 
+There is also a 'sa-data-import' folder containing scripts to upload SA data from csv files.
 
 ## License ##
 
