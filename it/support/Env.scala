@@ -53,7 +53,6 @@ object Env {
 
   def getInstance() = {
     val instance = createBrowser()
-    instance.manage().window().maximize()
     instance
   }
 
@@ -63,6 +62,6 @@ object Env {
     getInstance()
   }
 
-  val driver = phantomJsDriver
+  val driver = chromeWebDriver
 
 }
