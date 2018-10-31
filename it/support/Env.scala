@@ -62,6 +62,6 @@ object Env {
     getInstance()
   }
 
-  val driver = chromeWebDriver
+  val driver = phantomJsDriver
 
 }
