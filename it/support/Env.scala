@@ -16,11 +16,16 @@
 
 package support
 
+import java.net.URL
+
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
-import org.openqa.selenium.remote.DesiredCapabilities
+import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
+
+import scala.util.Properties
 
 object Env {
 
@@ -53,6 +58,20 @@ object Env {
     getInstance()
   }
 
-  val driver = chromeWebDriver
+  def createRemoteChrome: WebDriver = {
+    new RemoteWebDriver(new URL(s"http://localhost:4444/wd/hub"), DesiredCapabilities.chrome())
+  }
 
+  def createRemoteFirefox: WebDriver = {
+    new RemoteWebDriver(new URL(s"http://localhost:4444/wd/hub"), DesiredCapabilities.firefox())
+  }
+
+  val webDriver = Properties.propOrElse("browser", "chrome") match {
+    case "firefox"        => firefoxDriver
+    case "chrome"         => chromeWebDriver
+    case "remote-chrome"  => createRemoteChrome
+    case "remote-firefox" => createRemoteFirefox
+  }
+
+  val driver = webDriver
 }
