@@ -68,7 +68,9 @@ object Env {
     new RemoteWebDriver(new URL(s"http://localhost:4444/wd/hub"), DesiredCapabilities.firefox())
   }
 
-  val webDriver = Properties.propOrElse("browser", "remote-chrome") match {
+  private val browser: String = Properties.propOrElse("browser", "chrome")
+
+  val webDriver = browser match {
     case "firefox"        => firefoxDriver
     case "chrome"         => chromeWebDriver
     case "remote-chrome"  => createRemoteChrome

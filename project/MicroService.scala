@@ -6,6 +6,8 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import play.sbt.routes.RoutesKeys.routesGenerator
 
+import scala.util.Properties
+
 trait MicroService {
 
   import uk.gov.hmrc._
@@ -41,7 +43,7 @@ trait MicroService {
     .configs(IntegrationTest)
     .settings(inConfig(IntegrationTest)(Defaults.testSettings) : _*)
     .settings(
-      Keys.fork in IntegrationTest := false,
+      fork in IntegrationTest := false,
       unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
       unmanagedResourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it" / "resources")).value,
       addTestReportOption(IntegrationTest, "int-test-reports"),
@@ -61,8 +63,11 @@ trait MicroService {
 
 private object TestPhases {
 
-  def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
+  def oneForkedJvmPerTest(tests: Seq[TestDefinition]) = {
+    val browser: Seq[String] = Properties.propOrNone("browser").toSeq.map(value => s"-Dbrowser=$value")
+
     tests map {
-      test => new Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
+      test => new Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = browser ++ Seq("-Dtest.name=" + test.name))))
     }
+  }
 }
