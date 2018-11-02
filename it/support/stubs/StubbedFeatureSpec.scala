@@ -28,7 +28,7 @@ import support.Env
 import support.sugar._
 
 object StubbedFeatureSpec {
-  val fakeApplicationPort: Int = 9860
+  val fakeApplicationPort: Int = 6010
 }
 trait StubbedFeatureSpec
   extends FeatureSpec
