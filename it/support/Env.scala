@@ -24,12 +24,13 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
 import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
+import support.stubs.StubbedFeatureSpec
 
 import scala.util.Properties
 
 object Env {
 
-  var host = "http://localhost:9000"
+  val host = s"http://localhost:${StubbedFeatureSpec.fakeApplicationPort}"
 
   val stubPort = 11111
   val stubHost = "localhost"

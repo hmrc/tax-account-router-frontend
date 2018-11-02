@@ -27,6 +27,9 @@ import play.api.test.FakeApplication
 import support.Env
 import support.sugar._
 
+object StubbedFeatureSpec {
+  val fakeApplicationPort: Int = 9860
+}
 trait StubbedFeatureSpec
   extends FeatureSpec
   with GivenWhenThen
@@ -42,7 +45,7 @@ trait StubbedFeatureSpec
   with AssertionSugar
   with StubApplicationConfiguration {
 
-  override lazy val port = 9000
+  override lazy val port = StubbedFeatureSpec.fakeApplicationPort
   override lazy val app = FakeApplication(additionalConfiguration = config)
 
   val wireMockServer: WireMockServer = new WireMockServer(wireMockConfig().port(stubPort))

@@ -128,7 +128,7 @@ class SessionUser(loggedInViaGateway: Boolean,
         .withStatus(303)
         .withHeader(HeaderNames.SET_COOKIE, cookieValue(cookieData))
         .withHeader(HeaderNames.SET_COOKIE, s"""_ga="GA1.4.405633776.1470748420"; Path=/; HTTPOnly"; Path=/; HTTPOnly""")
-        .withHeader(HeaderNames.LOCATION, "http://localhost:9000/account")))
+        .withHeader(HeaderNames.LOCATION, s"http://localhost:${StubbedFeatureSpec.fakeApplicationPort}/account")))
   }
 
   private def stubLogin() = {
