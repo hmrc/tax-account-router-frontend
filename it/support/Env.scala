@@ -20,6 +20,7 @@ import java.net.URL
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import configuration.StubApplicationConfiguration
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
@@ -32,7 +33,7 @@ object Env {
 
   val host = s"http://localhost:${StubbedFeatureSpec.fakeApplicationPort}"
 
-  val stubPort = 11111
+  val stubPort = StubApplicationConfiguration.wiremockPort
   val stubHost = "localhost"
   val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
