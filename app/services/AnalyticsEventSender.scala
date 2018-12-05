@@ -34,7 +34,7 @@ trait AnalyticsEventSender {
 
     val gaClientId = request.cookies.get("_ga").map(_.value)
 
-    gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
+    gaClientId.fold(Logger.warn(s"Could not get _ga cookie from request $request")) {
       clientId =>
         val routingEvent = List(GaEvent(routingCategory, locationName, auditInfo.ruleApplied.getOrElse(""), Nil))
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
