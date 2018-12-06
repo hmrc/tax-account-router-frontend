@@ -9,7 +9,7 @@ A frontend service which provides routing and throttling functionality.
 To run the application execute:
 
 ```
-sbt 'run 9280' 
+sbt 'run 9280'  
 ```
 
 ## Test the application
