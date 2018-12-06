@@ -25,16 +25,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext
 
 trait AnalyticsEventSender {
-
   private val routingCategory = "routing"
 
   def analyticsPlatformConnector: AnalyticsPlatformConnector
 
-  def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext) = {
-
+  def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val gaClientId = request.cookies.get("_ga").map(_.value)
-
-    gaClientId.fold(Logger.warn(s"Couldn't get _ga cookie from request $request")) {
+    gaClientId.fold(Logger.info(s"No _ga cookie in request $request, skipping sending analytics event")) {
       clientId =>
         val routingEvent = List(GaEvent(routingCategory, locationName, auditInfo.ruleApplied.getOrElse(""), Nil))
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
@@ -43,5 +40,5 @@ trait AnalyticsEventSender {
 }
 
 object AnalyticsEventSender extends AnalyticsEventSender {
-  override lazy val analyticsPlatformConnector = AnalyticsPlatformConnector
+  override lazy val analyticsPlatformConnector: AnalyticsPlatformConnector = AnalyticsPlatformConnector
 }
