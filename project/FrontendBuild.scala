@@ -13,10 +13,11 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "frontend-bootstrap" % "11.2.0",
+    "uk.gov.hmrc" %% "frontend-bootstrap" % "8.24.0",
     "uk.gov.hmrc" %% "http-caching-client" % "7.1.0",
     "uk.gov.hmrc" %% "mongo-caching" % "5.4.0",
-    "org.typelevel" %% "cats" % "0.9.0"
+    "org.typelevel" %% "cats" % "0.9.0",
+    "ch.qos.logback" % "logback-classic" % "1.2.3"
   )
 
   abstract class TestDependencies(scope: String) {

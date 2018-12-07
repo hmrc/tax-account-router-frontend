@@ -39,6 +39,7 @@ object FrontendGlobal
 
   override def onStart(app: Application) {
     super.onStart(app)
+
     ApplicationCrypto.verifyConfiguration()
     Locations.verifyConfiguration()
   }
