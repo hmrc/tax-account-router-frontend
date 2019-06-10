@@ -13,9 +13,9 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "frontend-bootstrap" % "8.24.0",
-    "uk.gov.hmrc" %% "http-caching-client" % "7.1.0",
-    "uk.gov.hmrc" %% "mongo-caching" % "5.4.0",
+    "uk.gov.hmrc" %% "frontend-bootstrap" % "8.27.0",
+    "uk.gov.hmrc" %% "http-caching-client" % "7.2.0",
+    "uk.gov.hmrc" %% "mongo-caching" % "5.7.0",
     "org.typelevel" %% "cats" % "0.9.0"
   )
 
@@ -25,9 +25,9 @@ private object AppDependencies {
       "org.pegdown" % "pegdown" % "1.6.0" % scope,
       "org.jsoup" % "jsoup" % "1.10.2" % scope,
       "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-      "uk.gov.hmrc" %% "hmrctest" % "3.0.0" % scope,
+      "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % scope,
       "com.github.tomakehurst" % "wiremock" % "2.5.1" % scope,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % scope,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
       "org.mockito" % "mockito-core" % "1.9.5" % scope,
       "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % scope,
       "me.scf37.expecty" %% "expecty" % "1.0.2" % scope
