@@ -45,7 +45,7 @@ sealed trait TAuditInfo {
           .toSeq
         val optionalAccounts: JsObject = Json.obj(accountsAsJson: _*)
         ExtendedDataEvent(
-          auditSource = AppName.appName,
+          auditSource = "tax-account-router-frontend",
           auditType = "Routing",
           tags = hc.toAuditTags(transactionNames.getOrElse(location, "unknown transaction"), request.path),
           detail = Json.obj(

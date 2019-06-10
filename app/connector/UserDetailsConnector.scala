@@ -17,6 +17,8 @@
 package connector
 
 import config.{HttpClient, WSHttpClient}
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import play.api.libs.json._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -45,6 +47,10 @@ case class CredentialRole(value: String) extends AnyVal {
 object UserDetailsConnector extends UserDetailsConnector with ServicesConfig {
   override lazy val serviceUrl = baseUrl("user-details")
   override lazy val httpClient = WSHttpClient
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 case class UserDetails(credentialRole: Option[CredentialRole], affinityGroup: String) {
