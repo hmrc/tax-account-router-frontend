@@ -17,6 +17,8 @@
 package connector
 
 import config.{HttpClient, WSHttpClient}
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import play.api.libs.json.{Json, Writes}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -49,4 +51,8 @@ trait AnalyticsPlatformConnector {
 object AnalyticsPlatformConnector extends AnalyticsPlatformConnector with ServicesConfig {
   override val serviceUrl = baseUrl("platform-analytics")
   override lazy val httpClient = WSHttpClient
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

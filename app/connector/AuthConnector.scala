@@ -17,6 +17,8 @@
 package connector
 
 import config.WSHttpClient
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import play.api.libs.functional.syntax._
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -82,4 +84,8 @@ trait FrontendAuthConnector extends AuthConnector {
 object FrontendAuthConnector extends FrontendAuthConnector with ServicesConfig {
   val serviceUrl = baseUrl("auth")
   lazy val http = WSHttpClient
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

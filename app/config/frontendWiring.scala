@@ -18,7 +18,8 @@ package config
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.Play
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.hooks.HttpHooks
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -29,6 +30,12 @@ import uk.gov.hmrc.play.http.ws._
 
 object FrontendAuditConnector extends AuditConnector with AppName with RunMode {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 trait Hooks extends HttpHooks with HttpAuditing {
@@ -55,4 +62,6 @@ object WSHttpClient
   override protected def actorSystem: ActorSystem = Play.current.actorSystem
 
   override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }

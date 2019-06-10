@@ -17,7 +17,8 @@
 package connector
 
 import config.{HttpClient, WSHttpClient}
-import play.api.Logger
+import play.api.Mode.Mode
+import play.api.{Configuration, Logger, Play}
 import play.api.libs.json._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -48,6 +49,10 @@ object SelfAssessmentConnector extends SelfAssessmentConnector with ServicesConf
   override val serviceUrl: String = baseUrl("sa")
 
   lazy val httpClient = WSHttpClient
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 case class SaReturn(supplementarySchedules: List[String] = List.empty, previousReturns: Boolean = true) {

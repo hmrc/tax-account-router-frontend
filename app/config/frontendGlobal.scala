@@ -19,6 +19,7 @@ package config
 import com.typesafe.config.Config
 import model.Locations
 import net.ceedubs.ficus.Ficus._
+import play.api.Mode.Mode
 import play.api.Play.current
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
@@ -39,7 +40,6 @@ object FrontendGlobal
 
   override def onStart(app: Application) {
     super.onStart(app)
-    ApplicationCrypto.verifyConfiguration()
     Locations.verifyConfiguration()
   }
 
@@ -66,4 +66,10 @@ object AuditFilter extends FrontendAuditFilter with RunMode with AppName with Mi
   override lazy val auditConnector = FrontendAuditConnector
 
   override def controllerNeedsAuditing(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
