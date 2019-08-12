@@ -23,16 +23,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.test.{FakeApplication, FakeRequest}
+import support.UnitSpec
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class ConditionsSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures {
+class ConditionsSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ScalaFutures {
 
   val configuration = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",

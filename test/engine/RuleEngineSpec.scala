@@ -20,15 +20,16 @@ import engine.RoutingReason.Reason
 import model.{Location, _}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import support.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ScalaFutures {
 
   "rule engine" should {
 

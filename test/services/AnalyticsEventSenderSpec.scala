@@ -23,7 +23,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Cookie
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 import scala.concurrent.ExecutionContext
 

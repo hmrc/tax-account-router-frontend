@@ -20,7 +20,7 @@ import helpers.ExpectySupport
 import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.Configuration
 import services.ThrottlingConfig
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 

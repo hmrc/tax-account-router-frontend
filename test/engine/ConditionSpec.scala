@@ -19,7 +19,7 @@ package engine
 import engine.RoutingReason.{Reason, RoutingReason}
 import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 import scala.concurrent.Future
 

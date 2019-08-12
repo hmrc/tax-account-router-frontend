@@ -18,18 +18,19 @@ package connector
 
 import ch.qos.logback.classic.Level
 import config.HttpClient
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Matchers.{eq ⇒ eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
+import support._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with LogCapturing with LoneElement {
+class SelfAssessmentConnectorSpec extends UnitSpec with MockitoSugar with LogCapturing with LoneElement with OneAppPerSuite{
 
   "lastReturn" should {
     "return a saReturn object when the return is found" in new Setup {
@@ -76,7 +77,7 @@ class SelfAssessmentConnectorSpec extends UnitSpec with WithFakeApplication with
   }
 
   trait Setup {
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
     val httpMock = mock[HttpClient]
 

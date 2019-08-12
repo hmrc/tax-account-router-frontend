@@ -16,7 +16,7 @@
 
 package utils
 
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 class StringSeparationHelperSpec extends UnitSpec {
 

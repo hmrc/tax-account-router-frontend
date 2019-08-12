@@ -22,7 +22,7 @@ import model.{Location, Locations}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with OneAppPerSuite {
 

@@ -33,7 +33,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 import scala.concurrent.Future
 

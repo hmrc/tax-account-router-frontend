@@ -40,7 +40,7 @@ trait MicroService {
       evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
       routesGenerator := StaticRoutesGenerator
     )
-    .configs(IntegrationTest)
+    .configs(IntegrationTest extend Test)
     .settings(inConfig(IntegrationTest)(Defaults.testSettings) : _*)
     .settings(
       fork in IntegrationTest := false,

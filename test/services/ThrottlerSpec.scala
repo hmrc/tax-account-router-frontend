@@ -19,7 +19,7 @@ package services
 import org.scalatest.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 class ThrottlerSpec extends UnitSpec with Matchers {
 
