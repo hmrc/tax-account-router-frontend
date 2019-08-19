@@ -19,11 +19,12 @@ package controllers
 import cats.data.WriterT
 import engine.{AuditInfo, EngineResult, RuleEngine}
 import model.{Location, _}
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Matchers.{eq ⇒ eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -37,11 +38,11 @@ import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
-import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
+import support._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RouterControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with ScalaFutures with Eventually with LoneElement with LogCapturing {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ScalaFutures with Eventually with LoneElement with LogCapturing {
 
   val location1 = Location("location1", "/location1")
   val location2 = Location("location2", "/location2")

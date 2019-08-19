@@ -21,16 +21,17 @@ import connector._
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
 import play.api.test.FakeRequest
+import support.{LogCapturing, UnitSpec}
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
-import uk.gov.hmrc.play.test.{LogCapturing, UnitSpec, WithFakeApplication}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RuleContextSpec extends UnitSpec with MockitoSugar with WithFakeApplication with LogCapturing with LoneElement {
+class RuleContextSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with LogCapturing with LoneElement {
 
   sealed trait Setup {
 

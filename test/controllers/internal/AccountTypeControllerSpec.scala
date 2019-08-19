@@ -26,16 +26,17 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
+import support.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 
-class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication with Eventually with MicroserviceFilterSupport {
+class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with Eventually with MicroserviceFilterSupport {
 
   "Account type controller " should {
 

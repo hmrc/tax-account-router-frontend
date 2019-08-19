@@ -19,7 +19,7 @@ package model
 import config.AppConfig
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.play.test.UnitSpec
+import support.UnitSpec
 
 class LocationsSpec extends UnitSpec with MockitoSugar {
 
