@@ -21,7 +21,7 @@ import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
 import engine.RuleEngine
 import model._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.mvc._
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 import engine._
 import play.api.libs.json.{JsNull, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
+import play.api.Play.current
 
 import scala.concurrent.Future
 
@@ -70,6 +71,12 @@ trait RouterController extends FrontendController with Actions {
       val auditEvent = auditInfo.toAuditEvent(throttledLocation)
       auditConnector.sendExtendedEvent(auditEvent)
       val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
+
+      val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
+
+      if (extendedLoggingEnabled) {
+        Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied.")}")
+      }
       Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
     }
 

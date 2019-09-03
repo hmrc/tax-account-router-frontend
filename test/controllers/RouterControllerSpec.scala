@@ -49,7 +49,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuit
 
   private val gaToken = "GA-TOKEN"
   override lazy val fakeApplication = FakeApplication(
-    additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url)
+    additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url, "extended-logging-enabled" -> false)
   )
 
   def withExpectedLogMessages(expectedLogMessages: List[String])(block: => Unit) {
