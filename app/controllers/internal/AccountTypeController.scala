@@ -77,16 +77,18 @@ trait AccountTypeController extends FrontendController with Actions {
       case _ =>
         val engineResult: EngineResult = ruleEngine.getLocation(ruleContext)
 
+        val finalResult = engineResult.value map { location  =>
+          val accountType = accountTypeBasedOnLocation(location)
+          Ok(Json.toJson(AccountTypeResponse(accountType)))
+        }
+
         if (extendedLoggingEnabled) {
           engineResult.run map {
             case (auditInfo, _) => Logger.warn (s"[AIV-1264 (internal)] ${auditInfo.ruleApplied.getOrElse ("No rule applied.")}")
           }
         }
 
-        engineResult.value map { location  =>
-          val accountType = accountTypeBasedOnLocation(location)
-          Ok(Json.toJson(AccountTypeResponse(accountType)))
-        }
+        finalResult
     }.recover {
       case e =>
         logger.error("Unable to get user details from downstream.", e)
