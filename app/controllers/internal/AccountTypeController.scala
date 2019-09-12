@@ -23,11 +23,12 @@ import engine._
 import model._
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{Action, AnyContent, Request}
-import play.api.{Logger, LoggerLike}
+import play.api.{Logger, LoggerLike, Play}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils.EnumJson._
+import play.api.Play.current
 
 import scala.concurrent.Future
 
@@ -57,6 +58,8 @@ object AccountTypeController extends AccountTypeController {
 }
 
 trait AccountTypeController extends FrontendController with Actions {
+  val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
+
   def defaultAccountType: AccountType.AccountType
 
   def logger: LoggerLike
@@ -72,10 +75,20 @@ trait AccountTypeController extends FrontendController with Actions {
       case AffinityGroupValue.AGENT =>
         Future.successful(Ok(Json.toJson(AccountTypeResponse(AccountType.Agent))))
       case _ =>
-        ruleEngine.getLocation(ruleContext).value map { location =>
+        val engineResult: EngineResult = ruleEngine.getLocation(ruleContext)
+
+        val finalResult = engineResult.value map { location  =>
           val accountType = accountTypeBasedOnLocation(location)
           Ok(Json.toJson(AccountTypeResponse(accountType)))
         }
+
+        if (extendedLoggingEnabled) {
+          engineResult.run map {
+            case (auditInfo, _) => Logger.warn (s"[AIV-1264 (internal)] ${auditInfo.ruleApplied.getOrElse ("No rule applied.")}")
+          }
+        }
+
+        finalResult
     }.recover {
       case e =>
         logger.error("Unable to get user details from downstream.", e)

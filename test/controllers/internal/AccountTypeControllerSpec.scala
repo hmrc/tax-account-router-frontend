@@ -56,7 +56,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyNoMoreInteractions(allMocks: _*)
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
 
     "return type Individual when PTA location is provided by rules and there is an origin for this location" in new Setup {
@@ -75,7 +75,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyNoMoreInteractions(allMocks: _*)
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
 
     "return default account type when an unknown location is provided by rules (not PTA or BTA)" in new Setup {
@@ -97,7 +97,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verifyWarningLogging(s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.")
 
-      verifyNoMoreInteractions(allMocks: _*)
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
 
     "return agent account type when the affinity group is agent" in new Setup {
@@ -114,7 +114,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Agent
 
-      verifyNoMoreInteractions(allMocks: _*)
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
 
   }
@@ -125,7 +125,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
     val mockRuleContext = mock[RuleContext]
     val mockRuleEngine = mock[RuleEngine]
 
-    val allMocks = Seq(mockRuleEngine, mockAuthConnector, mockAuditInfo, mockLogger)
+    val allMocksExceptAuditInfo = Seq(mockRuleEngine, mockAuthConnector, mockLogger)
 
     val credId = "credId"
 
