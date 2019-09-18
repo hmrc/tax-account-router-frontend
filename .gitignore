@@ -1,7 +1,6 @@
 .*
 
 !.gitignore
-!.travis.yml
 
 .cache
 /.classpath

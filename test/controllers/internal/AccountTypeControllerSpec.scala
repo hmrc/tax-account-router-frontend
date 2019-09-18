@@ -95,7 +95,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLogging(s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.")
+      verifyWarningLogging(s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.", 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }

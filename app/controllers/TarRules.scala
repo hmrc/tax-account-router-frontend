@@ -16,14 +16,13 @@
 
 package controllers
 
+import engine.dsl._
 import engine.{Rule, RuleEngine}
 import model.Conditions._
 import model.Locations._
 import model.RuleContext
 
 object TarRules extends RuleEngine {
-
-  import engine.dsl._
 
   override val defaultLocation = BusinessTaxAccount
 

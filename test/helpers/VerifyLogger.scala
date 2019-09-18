@@ -16,20 +16,20 @@
 
 package helpers
 
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.{times, verify}
 import org.scalatest.mockito.MockitoSugar
 import play.api.LoggerLike
 
 trait VerifyLogger extends MockitoSugar {
   val mockLogger = mock[LoggerLike]
 
-  def verifyWarningLogging(expectedMessage: String) = verifyLogging("warn", expectedMessage)
+  def verifyWarningLogging(expectedMessage: String, runTimes: Int = 1) = verifyLogging("warn", expectedMessage, runTimes)
 
   def verifyErrorLogging(expectedMessage: String) = verifyLogging("error", expectedMessage)
 
-  private def verifyLogging(methodName: String, expectedMessage: String) = {
+  private def verifyLogging(methodName: String, expectedMessage: String, runTimes: Int = 1) = {
     classOf[LoggerLike].getMethod(methodName, classOf[() => _]).invoke(
-      verify(mockLogger),
+      verify(mockLogger, times(runTimes)),
       new (() => String) {
         def apply = null
 

@@ -17,7 +17,7 @@
 package engine
 
 import cats.data.WriterT
-import model.{Location, _}
+import model._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

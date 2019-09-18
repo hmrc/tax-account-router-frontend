@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils.EnumJson._
 import play.api.Play.current
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object AccountType extends Enumeration {
@@ -74,25 +75,56 @@ trait AccountTypeController extends FrontendController with Actions {
     ruleContext.affinityGroup.flatMap {
       case AffinityGroupValue.AGENT =>
         Future.successful(Ok(Json.toJson(AccountTypeResponse(AccountType.Agent))))
-      case _ =>
+
+      case affinityValue =>
         val engineResult: EngineResult = ruleEngine.getLocation(ruleContext)
 
-        val finalResult = engineResult.value map { location  =>
+        val finalResult: Future[AccountTypeResponse] = engineResult.value map { location =>
           val accountType = accountTypeBasedOnLocation(location)
-          Ok(Json.toJson(AccountTypeResponse(accountType)))
+          AccountTypeResponse(accountType)
         }
 
         if (extendedLoggingEnabled) {
           engineResult.run map {
-            case (auditInfo, _) => Logger.warn (s"[AIV-1264 (internal)] ${auditInfo.ruleApplied.getOrElse ("No rule applied.")}")
+            case (auditInfo, _) => Logger.warn(s"[AIV-1264 (internal)] ${auditInfo.ruleApplied.getOrElse("No rule applied.")}")
           }
         }
 
-        finalResult
+        //[AIV-1349]
+        val fprResult = fourpartruleEvaluate(affinityValue, engineResult)
+
+        for {
+          tarResponse <- finalResult
+          fourprResponse <- fprResult
+        } yield{
+          compareAndLog(tarResponse, fourprResponse)
+          Ok(Json.toJson(tarResponse))
+        }
+
     }.recover {
       case e =>
         logger.error("Unable to get user details from downstream.", e)
         InternalServerError("Unable to get user details from downstream.")
+    }
+  }
+
+  //[AIV-1349]
+  private def compareAndLog(tar: AccountTypeResponse, fprResult: AccountTypeResponse) = {
+    if (tar.`type`.equals(fprResult.`type`)) Logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}.")
+    else Logger.warn(s"[AIV-1349] TAT and 4PR disagree, TAR identifies login as ${tar.`type`}, but 4PR identifies login as ${fprResult.`type`}")
+  }
+
+  //[AIV-1349]
+  private def fourpartruleEvaluate(affinityValue: String, engineResult: EngineResult): Future[AccountTypeResponse] = {
+    affinityValue match {
+      case "Individual" => Future.successful(AccountTypeResponse(AccountType.Individual))
+      case "Organisation" =>
+        engineResult.value map { location =>
+          val accountType = accountTypeBasedOnLocation(location)
+          AccountTypeResponse(accountType)
+        }
+      case "Agent" => Future.successful(AccountTypeResponse(AccountType.Agent))
+      case _ => Future.successful(AccountTypeResponse(AccountType.Organisation))
     }
   }
 
