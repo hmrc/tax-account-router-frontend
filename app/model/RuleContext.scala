@@ -66,7 +66,6 @@ case class RuleContext(credId: Option[String])(implicit request: Request[AnyCont
     }
   }
 
-
   lazy val enrolments = authority.flatMap { authority =>
     lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
     authority.enrolmentsUri.fold(noEnrolments)(authConnector.getEnrolments)

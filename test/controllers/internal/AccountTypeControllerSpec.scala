@@ -56,6 +56,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
+      verifyWarningLogging(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Organisation}.")
+
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
 
@@ -74,6 +76,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Individual
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
+
+      verifyWarningLogging(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Individual}.")
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -95,7 +99,10 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLogging(s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.", 2)
+      verifyWarningLoggings(
+        List(
+          s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.",
+          s"[AIV-1349] TAR and 4PR agree that login is $theDefaultAccountType."), 3)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
