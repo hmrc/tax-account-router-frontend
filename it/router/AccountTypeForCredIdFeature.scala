@@ -8,14 +8,14 @@ import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
 import uk.gov.hmrc.domain.{Nino, SaUtr}
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
 
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+
 class AccountTypeForCredIdFeature extends StubbedFeatureSpec with CommonStubs {
 
   val credId = "cred-id-for-the-user"
   val saUtr = "12345"
   val saAccounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-
-  import scala.concurrent.duration._
-  import scala.concurrent.{Await, Future}
 
   implicit val defaultTimeout = 5 seconds
 

@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.CredentialStrength
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 case class EnrolmentIdentifier(key: String, value: String)
 
@@ -73,7 +73,7 @@ trait FrontendAuthConnector extends AuthConnector {
 
   def currentUserAuthority(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[UserAuthority](s"$serviceUrl/auth/authority")
 
-  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
+  def userAuthority(credId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserAuthority] = http.GET[UserAuthority](s"$serviceUrl/auth/gg/$credId")
 
   def getIds(idsUri: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = http.GET[InternalUserIdentifier](s"$serviceUrl$idsUri")
 
