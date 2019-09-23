@@ -156,7 +156,10 @@ trait AccountTypeController extends FrontendController with Actions {
       }
     }
 
-    fourpartruleEvaluate(userAffinityGroup, userHasActiveBusinessEnrolments).recover{case _ => AccountTypeResponse(AccountType.Organisation)}
+    fourpartruleEvaluate(userAffinityGroup, userHasActiveBusinessEnrolments).recover{case t: Throwable =>
+      logger.warn(s"[AIV-1349] the fourpartruleEvaluate fails set account type to Organisation as default: ${t.getMessage}")
+      AccountTypeResponse(AccountType.Organisation)
+    }
   }
 
   //[AIV-1349]
