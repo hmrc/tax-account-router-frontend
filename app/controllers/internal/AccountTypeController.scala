@@ -90,11 +90,11 @@ trait AccountTypeController extends FrontendController with Actions {
           AccountTypeResponse(accountType)
         }
 
-        if (extendedLoggingEnabled) {
+        val ruleApplied: Future[String] = if (extendedLoggingEnabled) {
           engineResult.run map {
-            case (auditInfo, _) => Logger.warn(s"[AIV-1264 (internal)] ${auditInfo.ruleApplied.getOrElse("No rule applied.")}")
+            case (auditInfo, _) => s"${auditInfo.ruleApplied.getOrElse("No rule applied.")}"
           }
-        }
+        } else Future.successful("")
 
         //[AIV-1349]
         val fourprResult = accountTypeForCredIdUsingFourPartRule(credId)
@@ -103,7 +103,7 @@ trait AccountTypeController extends FrontendController with Actions {
           tarResponse <- finalResult
           fourprResponse <- fourprResult
         } yield{
-          compareAndLog(tarResponse, fourprResponse)
+          compareAndLog(tarResponse, fourprResponse, ruleApplied)
           Ok(Json.toJson(tarResponse))
         }
 
@@ -163,9 +163,11 @@ trait AccountTypeController extends FrontendController with Actions {
   }
 
   //[AIV-1349]
-  def compareAndLog(tar: AccountTypeResponse, fprResult: AccountTypeResponse): Unit = {
-    if (tar.`type`.equals(fprResult.`type`)) logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}.")
-    else logger.warn(s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as ${tar.`type`}, but 4PR identifies login as ${fprResult.`type`}")
+  def compareAndLog(tar: AccountTypeResponse, fprResult: AccountTypeResponse, ruleApplied: Future[String]): Unit = {
+    ruleApplied.map { rule: String =>
+      if (tar.`type`.equals(fprResult.`type`)) logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}.")
+      else logger.warn(s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as ${tar.`type`} by applying rule ${rule}, but 4PR identifies login as ${fprResult.`type`}")
+    }
   }
 
   //[AIV-1349]
