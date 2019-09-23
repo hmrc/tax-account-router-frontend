@@ -169,12 +169,19 @@ trait AccountTypeController extends FrontendController with Actions {
   }
 
   //[AIV-1349]
+
+  // The four part rule being tested is :-
+  //   If the user has an agent affinity group it is an agent
+  //   else if the user has active business enrolments it is a organization
+  //   else if the user has an individual affinity group it is an individual
+  //   else it is an organization
+
   def fourpartruleEvaluate(affinityValue: Future[String], userHasActiveBusinessEnrolments: Future[Boolean]): Future[AccountTypeResponse] = {
     for {
       affinity: String <- affinityValue
-      hasActiveEnrolment: Boolean <- userHasActiveBusinessEnrolments
+      hasActiveBusinessEnrolment: Boolean <- userHasActiveBusinessEnrolments
     } yield {
-      (affinity, hasActiveEnrolment) match {
+      (affinity, hasActiveBusinessEnrolment) match {
         case ("Agent", _)      => AccountTypeResponse(AccountType.Agent)
         case (_, true)         => AccountTypeResponse(AccountType.Organisation)
         case ("Individual", _) => AccountTypeResponse(AccountType.Individual)
