@@ -43,7 +43,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
     "return type Organisation when BTA location is provided by rules and there is an origin for this location" in new Setup {
       // given
-      val engineResult = WriterT(Future.successful((mockAuditInfo, Locations.BusinessTaxAccount)))
+      val engineResult = WriterT(Future.successful((emptyAuditInfo, Locations.BusinessTaxAccount)))
       when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
       when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.ORGANISATION))
       when(mockAuthConnector.userAuthority(anyString())(any(), any())).thenReturn(Future.successful(expectedAuthority))
@@ -67,7 +67,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
     "return type Individual when PTA location is provided by rules and there is an origin for this location" in new Setup {
       // given
-      val engineResult = WriterT(Future.successful((mockAuditInfo, Locations.PersonalTaxAccount)))
+      val engineResult = WriterT(Future.successful((emptyAuditInfo, Locations.PersonalTaxAccount)))
       when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
       when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.INDIVIDUAL))
       when(mockAuthConnector.userAuthority(anyString())(any(), any())).thenReturn(Future.successful(expectedAuthority))
@@ -92,7 +92,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
     "return default account type when an unknown location is provided by rules (not PTA or BTA)" in new Setup {
       // given
       val unknownLocation = Location("unknown-location", "/unknown-location")
-      val engineResult = WriterT(Future.successful((mockAuditInfo, unknownLocation)))
+      val engineResult = WriterT(Future.successful((emptyAuditInfo, unknownLocation)))
       when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
       when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.ORGANISATION))
       when(mockAuthConnector.userAuthority(anyString())(any(), any())).thenReturn(Future.successful(expectedAuthority))
@@ -112,7 +112,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verifyWarningLoggings(
         List(
           s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.",
-          s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as $theDefaultAccountType, but 4PR identifies login as Individual",
+          s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as $theDefaultAccountType by applying rule No rule applied, but 4PR identifies login as Individual",
           s"[AIV-1349] the userActiveEnrolments are: Set(some-key)"), 3)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
@@ -138,7 +138,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
   }
 
   trait Setup extends VerifyLogger {
-    val mockAuditInfo: AuditInfo                       = mock[AuditInfo]
+    val emptyAuditInfo: AuditInfo                      = AuditInfo.Empty
     val mockAuthConnector: FrontendAuthConnector       = mock[FrontendAuthConnector]
     val mockUserDetailsConnector: UserDetailsConnector = mock[UserDetailsConnector]
     val mockRuleContext: RuleContext                   = mock[RuleContext]
