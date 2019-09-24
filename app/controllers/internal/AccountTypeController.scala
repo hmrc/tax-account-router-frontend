@@ -184,10 +184,10 @@ trait AccountTypeController extends FrontendController with Actions {
       affinity: String <- affinityValue
       hasActiveBusinessEnrolment: Boolean <- userHasActiveBusinessEnrolments
     } yield {
-      (affinity, hasActiveBusinessEnrolment) match {
-        case ("Agent", _)      => AccountTypeResponse(AccountType.Agent)
+      (affinity.toLowerCase, hasActiveBusinessEnrolment) match {
+        case ("agent", _)      => AccountTypeResponse(AccountType.Agent)
         case (_, true)         => AccountTypeResponse(AccountType.Organisation)
-        case ("Individual", _) => AccountTypeResponse(AccountType.Individual)
+        case ("individual", _) => AccountTypeResponse(AccountType.Individual)
         case _                 => AccountTypeResponse(AccountType.Organisation)
       }
     }
