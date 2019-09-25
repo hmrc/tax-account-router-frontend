@@ -1,36 +1,34 @@
 import play.routes.compiler.StaticRoutesGenerator
+import play.sbt.PlayImport.PlayKeys.playDefaultPort
+import play.sbt.routes.RoutesKeys.routesGenerator
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
+import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
-import play.sbt.routes.RoutesKeys.routesGenerator
+import uk.gov.hmrc.versioning.SbtGitVersioning
+import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
+import uk.gov.hmrc.{SbtArtifactory, SbtAutoBuildPlugin}
 
 import scala.util.Properties
 
 trait MicroService {
 
-  import uk.gov.hmrc._
-  import DefaultBuildSettings._
-  import TestPhases._
-  import uk.gov.hmrc.sbtdistributables
-  import uk.gov.hmrc.{SbtArtifactory, SbtAutoBuildPlugin, SbtBuildInfo}
-  import uk.gov.hmrc.versioning.SbtGitVersioning
-  import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
-
   val appName: String
   val appDependencies : Seq[ModuleID]
 
-  lazy val plugins : Seq[Plugins] = Seq(SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  lazy val plugins : Seq[Plugins] = Seq(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   lazy val playSettings : Seq[Setting[_]] = Seq.empty
 
   lazy val microservice = Project(appName, file("."))
-    .enablePlugins(Seq(play.sbt.PlayScala) ++ plugins : _*)
+    .enablePlugins(plugins : _*)
     .settings(majorVersion := 1)
     .settings(playSettings : _*)
     .settings(scalaSettings: _*)
     .settings(publishingSettings: _*)
     .settings(defaultSettings(): _*)
+    .settings(playDefaultPort := 9280)
     .settings(
       scalaVersion := "2.11.7",
       libraryDependencies ++= appDependencies,
@@ -63,11 +61,11 @@ trait MicroService {
 
 private object TestPhases {
 
-  def oneForkedJvmPerTest(tests: Seq[TestDefinition]) = {
+  def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] = {
     val browser: Seq[String] = Properties.propOrNone("browser").toSeq.map(value => s"-Dbrowser=$value")
 
     tests map {
-      test => new Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = browser ++ Seq("-Dtest.name=" + test.name))))
+      test => Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = browser ++ Seq("-Dtest.name=" + test.name))))
     }
   }
 }

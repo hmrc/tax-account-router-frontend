@@ -16,26 +16,28 @@
 
 package helpers
 
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.{times, verify}
 import org.scalatest.mockito.MockitoSugar
 import play.api.LoggerLike
 
 trait VerifyLogger extends MockitoSugar {
   val mockLogger = mock[LoggerLike]
 
-  def verifyWarningLogging(expectedMessage: String) = verifyLogging("warn", expectedMessage)
+  def verifyWarningLogging(expectedMessage: String, runTimes: Int = 1) = verifyLogging("warn", List(expectedMessage), runTimes)
 
-  def verifyErrorLogging(expectedMessage: String) = verifyLogging("error", expectedMessage)
+  def verifyWarningLoggings(expectedMessage: List[String], runTimes: Int = 1) = verifyLogging("warn", expectedMessage, runTimes)
 
-  private def verifyLogging(methodName: String, expectedMessage: String) = {
+  def verifyErrorLogging(expectedMessage: String) = verifyLogging("error", List(expectedMessage))
+
+  private def verifyLogging(methodName: String, expectedMessage: List[String], runTimes: Int = 1) = {
     classOf[LoggerLike].getMethod(methodName, classOf[() => _]).invoke(
-      verify(mockLogger),
+      verify(mockLogger, times(runTimes)),
       new (() => String) {
         def apply = null
 
         override def equals(o: Any): Boolean = {
           val actual = o.asInstanceOf[() => String].apply()
-          if (expectedMessage == actual) {
+          if (expectedMessage.contains(actual) ) {
             true
           } else {
             throw new RuntimeException(s"""Expected and actual messages didn't match - Expected = "$expectedMessage", Actual = "$actual""")
