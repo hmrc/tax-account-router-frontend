@@ -60,7 +60,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLoggings(List(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied.", "[AIV-1349] the userActiveEnrolments are: Set(some-key, enr1)"), 2)
+      verifyWarningLoggings(List(s"[AIV-1396] TAR and 4PR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied. MPR applying the rule: org-by-biz-enrolments-rule.", "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -84,7 +84,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLoggings(List(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied.", "[AIV-1349] the userActiveEnrolments are: Set(some-key)"), 2)
+      //verifyWarningLoggings(List(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied.", "[AIV-1349] the userActiveEnrolments are: Set(some-key)"), 2)
+      verifyWarningLoggings(List(s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied,  MPR applying the rule: individual-rule", "[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }

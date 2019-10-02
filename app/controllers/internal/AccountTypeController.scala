@@ -101,10 +101,10 @@ trait AccountTypeController extends FrontendController with Actions {
 
         for {
           tarResponse <- finalResult
-          fourprResponse <- fourprResult
+          ruleResponse <- fourprResult
           tarRuleApplied <- ruleApplied
         } yield{
-          compareAndLog(tarResponse, fourprResponse, tarRuleApplied)
+          compareAndLog(tarResponse, ruleResponse, tarRuleApplied)
           Ok(Json.toJson(tarResponse))
         }
 
@@ -116,7 +116,7 @@ trait AccountTypeController extends FrontendController with Actions {
   }
 
   //[AIV-1349]
-  def accountTypeForCredIdUsingFourPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[AccountTypeResponse] = {
+  def accountTypeForCredIdUsingFourPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[(AccountTypeResponse, String)] = {
 
     val businessEnrolments: Set[String] = Conditions.config.businessEnrolments
 
@@ -152,43 +152,50 @@ trait AccountTypeController extends FrontendController with Actions {
       for {
         activedEnrolmentKeys <- userActiveEnrolmentKeys
       } yield {
-        logger.warn(s"[AIV-1349] the userActiveEnrolments are: $activedEnrolmentKeys")
+        logger.warn(s"[AIV-1396] the userActiveEnrolments are: $activedEnrolmentKeys")
         businessEnrolments.exists(activedEnrolmentKeys.contains)
       }
     }
 
-    fourpartruleEvaluate(userAffinityGroup, userHasActiveBusinessEnrolments).recover{case t: Throwable =>
-      logger.warn(s"[AIV-1349] the fourpartruleEvaluate fails set account type to Organisation as default: ${t.getMessage}")
-      AccountTypeResponse(AccountType.Organisation)
+    multipartRuleEvaluate(userAffinityGroup, userHasActiveBusinessEnrolments).recover{case t: Throwable =>
+      logger.warn(s"[AIV-1349] the multipartRuleEvaluate fails set account type to Organisation as default: ${t.getMessage}")
+      (AccountTypeResponse(AccountType.Organisation), "")
     }
   }
 
-  //[AIV-1349]
-  def compareAndLog(tar: AccountTypeResponse, fprResult: AccountTypeResponse, ruleApplied: String): Unit = {
-    if (extendedLoggingEnabled) {
-      if (tar.`type`.equals(fprResult.`type`)) logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied.")
-      else logger.warn(s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as ${tar.`type`} by applying rule $ruleApplied, but 4PR identifies login as ${fprResult.`type`}")
+//  def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
+//    if (extendedLoggingEnabled) {
+//      if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied.")
+//      else logger.warn(s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as ${tar.`type`} by applying rule $ruleApplied, but 4PR identifies login as ${ruleResult._1.`type`}")
+//    }
+//  }
+
+    //AIV-396
+    def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
+      if (extendedLoggingEnabled) {
+        if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1396] TAR and 4PR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied. MPR applying the rule: ${ruleResult._2}.")
+        else logger.warn(s"[AIV-1396] TAR and MPR agree that login is ${tar.`type`}, TAR applying the rule: ${tar.`type`},  MPR applying the rule: ${ruleResult._2}.")
+      }
     }
-  }
 
-  //[AIV-1349]
+  //[AIV-1396]
 
-  // The four part rule being tested is :-
+  // The multi part rule being tested is :-
   //   If the user has an agent affinity group it is an agent
   //   else if the user has active business enrolments it is a organization
   //   else if the user has an individual affinity group it is an individual
   //   else it is an organization
 
-  def fourpartruleEvaluate(affinityValue: Future[String], userHasActiveBusinessEnrolments: Future[Boolean]): Future[AccountTypeResponse] = {
+  def multipartRuleEvaluate(affinityValue: Future[String], userHasActiveBusinessEnrolments: Future[Boolean]): Future[(AccountTypeResponse, String)] = {
     for {
       affinity: String <- affinityValue
       hasActiveBusinessEnrolment: Boolean <- userHasActiveBusinessEnrolments
     } yield {
       (affinity.toLowerCase, hasActiveBusinessEnrolment) match {
-        case ("agent", _)      => AccountTypeResponse(AccountType.Agent)
-        case (_, true)         => AccountTypeResponse(AccountType.Organisation)
-        case ("individual", _) => AccountTypeResponse(AccountType.Individual)
-        case _                 => AccountTypeResponse(AccountType.Organisation)
+        case ("agent", _)      => (AccountTypeResponse(AccountType.Agent), "agent-rule")
+        case (_, true)         => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
+        case ("individual", _) => (AccountTypeResponse(AccountType.Individual), "individual-rule")
+        case _                 => (AccountTypeResponse(AccountType.Organisation), "No rule applied")
       }
     }
   }
