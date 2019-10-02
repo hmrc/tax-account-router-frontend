@@ -119,6 +119,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def accountTypeForCredIdUsingFourPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[(AccountTypeResponse, String)] = {
 
     val businessEnrolments: Set[String] = Conditions.config.businessEnrolments
+    val sensitiveTaxesEnrolments: Set[String] = Conditions.config.sensitiveEnrolments
 
     val userAuthority: Future[UserAuthority] = authConnector.userAuthority(credId)
 
@@ -148,12 +149,12 @@ trait AccountTypeController extends FrontendController with Actions {
         }
       )
 
-    val userHasActiveBusinessEnrolments: Future[Boolean] = {
+    val userHasActiveBusinessEnrolments: Future[UserActiveBusinessEnrolmentsState] = {
       for {
         activedEnrolmentKeys <- userActiveEnrolmentKeys
       } yield {
         logger.warn(s"[AIV-1396] the userActiveEnrolments are: $activedEnrolmentKeys")
-        businessEnrolments.exists(activedEnrolmentKeys.contains)
+        UserActiveBusinessEnrolmentsState(businessEnrolments.exists(activedEnrolmentKeys.contains), sensitiveTaxesEnrolments.exists(activedEnrolmentKeys.contains))
       }
     }
 
@@ -163,39 +164,41 @@ trait AccountTypeController extends FrontendController with Actions {
     }
   }
 
-//  def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
-//    if (extendedLoggingEnabled) {
-//      if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1349] TAR and 4PR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied.")
-//      else logger.warn(s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as ${tar.`type`} by applying rule $ruleApplied, but 4PR identifies login as ${ruleResult._1.`type`}")
-//    }
-//  }
+  //AIV-1396
+  case class UserActiveBusinessEnrolmentsState(userHasActiveBusinessEnrolments: Boolean, userHasActiveSensitiveTaxesEnrolments: Boolean)
 
-    //AIV-396
-    def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
-      if (extendedLoggingEnabled) {
-        if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1396] TAR and 4PR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied. MPR applying the rule: ${ruleResult._2}.")
-        else logger.warn(s"[AIV-1396] TAR and MPR agree that login is ${tar.`type`}, TAR applying the rule: ${tar.`type`},  MPR applying the rule: ${ruleResult._2}.")
-      }
+  //AIV-1396
+  def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
+    if (extendedLoggingEnabled) {
+      if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1396] TAR and MPR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied. MPR applying the rule: ${ruleResult._2}.")
+      else logger.warn(s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: ${tar.`type`}, MPR applying the rule: ${ruleResult._2}.")
     }
+  }
 
   //[AIV-1396]
 
   // The multi part rule being tested is :-
-  //   If the user has an agent affinity group it is an agent
-  //   else if the user has active business enrolments it is a organization
-  //   else if the user has an individual affinity group it is an individual
-  //   else it is an organization
+  //   If the user has an agent affinity group it is an agent(agent-rule)
+  //   else if the user has active business enrolments and enrolments are NOT including CT, VAT, PAYE, or SA, it is a organization(org-by-biz-enrolments-rule), else individual(ind-sensitive-enrolments-rule)
+  //   else if the user has an individual affinity group it is an individual(individual-rule)
+  //   else it is an organization(default-org-rule), i.e a organization without any active enrolments
 
-  def multipartRuleEvaluate(affinityValue: Future[String], userHasActiveBusinessEnrolments: Future[Boolean]): Future[(AccountTypeResponse, String)] = {
+  def multipartRuleEvaluate(affinityValue: Future[String], userActiveBusinessEnrolmentsState: Future[UserActiveBusinessEnrolmentsState]): Future[(AccountTypeResponse, String)] = {
     for {
       affinity: String <- affinityValue
-      hasActiveBusinessEnrolment: Boolean <- userHasActiveBusinessEnrolments
+      activeEnrolmentsState: UserActiveBusinessEnrolmentsState <- userActiveBusinessEnrolmentsState
     } yield {
-      (affinity.toLowerCase, hasActiveBusinessEnrolment) match {
-        case ("agent", _)      => (AccountTypeResponse(AccountType.Agent), "agent-rule")
-        case (_, true)         => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
-        case ("individual", _) => (AccountTypeResponse(AccountType.Individual), "individual-rule")
-        case _                 => (AccountTypeResponse(AccountType.Organisation), "No rule applied")
+      (affinity.toLowerCase, activeEnrolmentsState) match {
+        case ("agent", _)                                                                       =>
+          (AccountTypeResponse(AccountType.Agent), "agent-rule")
+        case ("organisation", activeState) if activeState.userHasActiveSensitiveTaxesEnrolments =>
+          (AccountTypeResponse(AccountType.Individual), "ind-sensitive-enrolments-rule")
+        case ("organisation", activeState) if activeState.userHasActiveBusinessEnrolments       =>
+          (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
+        case ("individual", _)                                                                  =>
+          (AccountTypeResponse(AccountType.Individual), "individual-rule")
+        case _                                                                                  =>
+          (AccountTypeResponse(AccountType.Organisation), "default-org-rule")
       }
     }
   }
