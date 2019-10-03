@@ -149,16 +149,16 @@ trait AccountTypeController extends FrontendController with Actions {
         }
       )
 
-    val userHasActiveBusinessEnrolments: Future[Boolean] = {
+    val userActiveBusinessEnrolments: Future[Set[String]] = {
       for {
         activedEnrolmentKeys <- userActiveEnrolmentKeys
       } yield {
         logger.warn(s"[AIV-1396] the userActiveEnrolments are: $activedEnrolmentKeys")
-        businessEnrolments.exists(activedEnrolmentKeys.contains)
+        businessEnrolments.intersect(activedEnrolmentKeys)
       }
     }
 
-    multipartRuleEvaluate(userAffinityGroup, userHasActiveBusinessEnrolments).recover{case t: Throwable =>
+    multipartRuleEvaluate(userAffinityGroup, userActiveBusinessEnrolments,sensitiveTaxesEnrolments).recover{case t: Throwable =>
       logger.warn(s"[AIV-1349] the multipartRuleEvaluate fails set account type to Organisation as default: ${t.getMessage}")
       (AccountTypeResponse(AccountType.Organisation), "")
     }
@@ -184,11 +184,11 @@ trait AccountTypeController extends FrontendController with Actions {
     for {
       affinity: String <- affinityValue
       hasActiveBusinessEnrolment <- userActiveBusinessEnrolments
-      hasSensitiveEnrolments = hasActiveBusinessEnrolment.intersect(sensitiveTaxesEnrolments).nonEmpty
+      userSensitiveEnrolments = hasActiveBusinessEnrolment.intersect(sensitiveTaxesEnrolments).nonEmpty
     } yield {
       (affinity.toLowerCase, hasActiveBusinessEnrolment.nonEmpty) match {
         case ("agent", _)                                 => (AccountTypeResponse(AccountType.Agent), "agent-rule")
-        case (_,true) if (hasSensitiveEnrolments)         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
+        case (_,true) if (userSensitiveEnrolments)         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
         case (_, true)                                    => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
         case ("individual", _)                            => (AccountTypeResponse(AccountType.Individual), "individual-rule")
         case _                                            => (AccountTypeResponse(AccountType.Organisation), "No rule applied")
