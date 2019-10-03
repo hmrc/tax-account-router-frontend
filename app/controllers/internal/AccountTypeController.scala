@@ -149,12 +149,12 @@ trait AccountTypeController extends FrontendController with Actions {
         }
       )
 
-    val userHasActiveBusinessEnrolments: Future[UserActiveBusinessEnrolmentsState] = {
+    val userHasActiveBusinessEnrolments: Future[Boolean] = {
       for {
         activedEnrolmentKeys <- userActiveEnrolmentKeys
       } yield {
         logger.warn(s"[AIV-1396] the userActiveEnrolments are: $activedEnrolmentKeys")
-        UserActiveBusinessEnrolmentsState(businessEnrolments.exists(activedEnrolmentKeys.contains), sensitiveTaxesEnrolments.exists(activedEnrolmentKeys.contains))
+        businessEnrolments.exists(activedEnrolmentKeys.contains)
       }
     }
 
@@ -163,9 +163,6 @@ trait AccountTypeController extends FrontendController with Actions {
       (AccountTypeResponse(AccountType.Organisation), "")
     }
   }
-
-  //AIV-1396
-  case class UserActiveBusinessEnrolmentsState(userHasActiveBusinessEnrolments: Boolean, userHasActiveSensitiveTaxesEnrolments: Boolean)
 
   //AIV-1396
   def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
@@ -183,22 +180,16 @@ trait AccountTypeController extends FrontendController with Actions {
   //   else if the user has an individual affinity group it is an individual(individual-rule)
   //   else it is an organization(default-org-rule), i.e a organization without any active enrolments
 
-  def multipartRuleEvaluate(affinityValue: Future[String], userActiveBusinessEnrolmentsState: Future[UserActiveBusinessEnrolmentsState]): Future[(AccountTypeResponse, String)] = {
+  def multipartRuleEvaluate(affinityValue: Future[String], userHasActiveBusinessEnrolments: Future[Boolean]): Future[(AccountTypeResponse, String)] = {
     for {
       affinity: String <- affinityValue
-      activeEnrolmentsState: UserActiveBusinessEnrolmentsState <- userActiveBusinessEnrolmentsState
+      hasActiveBusinessEnrolment: Boolean <- userHasActiveBusinessEnrolments
     } yield {
-      (affinity.toLowerCase, activeEnrolmentsState) match {
-        case ("agent", _)                                                                       =>
-          (AccountTypeResponse(AccountType.Agent), "agent-rule")
-        case ("organisation", activeState) if activeState.userHasActiveSensitiveTaxesEnrolments =>
-          (AccountTypeResponse(AccountType.Individual), "ind-sensitive-enrolments-rule")
-        case ("organisation", activeState) if activeState.userHasActiveBusinessEnrolments       =>
-          (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
-        case ("individual", _)                                                                  =>
-          (AccountTypeResponse(AccountType.Individual), "individual-rule")
-        case _                                                                                  =>
-          (AccountTypeResponse(AccountType.Organisation), "default-org-rule")
+      (affinity.toLowerCase, hasActiveBusinessEnrolment) match {
+        case ("agent", _)      => (AccountTypeResponse(AccountType.Agent), "agent-rule")
+        case (_, true)         => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
+        case ("individual", _) => (AccountTypeResponse(AccountType.Individual), "individual-rule")
+        case _                 => (AccountTypeResponse(AccountType.Organisation), "No rule applied")
       }
     }
   }
