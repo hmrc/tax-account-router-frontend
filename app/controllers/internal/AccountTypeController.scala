@@ -184,14 +184,14 @@ trait AccountTypeController extends FrontendController with Actions {
     for {
       affinity: String <- affinityValue
       hasActiveBusinessEnrolment <- userActiveBusinessEnrolments
-      userSensitiveEnrolments = hasActiveBusinessEnrolment.intersect(sensitiveTaxesEnrolments).nonEmpty
+      userSensitiveEnrolments = hasActiveBusinessEnrolment.exists(sensitiveTaxesEnrolments)
     } yield {
       (affinity.toLowerCase, hasActiveBusinessEnrolment.nonEmpty) match {
         case ("agent", _)                                 => (AccountTypeResponse(AccountType.Agent), "agent-rule")
-        case (_,true) if (userSensitiveEnrolments)         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
+        case (_, true) if userSensitiveEnrolments         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
         case (_, true)                                    => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
         case ("individual", _)                            => (AccountTypeResponse(AccountType.Individual), "individual-rule")
-        case _                                            => (AccountTypeResponse(AccountType.Organisation), "No rule applied")
+        case _                                            => (AccountTypeResponse(AccountType.Organisation), "default-org-rule")
       }
     }
   }
