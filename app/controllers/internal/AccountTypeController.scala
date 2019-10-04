@@ -97,11 +97,11 @@ trait AccountTypeController extends FrontendController with Actions {
         } else Future.successful("")
 
         //[AIV-1349]
-        val fourprResult = accountTypeForCredIdUsingFourPartRule(credId)
+        val multiPartRuleResult = accountTypeForCredIdUsingMultiPartRule(credId)
 
         for {
           tarResponse <- finalResult
-          ruleResponse <- fourprResult
+          ruleResponse <- multiPartRuleResult
           tarRuleApplied <- ruleApplied
         } yield{
           compareAndLog(tarResponse, ruleResponse, tarRuleApplied)
@@ -116,7 +116,7 @@ trait AccountTypeController extends FrontendController with Actions {
   }
 
   //[AIV-1349]
-  def accountTypeForCredIdUsingFourPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[(AccountTypeResponse, String)] = {
+  def accountTypeForCredIdUsingMultiPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[(AccountTypeResponse, String)] = {
 
     val businessEnrolments: Set[String] = Conditions.config.businessEnrolments
     val sensitiveTaxesEnrolments: Set[String] = Conditions.config.sensitiveEnrolments
@@ -183,10 +183,10 @@ trait AccountTypeController extends FrontendController with Actions {
   def multipartRuleEvaluate(affinityValue: Future[String], userActiveBusinessEnrolments: Future[Set[String]], sensitiveTaxesEnrolments: Set[String]): Future[(AccountTypeResponse, String)] = {
     for {
       affinity: String <- affinityValue
-      hasActiveBusinessEnrolment <- userActiveBusinessEnrolments
-      userSensitiveEnrolments = hasActiveBusinessEnrolment.exists(sensitiveTaxesEnrolments)
+      activeBusinessEnrolments: Set[String] <- userActiveBusinessEnrolments
+      userSensitiveEnrolments = activeBusinessEnrolments.exists(sensitiveTaxesEnrolments)
     } yield {
-      (affinity.toLowerCase, hasActiveBusinessEnrolment.nonEmpty) match {
+      (affinity.toLowerCase, activeBusinessEnrolments.nonEmpty) match {
         case ("agent", _)                                 => (AccountTypeResponse(AccountType.Agent), "agent-rule")
         case (_, true) if userSensitiveEnrolments         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
         case (_, true)                                    => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
