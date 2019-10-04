@@ -60,7 +60,9 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLoggings(List(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied.", "[AIV-1349] the userActiveEnrolments are: Set(some-key, enr1)"), 2)
+      verifyWarningLoggings(
+        List(s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied. MPR applying the rule: org-by-biz-enrolments-rule.",
+          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -84,7 +86,10 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
-      verifyWarningLoggings(List(s"[AIV-1349] TAR and 4PR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied.", "[AIV-1349] the userActiveEnrolments are: Set(some-key)"), 2)
+      verifyWarningLoggings(
+        List(
+          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: individual-rule.",
+          "[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -112,8 +117,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verifyWarningLoggings(
         List(
           s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.",
-          s"[AIV-1349] TAR and 4PR disagree, TAR identifies login as $theDefaultAccountType by applying rule No rule applied, but 4PR identifies login as Individual",
-          s"[AIV-1349] the userActiveEnrolments are: Set(some-key)"), 3)
+          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: $theDefaultAccountType, MPR applying the rule: individual-rule.",
+          s"[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 3)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -131,6 +136,60 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       import AccountTypeResponse.accountTypeReads
 
       (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Agent
+
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
+    }
+
+    "return type Individual when ind-sensitive-enrolments-rule" in new Setup {
+      // given
+      val engineResult = WriterT(Future.successful((emptyAuditInfo, Locations.PersonalTaxAccount)))
+      when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.INDIVIDUAL))
+      when(mockAuthConnector.userAuthority(anyString())(any(), any())).thenReturn(Future.successful(expectedAuthority))
+      when(mockAuthConnector.getEnrolments(anyString())(any(), any())).thenReturn(Future.successful(expectedActiveEnrolmentsSeq(withSensitiveBusinessEnrolment = true)))
+      when(mockUserDetailsConnector.getUserDetails(anyString())(any(), any())).thenReturn(Future.successful(expectedUserDetailsAsIndividual))
+
+      // when
+      val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
+
+      // then
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Individual
+
+      verify(mockRuleEngine).getLocation(mockRuleContext)
+
+      verifyWarningLoggings(
+        List(
+          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: ind-sensitive-enrolments-rule.",
+          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1, enr3-se)"), 2)
+
+      verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
+    }
+
+    "return default-org-rule" in new Setup {
+      // given
+      val engineResult = WriterT(Future.successful((emptyAuditInfo, Locations.PersonalTaxAccount)))
+      when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
+      when(mockRuleContext.affinityGroup).thenReturn(Future.successful(AffinityGroupValue.INDIVIDUAL))
+      when(mockAuthConnector.userAuthority(anyString())(any(), any())).thenReturn(Future.successful(expectedAuthority))
+      when(mockAuthConnector.getEnrolments(anyString())(any(), any())).thenReturn(Future.successful(expectedActiveEnrolmentsSeq(withBusinessEnrolment = false)))
+      when(mockUserDetailsConnector.getUserDetails(anyString())(any(), any())).thenReturn(Future.successful(expectedUserDetailsAsAny))
+
+      // when
+      val result = await(controller.accountTypeForCredId(credId)(FakeRequest()))
+
+      // then
+      status(result) shouldBe 200
+
+      (jsonBodyOf(result) \ "type").as[AccountType.AccountType] shouldBe AccountType.Individual
+
+      verify(mockRuleEngine).getLocation(mockRuleContext)
+
+      verifyWarningLoggings(
+        List(
+          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: ${AccountType.Individual}, MPR applying the rule: default-org-rule.",
+          "[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -160,8 +219,16 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
         nino = None,
         saUtr = None)
 
-    def expectedActiveEnrolmentsSeq(withBusinessEnrolment: Boolean = true): Seq[GovernmentGatewayEnrolment] = {
-      if (withBusinessEnrolment){
+    def expectedActiveEnrolmentsSeq(withBusinessEnrolment: Boolean = true, withSensitiveBusinessEnrolment: Boolean = false): Seq[GovernmentGatewayEnrolment] = {
+      if (withBusinessEnrolment && withSensitiveBusinessEnrolment){
+        Seq(
+          GovernmentGatewayEnrolment("some-key", Seq(EnrolmentIdentifier("key-1", "value-1")), EnrolmentState.ACTIVATED),
+          GovernmentGatewayEnrolment("enr1", Seq(EnrolmentIdentifier("enr1", "enr1")), EnrolmentState.ACTIVATED),
+          GovernmentGatewayEnrolment("enr3-se", Seq(EnrolmentIdentifier("enr3-se", "enr3-se")), EnrolmentState.ACTIVATED),
+          GovernmentGatewayEnrolment("some-other-key", Seq(EnrolmentIdentifier("key-2", "value-2")), EnrolmentState.NOT_YET_ACTIVATED)
+        )
+      }
+      else if (withBusinessEnrolment){
         Seq(
           GovernmentGatewayEnrolment("some-key", Seq(EnrolmentIdentifier("key-1", "value-1")), EnrolmentState.ACTIVATED),
           GovernmentGatewayEnrolment("enr1", Seq(EnrolmentIdentifier("enr1", "enr1")), EnrolmentState.ACTIVATED),
@@ -178,6 +245,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
     val expectedAffinityGroup = "Individual"
     val expectedUserDetailsAsIndividual = UserDetails(Some(CredentialRole("User")), expectedAffinityGroup)
+    val expectedUserDetailsAsAny = UserDetails(Some(CredentialRole("User")), "any")
 
     val allMocksExceptAuditInfo = Seq(mockRuleEngine, mockLogger)
 

@@ -71,6 +71,8 @@ trait AppConfig extends AppConfigHelpers {
 
   lazy val businessEnrolments: Set[String] = getConfigurationStringSet("business-enrolments")
   lazy val saEnrolments: Set[String] = getConfigurationStringSet("self-assessment-enrolments")
+
+  lazy val financiallySensitiveEnrolments: Set[String] = getConfigurationStringSet("financially-sensitive-enrolments")
 }
 
 object FrontendAppConfig extends AppConfig {
