@@ -119,7 +119,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def accountTypeForCredIdUsingMultiPartRule(credId: String)(implicit requestAnyContent: Request[AnyContent]): Future[(AccountTypeResponse, String)] = {
 
     val businessEnrolments: Set[String] = Conditions.config.businessEnrolments
-    val sensitiveTaxesEnrolments: Set[String] = Conditions.config.sensitiveEnrolments
+    val financiallySensitiveEnrolments: Set[String] = Conditions.config.financiallySensitiveEnrolments
 
     val userAuthority: Future[UserAuthority] = authConnector.userAuthority(credId)
 
@@ -158,7 +158,7 @@ trait AccountTypeController extends FrontendController with Actions {
       }
     }
 
-    multipartRuleEvaluate(userAffinityGroup, userActiveBusinessEnrolments,sensitiveTaxesEnrolments).recover{case t: Throwable =>
+    multipartRuleEvaluate(userAffinityGroup, userActiveBusinessEnrolments,financiallySensitiveEnrolments).recover{case t: Throwable =>
       logger.warn(s"[AIV-1349] the multipartRuleEvaluate fails set account type to Organisation as default: ${t.getMessage}")
       (AccountTypeResponse(AccountType.Organisation), "")
     }

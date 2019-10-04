@@ -162,7 +162,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verifyWarningLoggings(
         List(
           s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: ind-sensitive-enrolments-rule.",
-          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1, IR-SA)"), 2)
+          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1, enr3-se)"), 2)
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -224,7 +224,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
         Seq(
           GovernmentGatewayEnrolment("some-key", Seq(EnrolmentIdentifier("key-1", "value-1")), EnrolmentState.ACTIVATED),
           GovernmentGatewayEnrolment("enr1", Seq(EnrolmentIdentifier("enr1", "enr1")), EnrolmentState.ACTIVATED),
-          GovernmentGatewayEnrolment("IR-SA", Seq(EnrolmentIdentifier("IR-SA", "IR-SA")), EnrolmentState.ACTIVATED),
+          GovernmentGatewayEnrolment("enr3-se", Seq(EnrolmentIdentifier("enr3-se", "enr3-se")), EnrolmentState.ACTIVATED),
           GovernmentGatewayEnrolment("some-other-key", Seq(EnrolmentIdentifier("key-2", "value-2")), EnrolmentState.NOT_YET_ACTIVATED)
         )
       }
