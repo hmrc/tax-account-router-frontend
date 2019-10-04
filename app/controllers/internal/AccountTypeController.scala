@@ -183,12 +183,12 @@ trait AccountTypeController extends FrontendController with Actions {
   def multipartRuleEvaluate(affinityValue: Future[String], userActiveBusinessEnrolments: Future[Set[String]], sensitiveTaxesEnrolments: Set[String]): Future[(AccountTypeResponse, String)] = {
     for {
       affinity: String <- affinityValue
-      activeBusinessEnrolments: Set[String] <- userActiveBusinessEnrolments
-      userSensitiveEnrolments = activeBusinessEnrolments.exists(sensitiveTaxesEnrolments)
+      activeBusinessEnrolment <- userActiveBusinessEnrolments
+      hasSensitiveEnrolments = activeBusinessEnrolment.intersect(sensitiveTaxesEnrolments).nonEmpty
     } yield {
-      (affinity.toLowerCase, activeBusinessEnrolments.nonEmpty) match {
+      (affinity.toLowerCase, activeBusinessEnrolment.nonEmpty) match {
         case ("agent", _)                                 => (AccountTypeResponse(AccountType.Agent), "agent-rule")
-        case (_, true) if userSensitiveEnrolments         => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
+        case (_, true) if hasSensitiveEnrolments          => (AccountTypeResponse(AccountType.Individual),"ind-sensitive-enrolments-rule")
         case (_, true)                                    => (AccountTypeResponse(AccountType.Organisation), "org-by-biz-enrolments-rule")
         case ("individual", _)                            => (AccountTypeResponse(AccountType.Individual), "individual-rule")
         case _                                            => (AccountTypeResponse(AccountType.Organisation), "default-org-rule")
