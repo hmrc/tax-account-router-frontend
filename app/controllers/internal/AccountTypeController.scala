@@ -153,7 +153,6 @@ trait AccountTypeController extends FrontendController with Actions {
       for {
         activedEnrolmentKeys <- userActiveEnrolmentKeys
       } yield {
-        logger.warn(s"[AIV-1396] the userActiveEnrolments are: $activedEnrolmentKeys")
         businessEnrolments.intersect(activedEnrolmentKeys)
       }
     }

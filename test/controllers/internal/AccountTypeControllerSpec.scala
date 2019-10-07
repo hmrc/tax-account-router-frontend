@@ -61,8 +61,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verify(mockRuleEngine).getLocation(mockRuleContext)
 
       verifyWarningLoggings(
-        List(s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied. MPR applying the rule: org-by-biz-enrolments-rule.",
-          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1)"), 2)
+        List(s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Organisation}, TAR applying the rule: No rule applied. MPR applying the rule: org-by-biz-enrolments-rule.")
+      )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -88,8 +88,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verifyWarningLoggings(
         List(
-          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: individual-rule.",
-          "[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 2)
+          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: individual-rule.")
+      )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -117,8 +117,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verifyWarningLoggings(
         List(
           s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.",
-          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: $theDefaultAccountType, MPR applying the rule: individual-rule.",
-          s"[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 3)
+          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: $theDefaultAccountType, MPR applying the rule: individual-rule."), 2
+      )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -161,8 +161,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verifyWarningLoggings(
         List(
-          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: ind-sensitive-enrolments-rule.",
-          "[AIV-1396] the userActiveEnrolments are: Set(some-key, enr1, enr3-se)"), 2)
+          s"[AIV-1396] TAR and MPR agree that login is ${AccountType.Individual}, TAR applying the rule: No rule applied. MPR applying the rule: ind-sensitive-enrolments-rule.")
+      )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
@@ -188,8 +188,8 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verifyWarningLoggings(
         List(
-          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: ${AccountType.Individual}, MPR applying the rule: default-org-rule.",
-          "[AIV-1396] the userActiveEnrolments are: Set(some-key)"), 2)
+          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: ${AccountType.Individual}, MPR applying the rule: default-org-rule.")
+      )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
     }
