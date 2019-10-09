@@ -167,7 +167,7 @@ trait AccountTypeController extends FrontendController with Actions {
   def compareAndLog(tar: AccountTypeResponse, ruleResult: (AccountTypeResponse, String), ruleApplied: String): Unit = {
     if (extendedLoggingEnabled) {
       if (tar.`type`.equals(ruleResult._1.`type`)) logger.warn(s"[AIV-1396] TAR and MPR agree that login is ${tar.`type`}, TAR applying the rule: $ruleApplied. MPR applying the rule: ${ruleResult._2}.")
-      else logger.warn(s"[AIV-1396] TAR and MPR disagree, TAR identifies login as ${tar.`type`} by applying rule: $ruleApplied, but MPR identifies login as ${ruleResult._1.`type`} by applying the rule:  ${ruleResult._2}.")
+      else logger.warn(s"[AIV-1396] TAR and MPR disagree, TAR identifies login as ${tar.`type`} by applying rule: $ruleApplied, but MPR identifies login as ${ruleResult._1.`type`} by applying the rule: ${ruleResult._2}.")
     }
   }
 
