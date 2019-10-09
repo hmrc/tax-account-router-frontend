@@ -117,7 +117,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
       verifyWarningLoggings(
         List(
           s"Location ${unknownLocation.url} is not recognised as PTA or BTA. Returning default type.",
-          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: $theDefaultAccountType, MPR applying the rule: individual-rule."), 2
+          s"[AIV-1396] TAR and MPR disagree, TAR identifies login as $theDefaultAccountType by applying rule: No rule applied, but MPR identifies login as Individual by applying the rule: individual-rule."), 2
       )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
@@ -188,7 +188,7 @@ class AccountTypeControllerSpec extends UnitSpec with MockitoSugar with OneAppPe
 
       verifyWarningLoggings(
         List(
-          s"[AIV-1396] TAR and MPR disagree, TAR applying the rule: ${AccountType.Individual}, MPR applying the rule: default-org-rule.")
+          s"[AIV-1396] TAR and MPR disagree, TAR identifies login as ${AccountType.Individual} by applying rule: No rule applied, but MPR identifies login as Organisation by applying the rule: default-org-rule.")
       )
 
       verifyNoMoreInteractions(allMocksExceptAuditInfo: _*)
