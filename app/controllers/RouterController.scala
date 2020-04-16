@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,8 @@ trait RouterController extends FrontendController with Actions {
       val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
 
       if (extendedLoggingEnabled) {
-        Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied.")}")
+        Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied.")} , [AIV-1992] Location = ${throttledLocation}" +
+          s" affinity group = ${ruleContext.affinityGroup} , Enrolments = ${ruleContext.activeEnrolmentKeys}")
       }
       Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
     }
