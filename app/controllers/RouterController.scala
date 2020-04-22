@@ -77,7 +77,7 @@ trait RouterController extends FrontendController with Actions {
 
       if (extendedLoggingEnabled) {
         Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied.")} , [AIV-1992] Location = ${throttledLocation.name}" +
-          s" affinity group = ${ruleContext.affinityGroup.value} , Enrolments = ${ruleContext.activeEnrolmentKeys.value}")
+          s" affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")} , Enrolments = ${ruleContext.activeEnrolmentKeys.value.getOrElse("can not found")}")
       }
       Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
     }
