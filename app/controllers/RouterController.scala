@@ -19,18 +19,17 @@ package controllers
 import auth.RouterAuthenticationProvider
 import config.FrontendAuditConnector
 import connector.FrontendAuthConnector
-import engine.RuleEngine
+import engine._
 import model._
-import play.api.{Play, Logger}
+import play.api.Play.current
+import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc._
+import play.api.{Logger, Play}
 import services._
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.frontend.auth._
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import engine._
-import play.api.libs.json.{JsNull, JsValue, Json}
-import uk.gov.hmrc.http.HeaderCarrier
-import play.api.Play.current
 
 import scala.concurrent.Future
 
@@ -68,20 +67,6 @@ trait RouterController extends FrontendController with Actions {
   def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
     val ruleContext = RuleContext(None)
 
-    def sendAuditEvent(auditInfo: AuditInfo, throttledLocation: Location)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier) = {
-      val auditEvent = auditInfo.toAuditEvent(throttledLocation)
-      auditConnector.sendExtendedEvent(auditEvent)
-      val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
-
-      val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
-
-      if (extendedLoggingEnabled) {
-        Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied.")} , [AIV-1992] Location = ${throttledLocation.name}" +
-          s" affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")} , Enrolments = ${ruleContext.activeEnrolmentKeys.value.getOrElse("can not found")}")
-      }
-      Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
-    }
-
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
     val destinationAfterThrottling: Future[(AuditInfo, Location)] = throttlingService.throttle(destinationAfterRulesApplied, ruleContext).run
     val futureAuditInfo = destinationAfterThrottling map { case (auditInfo, _) => auditInfo }
@@ -91,7 +76,7 @@ trait RouterController extends FrontendController with Actions {
       finalDestination <- futureFinalDestination
       auditInfo <- futureAuditInfo
     } yield {
-      sendAuditEvent(auditInfo, finalDestination)
+      sendAuditEvent(ruleContext, auditInfo, finalDestination)
       metricsMonitoringService.sendMonitoringEvents(auditInfo, finalDestination)
       analyticsEventSender.sendEvents(auditInfo, finalDestination.name)
 
@@ -100,5 +85,22 @@ trait RouterController extends FrontendController with Actions {
     }
 
     destination.map(location => Redirect(location.url))
+  }
+
+  def sendAuditEvent(ruleContext: RuleContext, auditInfo: AuditInfo, throttledLocation: Location)
+                    (implicit authContext: AuthContext, request: Request[AnyContent]) = {
+    val auditEvent: ExtendedDataEvent = auditInfo.toAuditEvent(throttledLocation)
+    auditConnector.sendExtendedEvent(auditEvent)
+    val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
+
+    val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
+
+    if (extendedLoggingEnabled) {
+      Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied")}, " +
+        s"[AIV-1992] Location = ${throttledLocation.name}, " +
+        s"affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")}, " +
+        s"Enrolments = ${ruleContext.activeEnrolmentKeys.value.getOrElse("can not found")}")
+    }
+    Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
   }
 }

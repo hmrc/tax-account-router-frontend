@@ -18,45 +18,50 @@ package controllers
 
 import cats.data.WriterT
 import engine.{AuditInfo, EngineResult, RuleEngine}
-import model.{Location, _}
-import org.mockito.Matchers.{eq ⇒ eqTo, _}
+import model._
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.LoneElement
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
-import play.api.Logger
-import play.api.libs.json.Json
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import play.api.test.Helpers._
-import play.api.test.{FakeApplication, FakeRequest, Helpers}
+import play.api.test.{FakeRequest, Helpers}
+import play.api.{Application, Logger}
 import services._
+import support._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.Accounts
 import uk.gov.hmrc.play.frontend.auth.{AuthContext, LoggedInUser, Principal}
-import support._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RouterControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ScalaFutures with Eventually with LoneElement with LogCapturing {
+class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with ScalaFutures with Eventually with LoneElement with LogCapturing {
 
   val location1 = Location("location1", "/location1")
   val location2 = Location("location2", "/location2")
 
   private val gaToken = "GA-TOKEN"
-  override lazy val fakeApplication = FakeApplication(
-    additionalConfiguration = Map("google-analytics.token" -> gaToken, "location1.path" -> location1.url, "extended-logging-enabled" -> false)
+
+  val additionalConfigurations: Map[String, Any] = Map("google-analytics.token" -> gaToken,
+    "location1.path" -> location1.url,
+    "extended-logging-enabled" -> true
   )
 
-  def withExpectedLogMessages(expectedLogMessages: List[String])(block: => Unit) {
+  override lazy val fakeApplication: Application = new GuiceApplicationBuilder()
+    .configure(additionalConfigurations)
+    .build
 
+  def withExpectedLogMessages(expectedLogMessages: List[String])(block: => Unit) {
     withCaptureOfLoggingFrom(Logger) { logEvents =>
       block
-
       eventually {
         val logMessages = logEvents.map(_.getMessage)
         expectedLogMessages.foreach { expectedLogMessage =>
@@ -75,6 +80,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuit
       when(mockThrottlingService.throttle(any[EngineResult], eqTo(ruleContext))).thenReturn(engineResult)
 
       val mockAuditEvent = mock[ExtendedDataEvent]
+      when(mockAuditInfo.ruleApplied).thenReturn(Some("some rule applied"))
       when(mockAuditInfo.toAuditEvent(eqTo(location1))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(mockAuditEvent)
 
       val detail = Json.obj(
@@ -109,6 +115,23 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuit
         verify(mockAuditConnector).sendExtendedEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
         verify(mockAnalyticsEventSender).sendEvents(eqTo(mockAuditInfo), eqTo(location1.name))(eqTo(fakeRequest), any[HeaderCarrier], any[ExecutionContext])
         verify(mockMetricsMonitoringService).sendMonitoringEvents(eqTo(mockAuditInfo), eqTo(location1))(eqTo(fakeRequest), any[HeaderCarrier])
+      }
+    }
+
+    "send AuditEvent" in new Setup {
+      val details: JsObject = Json.obj("reasons" -> Json.obj("a" -> "b"))
+      val mockAuditInfo: AuditInfo = mock[AuditInfo]
+      val auditEvent: ExtendedDataEvent = ExtendedDataEvent(auditSource = "auditSource", auditType = "auditType", detail = details)
+      when(mockAuditInfo.ruleApplied).thenReturn(Some("some rule applied"))
+      when(mockAuditInfo.toAuditEvent(eqTo(location2))(any[HeaderCarrier], any[AuthContext], any[Request[AnyContent]])).thenReturn(auditEvent)
+
+      val mockAuditResult: AuditResult = Future.successful(mock[AuditResult])
+      when(mockAuditConnector.sendExtendedEvent(eqTo(auditEvent))(any[HeaderCarrier], any[ExecutionContext])).thenReturn(mockAuditResult)
+
+      withCaptureOfLoggingFrom(Logger) { events =>
+        val controller: TestRouterController = new TestRouterController()
+        controller.sendAuditEvent(ruleContext, mockAuditInfo, location2)(authContext, fakeRequest)
+        events.map(_.getMessage) shouldBe List(s"""[AIV-1264] some rule applied, [AIV-1992] Location = location2, affinity group = can not found, Enrolments = can not found""", """Routing decision summary: {"a":"b"}""")
       }
     }
   }
