@@ -80,7 +80,7 @@ trait RouterController extends FrontendController with Actions {
       metricsMonitoringService.sendMonitoringEvents(auditInfo, finalDestination)
       analyticsEventSender.sendEvents(auditInfo, finalDestination.name)
 
-      Logger.warn(s"Routing to: ${finalDestination.name}")
+      Logger.debug(s"Routing to: ${finalDestination.name}")
       finalDestination
     }
 
@@ -101,6 +101,6 @@ trait RouterController extends FrontendController with Actions {
         s"Affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")}, " +
         s"Enrolments = ${ruleContext.activeEnrolmentKeys.value.getOrElse("can not found")}")
     }
-    Logger.warn(s"Routing decision summary: ${Json.stringify(reasons)}")
+    Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")
   }
 }
