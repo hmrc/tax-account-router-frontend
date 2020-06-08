@@ -96,9 +96,9 @@ trait RouterController extends FrontendController with Actions {
     val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
 
     if (extendedLoggingEnabled) {
-      Logger.warn(s"[AIV-1264] ${auditInfo.ruleApplied.getOrElse("No rule applied")}, " +
-        s"[AIV-1992] Location = ${throttledLocation.name}, " +
-        s"affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")}, " +
+      Logger.warn(s"[AIV-1992] ${auditInfo.ruleApplied.getOrElse("No rule applied")}, " +
+        s"Location = ${throttledLocation.name}, " +
+        s"Affinity group = ${ruleContext.affinityGroup.value.getOrElse("can not found")}, " +
         s"Enrolments = ${ruleContext.activeEnrolmentKeys.value.getOrElse("can not found")}")
     }
     Logger.debug(s"Routing decision summary: ${Json.stringify(reasons)}")

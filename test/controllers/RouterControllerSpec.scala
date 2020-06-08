@@ -131,7 +131,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
       withCaptureOfLoggingFrom(Logger) { events =>
         val controller: TestRouterController = new TestRouterController()
         controller.sendAuditEvent(ruleContext, mockAuditInfo, location2)(authContext, fakeRequest)
-        events.map(_.getMessage) shouldBe List(s"""[AIV-1264] some rule applied, [AIV-1992] Location = location2, affinity group = can not found, Enrolments = can not found""", """Routing decision summary: {"a":"b"}""")
+        events.map(_.getMessage) shouldBe List(s"""[AIV-1992] some rule applied, Location = location2, Affinity group = can not found, Enrolments = can not found""", """Routing decision summary: {"a":"b"}""")
       }
     }
   }
