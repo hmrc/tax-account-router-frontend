@@ -20,37 +20,39 @@ import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
 import engine.AuditInfo
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import play.api.mvc.Cookie
+import play.api.mvc.{AnyContentAsEmpty, Cookie}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.http.HeaderCarrier
 import support.UnitSpec
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 
 class AnalyticsEventSenderSpec extends UnitSpec with MockitoSugar {
 
   "AnalyticsEventSender" should {
-    "send event to GA" in new Setup {
+
+    "send event to GA" in {
+
+      val gaClientId = "gaClientId"
+
+      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withCookies(Cookie("_ga", gaClientId))
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+      implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+
+      val mockAnalyticsPlatformConnector: AnalyticsPlatformConnector = mock[AnalyticsPlatformConnector]
+      val analyticsEventSender = new AnalyticsEventSender(mockAnalyticsPlatformConnector)
+
+      val locationName = "some-location"
+      val ruleApplied = "some rule"
+      val auditInfo: AuditInfo = AuditInfo(
+        routingReasons = Map.empty,
+        ruleApplied = Some(ruleApplied),
+        throttlingInfo = None
+      )
+
       analyticsEventSender.sendEvents(auditInfo, locationName)
       verify(mockAnalyticsPlatformConnector).sendEvents(AnalyticsData(gaClientId, List(GaEvent("routing", locationName, ruleApplied, Nil))))
     }
   }
 
-  sealed trait Setup {
-    val gaClientId = "gaClientId"
-    implicit val request = FakeRequest().withCookies(Cookie("_ga", gaClientId))
-    implicit val hc = HeaderCarrier()
-    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-    val mockAnalyticsPlatformConnector = mock[AnalyticsPlatformConnector]
-    val analyticsEventSender = new AnalyticsEventSender {
-      override val analyticsPlatformConnector = mockAnalyticsPlatformConnector
-    }
-    val locationName = "some-location"
-    val ruleApplied = "some rule"
-    val auditInfo = AuditInfo(
-      routingReasons = Map.empty,
-      ruleApplied = Some(ruleApplied),
-      throttlingInfo = None
-    )
-  }
 }

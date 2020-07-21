@@ -17,7 +17,7 @@
 package services
 
 import com.codahale.metrics.{Meter, MetricRegistry}
-import engine.{AuditInfo, ThrottlingInfo}
+import engine.{AuditInfo, RoutingReason, ThrottlingInfo}
 import model.Location
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito._
@@ -26,9 +26,10 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.TableFor4
 import org.scalatest.prop.Tables.Table
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import uk.gov.hmrc.http.HeaderCarrier
 import support.UnitSpec
+import uk.gov.hmrc.http.HeaderCarrier
 
 class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Eventually {
 
@@ -43,17 +44,20 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       ("destination before throttling not present", None, Location(name = "b", url = "/b"), "routed.to-b.because-rule-applied.not-throttled")
     )
 
-    forAll(scenarios) { (scenario, destinationNameBeforeThrottling, destinationNameAfterThrottling, expectedMeterName) =>
+    forAll(scenarios) { (scenario, _, _, expectedMeterName) =>
 
       s"send monitoring events - scenario: $scenario" in new Setup {
 
         import engine.RoutingReason._
 
+        implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
         // given
-        val trueCondition1 = Reason("trueCondition1")
-        val trueCondition2 = Reason("trueCondition2")
-        val falseCondition1 = Reason("falseCondition1")
-        val falseCondition2 = Reason("falseCondition2")
+        val trueCondition1: RoutingReason.RoutingReason = Reason("trueCondition1")
+        val trueCondition2: _root_.engine.RoutingReason.Reason = Reason("trueCondition2")
+        val falseCondition1: _root_.engine.RoutingReason.Reason = Reason("falseCondition1")
+        val falseCondition2: _root_.engine.RoutingReason.Reason = Reason("falseCondition2")
 
         val routingReasons = Map(
           trueCondition1 -> Some(true),
@@ -62,20 +66,20 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
           falseCondition2 -> Some(false)
         )
 
-        val throttlingInfo = ThrottlingInfo(None, true, Location("a", "/a"), true)
+        val throttlingInfo: ThrottlingInfo = ThrottlingInfo(None, throttled = true, Location("a", "/a"), throttlingEnabled = true)
 
-        val auditInfo = AuditInfo(routingReasons, Some(ruleApplied), Some(throttlingInfo))
+        val auditInfo: AuditInfo = AuditInfo(routingReasons, Some(ruleApplied), Some(throttlingInfo))
 
-        val throttledLocation = Location(name = "throttled", url = "/throttled")
+        val throttledLocation: Location = Location(name = "throttled", url = "/throttled")
 
-        val mockRoutedToMeter = mock[Meter]
+        val mockRoutedToMeter: Meter = mock[Meter]
 
         when(mockMetricRegistry.meter(eqTo(expectedMeterName))).thenReturn(mockRoutedToMeter)
 
-        val trueCondition1Meter = mock[Meter]
-        val trueCondition2Meter = mock[Meter]
-        val falseCondition1Meter = mock[Meter]
-        val falseCondition2Meter = mock[Meter]
+        val trueCondition1Meter: Meter = mock[Meter]
+        val trueCondition2Meter: Meter = mock[Meter]
+        val falseCondition1Meter: Meter = mock[Meter]
+        val falseCondition2Meter: Meter = mock[Meter]
         when(mockMetricRegistry.meter(eqTo(trueCondition1.key))).thenReturn(trueCondition1Meter)
         when(mockMetricRegistry.meter(eqTo(trueCondition2.key))).thenReturn(trueCondition2Meter)
         when(mockMetricRegistry.meter(eqTo(s"not-${falseCondition1.key}"))).thenReturn(falseCondition1Meter)
@@ -104,11 +108,10 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
   }
 
   trait Setup {
-    implicit val fakeRequest = FakeRequest()
-    implicit val hc = HeaderCarrier()
-    val mockMetricRegistry = mock[MetricRegistry]
-    val metricsMonitoringService = new MetricsMonitoringService {
-      override val metricsRegistry = mockMetricRegistry
+
+    val mockMetricRegistry: MetricRegistry = mock[MetricRegistry]
+    val metricsMonitoringService: MetricsMonitoringService = new MetricsMonitoringService {
+      override val metricsRegistry: MetricRegistry = mockMetricRegistry
     }
 
     when(mockMetricRegistry.meter(any[String])).thenReturn(mock[Meter])

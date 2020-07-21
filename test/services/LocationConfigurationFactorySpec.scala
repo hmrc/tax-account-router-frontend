@@ -17,60 +17,61 @@
 package services
 
 import config.AppConfig
-import org.mockito.Mockito._
 import model.{Location, Locations}
+import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import support.UnitSpec
 
-class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with OneAppPerSuite {
+class LocationConfigurationFactorySpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
   "configurationForLocation" should {
     "retrieve appropriate configuration" in new Setup {
-      implicit val fakeRequest = FakeRequest()
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       when(mockAppConfig.getThrottlingConfig("name1")).thenReturn(testThrottlingConfig)
 
-      val location = Location("name1", "some-url")
+      val location: Location = Location("name1", "some-url")
 
-      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result: ThrottlingConfig = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
       result shouldBe testThrottlingConfig
     }
 
     "retrieve appropriate configuration for PTA without token in session" in new Setup {
-      implicit val fakeRequest = FakeRequest()
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       when(mockAppConfig.getThrottlingConfig("personal-tax-account-verify")).thenReturn(testThrottlingConfig)
 
-      val location = Locations.PersonalTaxAccount
+      val location: Location = Locations.PersonalTaxAccount
 
-      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result: ThrottlingConfig = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
       result shouldBe testThrottlingConfig
     }
 
     "retrieve appropriate configuration for PTA with token in session" in new Setup {
 
-      implicit val fakeRequest = FakeRequest().withSession("token" -> "some-token")
+      implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withSession("token" -> "some-token")
 
       when(mockAppConfig.getThrottlingConfig("personal-tax-account-gg")).thenReturn(testThrottlingConfig)
 
-      val location = Locations.PersonalTaxAccount
+      val location: Location = Locations.PersonalTaxAccount
 
-      val result = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
+      val result: ThrottlingConfig = locationConfigurationFactory.configurationForLocation(location, fakeRequest)
 
       result shouldBe testThrottlingConfig
     }
   }
 
   class Setup {
-    val mockAppConfig = mock[AppConfig]
+    val mockAppConfig: AppConfig = mock[AppConfig]
 
-    val testThrottlingConfig = ThrottlingConfig(100, Some("some-fallback"))
+    val testThrottlingConfig: ThrottlingConfig = ThrottlingConfig(100, Some("some-fallback"))
 
-    val locationConfigurationFactory = new LocationConfigurationFactory {
+    val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
       override val configuration: AppConfig = mockAppConfig
     }
   }

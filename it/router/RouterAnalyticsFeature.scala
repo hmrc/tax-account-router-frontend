@@ -5,8 +5,7 @@ import play.api.test.FakeApplication
 import support.page._
 import support.stubs.PlatformAnalyticsStub.verifyAnalytics
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+
 
 class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -18,9 +17,10 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
-      stubUserDetails()
+      //val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+      val accounts = ???
+//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+//      stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()

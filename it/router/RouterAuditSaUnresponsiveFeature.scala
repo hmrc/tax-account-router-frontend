@@ -9,8 +9,7 @@ import play.api.test.FakeApplication
 import engine.RoutingReason._
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+
 
 import scala.collection.JavaConverters._
 
@@ -33,8 +32,8 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -70,8 +69,8 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubEnrolmentsToReturnAfter2Seconds()

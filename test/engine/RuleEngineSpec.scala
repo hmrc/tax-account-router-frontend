@@ -16,32 +16,33 @@
 
 package engine
 
-import engine.RoutingReason.Reason
-import model.{Location, _}
+import engine.RoutingReason.{Reason, RoutingReason}
+import model.{Location, RuleContext}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
+import support.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import support.UnitSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RuleEngineSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ScalaFutures {
+class RuleEngineSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with ScalaFutures {
 
   "rule engine" should {
 
     "return location from rule when a rule is matched" in new Setup {
 
-      implicit lazy val ruleContext = RuleContext(None)
+      implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-      val result = ruleEngineStubReturningLocation1.getLocation(ruleContext).run.futureValue
+      val result: (AuditInfo, Location) = ruleEngineStubReturningLocation1.getLocation(ruleContext).run.futureValue
 
       val (auditInfo, location) = result
 
-      val evaluatedReasons = auditInfo.routingReasons.filter { case (reason, evaluationResult)  => evaluationResult.isDefined }
+      val evaluatedReasons: Map[RoutingReason, Option[Boolean]] =
+        auditInfo.routingReasons.filter { case (_, evaluationResult)  => evaluationResult.isDefined }
 
       evaluatedReasons shouldBe Map(Reason("alwaysTrue") -> Some(true))
       location shouldBe location1
@@ -49,13 +50,14 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with
 
     "return default location when no rules are matched" in new Setup {
 
-      implicit lazy val ruleContext = RuleContext(None)
+      implicit lazy val ruleContext: RuleContext = mock[RuleContext]
 
-      val result = ruleEngineStubReturningLocation2.getLocation(ruleContext).run.futureValue
+      val result: (AuditInfo, Location) = ruleEngineStubReturningLocation2.getLocation(ruleContext).run.futureValue
 
       val (auditInfo, location) = result
 
-      val evaluatedReasons = auditInfo.routingReasons.filter { case (reason, evaluationResult)  => evaluationResult.isDefined }
+      val evaluatedReasons: Map[RoutingReason, Option[Boolean]] =
+        auditInfo.routingReasons.filter { case (_, evaluationResult)  => evaluationResult.isDefined }
 
       evaluatedReasons shouldBe Map(Reason("alwaysFalse") -> Some(false))
 
@@ -69,18 +71,18 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-    val testDefaultLocation = Location("default-location", "/default-location")
-    val location1 = Location("location1", "/location1")
-    val location2 = Location("location2", "/location2")
+    val testDefaultLocation: Location = Location("default-location", "/default-location")
+    val location1: Location = Location("location1", "/location1")
+    val location2: Location = Location("location2", "/location2")
 
-    type ConditionPredicate = (RuleContext) => Future[Boolean]
-    val alwaysTrueF: ConditionPredicate = rc => Future.successful(true)
-    val alwaysFalseF: ConditionPredicate = rc => Future.successful(false)
+    type ConditionPredicate = RuleContext => Future[Boolean]
+    val alwaysTrueF: ConditionPredicate = _ => Future.successful(true)
+    val alwaysFalseF: ConditionPredicate = _ => Future.successful(false)
 
-    val alwaysTrueCondition = Pure(alwaysTrueF, Reason("alwaysTrue"))
-    val alwaysFalseCondition = Pure(alwaysFalseF, Reason("alwaysFalse"))
+    val alwaysTrueCondition: Pure[RuleContext] = Pure(alwaysTrueF, Reason("alwaysTrue"))
+    val alwaysFalseCondition: Pure[RuleContext] = Pure(alwaysFalseF, Reason("alwaysFalse"))
 
-    val ruleEngineStubReturningLocation1 = new RuleEngine {
+    val ruleEngineStubReturningLocation1: RuleEngine = new RuleEngine {
       override val defaultLocation: Location = testDefaultLocation
       override val rules: List[Rule[RuleContext]] = {
         import engine.dsl._
@@ -92,7 +94,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with
       override def defaultRuleName: String = "test1"
     }
 
-    val ruleEngineStubReturningLocation2 = new RuleEngine {
+    val ruleEngineStubReturningLocation2: RuleEngine = new RuleEngine {
       override val defaultLocation: Location = testDefaultLocation
       override val rules: List[Rule[RuleContext]] = {
         import engine.dsl._

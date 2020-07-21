@@ -16,29 +16,29 @@
 
 package model
 
-import config.{AppConfig, FrontendAppConfig}
+import config.AppConfig
+import play.api.{Configuration, Play}
 
 case class Location(name: String, url: String)
 
-trait Locations {
-  def appConfig: AppConfig
+trait Locations extends AppConfig {
 
-  lazy val PersonalTaxAccount = buildLocation("pta")
-  lazy val BusinessTaxAccount = buildLocation("bta")
-  lazy val TaxAccountRouterHome = buildLocation("tax-account-router")
+  lazy override val config: Configuration = Play.current.configuration
+
+  lazy val PersonalTaxAccount: Location = buildLocation("pta")
+  lazy val BusinessTaxAccount: Location = buildLocation("bta")
+  lazy val TaxAccountRouterHome: Location = buildLocation("tax-account-router")
 
   lazy val all = List(PersonalTaxAccount, BusinessTaxAccount, TaxAccountRouterHome)
 
-  def verifyConfiguration() = {
-    assert(all.nonEmpty)
-  }
+  def verifyConfiguration(): Unit = assert(all.nonEmpty)
 
   def find(name: String): Option[Location] = all.find { case Location(n, _) => n == name }
 
   private def buildLocation(locationName: String): Location = {
 
     def getString(key: String): String = {
-      appConfig.getLocationConfig(locationName, key)
+      getLocationConfig(locationName, key)
         .getOrElse(throw new RuntimeException(s"key '$key' not configured for location '$locationName'"))
     }
 
@@ -46,6 +46,4 @@ trait Locations {
   }
 }
 
-object Locations extends Locations {
-  val appConfig = FrontendAppConfig
-}
+object Locations extends Locations

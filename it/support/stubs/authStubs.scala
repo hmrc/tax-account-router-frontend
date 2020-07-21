@@ -21,15 +21,15 @@ import java.util.UUID
 
 import auth.RouterAuthenticationProvider
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.AffinityGroupValue
+import model.AffinityGroupValue
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.Crypto
 import play.api.libs.json.Json
 import play.mvc.Http.HeaderNames
 import support.Env
+import uk.gov.hmrc.auth.core.CredentialStrength
 import uk.gov.hmrc.crypto.{CompositeSymmetricCrypto, PlainText}
 import uk.gov.hmrc.http.SessionKeys
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength}
 
 object LoggedOutSessionUser extends Stub with StubbedPage {
   override def create() = stubOut(
@@ -54,7 +54,7 @@ trait SessionCookieBaker {
 
 class SessionUser(loggedInViaGateway: Boolean,
                   isRegisteredFor2SV: Boolean,
-                  accounts: Accounts,
+                  //accounts: Accounts,
                   credentialStrength: CredentialStrength,
                   affinityGroup: String,
                   internalUserIdentifier: Option[String],
@@ -84,19 +84,19 @@ class SessionUser(loggedInViaGateway: Boolean,
 
   private val authorityObject = Json.obj(
     "legacyOid" -> "",
-    "credentialStrength" -> credentialStrength.name.toLowerCase,
+    "credentialStrength" -> credentialStrength.strength.toLowerCase,
     "affinityGroup" -> affinityGroup,
     "uri" -> s"/auth/oid/$oid",
     "loggedInAt" -> "2014-06-09T14:57:09.522Z",
-    "accounts" -> accounts,
+    //"accounts" -> accounts,
     "levelOfAssurance" -> 2,
     "confidenceLevel" -> 500
   ) ++
     (if (isRegisteredFor2SV) Json.obj("twoFactorAuthOtpId" -> "1234") else Json.obj()) ++
     (if (enrolmentsAvailable) Json.obj("enrolments" -> "/auth/enrolments-uri") else Json.obj()) ++
     (if (loggedInViaGateway && internalUserIdentifier.isDefined) Json.obj("credentials" -> Json.obj("gatewayId" -> internalUserIdentifier.get)) else Json.obj()) ++
-    (if (accounts.sa.isDefined) Json.obj("saUtr" -> accounts.sa.get.utr.value) else Json.obj()) ++
-    (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj()) ++
+//    (if (accounts.sa.isDefined) Json.obj("saUtr" -> accounts.sa.get.utr.value) else Json.obj()) ++
+//    (if (accounts.paye.isDefined) Json.obj("nino" -> accounts.paye.get.nino.value) else Json.obj()) ++
     userDetailsLink.map(link => Json.obj("userDetailsLink" -> link)).getOrElse(Json.obj()) ++
     internalUserIdentifier.map(_ => Json.obj("ids" -> "/auth/ids-uri")).getOrElse(Json.obj())
 
@@ -172,11 +172,13 @@ class SessionUser(loggedInViaGateway: Boolean,
 object SessionUser {
   def apply(loggedInViaGateway: Boolean = true,
             isRegisteredFor2SV: Boolean = true,
-            accounts: Accounts = Accounts(),
-            credentialStrength: CredentialStrength = CredentialStrength.None,
+            //accounts: Accounts = Accounts(),
+            credentialStrength: CredentialStrength = CredentialStrength("0"),
             affinityGroup: String = AffinityGroupValue.ORGANISATION,
             internalUserIdentifier: Option[String] = Some("id1234567890"),
             userDetailsLink: Option[String] = Some(s"http://${Env.stubHost}:${Env.stubPort}/user-details-uri"),
             enrolmentsAvailable: Boolean = true) =
-    new SessionUser(loggedInViaGateway, isRegisteredFor2SV, accounts, credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink, enrolmentsAvailable)
+    new SessionUser(loggedInViaGateway, isRegisteredFor2SV,
+      //accounts,
+      credentialStrength, affinityGroup, internalUserIdentifier, userDetailsLink, enrolmentsAvailable)
 }

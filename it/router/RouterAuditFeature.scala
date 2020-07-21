@@ -3,18 +3,16 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import connector.AffinityGroupValue
-import connector.AffinityGroupValue.INDIVIDUAL
+import model.AffinityGroupValue.INDIVIDUAL
 import engine.AuditInfo
 import engine.RoutingReason._
+import model.AffinityGroupValue
 import org.scalatest.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs._
-import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, CredentialStrength, PayeAccount, SaAccount}
 
 import scala.collection.JavaConverters._
 
@@ -88,8 +86,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -131,14 +129,14 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has no inactive enrolments")
       stubNoEnrolments()
 
       And("the user has organisation affinity group")
-      stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
+      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -176,8 +174,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -221,8 +219,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -267,8 +265,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -313,8 +311,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -359,9 +357,9 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
-      stubUserDetails()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+      //stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -402,9 +400,9 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO and not registered for 2SV should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
-      stubUserDetails()
+//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
+//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+      //stubUserDetails()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -442,8 +440,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO, not registered for 2SV but already has strong credentials should be not redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      SessionUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong).stubLoggedIn()
+//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
+//      SessionUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -481,8 +479,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO and not registered for 2SV and more than one enrolment should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
+//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubMoreThanOneSAEnrolment()
@@ -518,14 +516,14 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
 
       And("the user has self assessment enrolments and individual affinity group")
       stubNoEnrolments()
 
       And("the user has individual affinity group")
-      stubUserDetails(affinityGroup = Some(INDIVIDUAL))
+      //stubUserDetails(affinityGroup = Some(INDIVIDUAL))
 
       val auditEventStub = stubAuditEvent()
       stubPersonalAccount()
@@ -563,8 +561,8 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
 
       And("the user has no enrolments")
       stubNoEnrolments()

@@ -1,11 +1,10 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.AffinityGroupValue
+import model.AffinityGroupValue
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
-import uk.gov.hmrc.domain.{Nino, SaUtr}
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, PayeAccount, SaAccount}
+
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -70,8 +69,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -104,8 +103,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -138,8 +137,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("gg is returning 500")
       stubEnrolmentsToReturn500()
@@ -169,8 +168,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -203,8 +202,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -237,8 +236,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -271,8 +270,8 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -305,7 +304,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user has an inactive enrolment and individual affinity group")
       stubInactiveEnrolments()
-      stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
+      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       createStubs(BtaHomeStubPage)
 
@@ -335,7 +334,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
       And("the user has no inactive enrolments and individual affinity group")
       stubNoEnrolments()
-      stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
+      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
 
       createStubs(PtaHomeStubPage)
 

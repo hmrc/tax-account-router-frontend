@@ -17,18 +17,17 @@
 package engine
 
 import engine.RoutingReason.{Reason, RoutingReason}
-import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import support.UnitSpec
 
 import scala.concurrent.Future
 
-class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
+class ConditionSpec extends UnitSpec with ScalaFutures {
 
   "or condition" should {
     "return false and evaluate both sides if both sides are false" in new Setup {
 
-      val orCondition = Or(alwaysFalseCondition1, alwaysFalseCondition2)
+      val orCondition: Or[String] = Or(alwaysFalseCondition1, alwaysFalseCondition2)
 
       val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
 
@@ -41,7 +40,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
     "return true and not evaluate right hand side if left hand side is true" in new Setup {
 
-      val orCondition = Or(alwaysTrueCondition1, alwaysTrueCondition2)
+      val orCondition: Or[String] = Or(alwaysTrueCondition1, alwaysTrueCondition2)
 
       val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
 
@@ -53,7 +52,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
     "return true and evaluate both sides if left hand side is false" in new Setup {
 
-      val orCondition = Or(alwaysFalseCondition1, alwaysTrueCondition1)
+      val orCondition: Or[String] = Or(alwaysFalseCondition1, alwaysTrueCondition1)
 
       val (auditInfo, result) = orCondition.evaluate(context).run.futureValue
 
@@ -68,7 +67,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
   "and condition" should {
     "return false and evaluate only the left sides if the left side is false" in new Setup {
 
-      val andCondition = And(alwaysFalseCondition1, alwaysFalseCondition2)
+      val andCondition: And[String] = And(alwaysFalseCondition1, alwaysFalseCondition2)
 
       val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
@@ -80,7 +79,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
     "return false and evaluate right hand side if left hand side is true" in new Setup {
 
-      val andCondition = And(alwaysTrueCondition1, alwaysFalseCondition1)
+      val andCondition: And[String] = And(alwaysTrueCondition1, alwaysFalseCondition1)
 
       val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
@@ -93,7 +92,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
     "return true and evaluate both sides if left hand side is true" in new Setup {
 
-      val andCondition = And(alwaysTrueCondition1, alwaysTrueCondition2)
+      val andCondition: And[String] = And(alwaysTrueCondition1, alwaysTrueCondition2)
 
       val (auditInfo, result) = andCondition.evaluate(context).run.futureValue
 
@@ -108,7 +107,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
   "not condition" should {
     "return true if the condition returned false" in new Setup {
 
-      val notCondition = Not(alwaysTrueCondition1)
+      val notCondition: Not[String] = Not(alwaysTrueCondition1)
 
       val (auditInfo, result) = notCondition.evaluate(context).run.futureValue
 
@@ -120,7 +119,7 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
 
     "return false if the condition returned true" in new Setup {
 
-      val notCondition = Not(alwaysFalseCondition1)
+      val notCondition: Not[String] = Not(alwaysFalseCondition1)
 
       val (auditInfo, result) = notCondition.evaluate(context).run.futureValue
 
@@ -134,13 +133,13 @@ class ConditionSpec extends UnitSpec with Matchers with ScalaFutures {
   trait Setup {
     val context = ""
 
-    type ConditionPredicate = (String) => Future[Boolean]
-    val alwaysTrueF: ConditionPredicate = rc => Future.successful(true)
-    val alwaysFalseF: ConditionPredicate = rc => Future.successful(false)
+    type ConditionPredicate = String => Future[Boolean]
+    val alwaysTrueF: ConditionPredicate = _ => Future.successful(true)
+    val alwaysFalseF: ConditionPredicate = _ => Future.successful(false)
 
-    val alwaysTrueCondition1 = Pure(alwaysTrueF, Reason("alwaysTrue1"))
-    val alwaysTrueCondition2 = Pure(alwaysTrueF, Reason("alwaysTrue2"))
-    val alwaysFalseCondition1 = Pure(alwaysFalseF, Reason("alwaysFalse1"))
-    val alwaysFalseCondition2 = Pure(alwaysFalseF, Reason("alwaysFalse2"))
+    val alwaysTrueCondition1: Pure[String] = Pure(alwaysTrueF, Reason("alwaysTrue1"))
+    val alwaysTrueCondition2: Pure[String] = Pure(alwaysTrueF, Reason("alwaysTrue2"))
+    val alwaysFalseCondition1: Pure[String] = Pure(alwaysFalseF, Reason("alwaysFalse1"))
+    val alwaysFalseCondition2: Pure[String] = Pure(alwaysFalseF, Reason("alwaysFalse2"))
   }
 }

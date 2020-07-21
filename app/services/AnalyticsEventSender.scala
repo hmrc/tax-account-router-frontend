@@ -18,16 +18,17 @@ package services
 
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
 import engine.AuditInfo
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext
 
-trait AnalyticsEventSender {
-  private val routingCategory = "routing"
+@Singleton
+class AnalyticsEventSender @Inject()(analyticsPlatformConnector: AnalyticsPlatformConnector) {
 
-  def analyticsPlatformConnector: AnalyticsPlatformConnector
+  private val routingCategory = "routing"
 
   def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val gaClientId = request.cookies.get("_ga").map(_.value)
@@ -37,8 +38,5 @@ trait AnalyticsEventSender {
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))
     }
   }
-}
 
-object AnalyticsEventSender extends AnalyticsEventSender {
-  override lazy val analyticsPlatformConnector: AnalyticsPlatformConnector = AnalyticsPlatformConnector
 }

@@ -4,8 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.test.FakeApplication
 import support.page._
 import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+
 
 class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
@@ -25,8 +24,8 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("the user has self assessment enrolments")
       stubSelfAssessmentEnrolments()
@@ -61,8 +60,8 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
       Given("a user logged in through Government Gateway")
       val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
+//      SessionUser(accounts = accounts).stubLoggedIn()
 
       And("GG is unresponsive")
       stubEnrolmentsToReturnAfter2Seconds()

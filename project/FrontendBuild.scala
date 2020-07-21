@@ -13,9 +13,12 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"   %% "frontend-bootstrap"  % "12.9.0",
+    "uk.gov.hmrc"   %% "bootstrap-play-25"   % "5.3.0",
     "uk.gov.hmrc"   %% "http-caching-client" % "9.1.0-play-25",
     "uk.gov.hmrc"   %% "mongo-caching"       % "6.15.0-play-25",
+    "uk.gov.hmrc"   %% "auth-client"         % "3.0.0-play-25",
+    "uk.gov.hmrc"   %% "play-ui"             % "8.11.0-play-25",
+    "uk.gov.hmrc"   %% "govuk-template"      % "5.55.0-play-25",
     "org.typelevel" %% "cats"                % "0.9.0"
   )
 

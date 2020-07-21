@@ -1,39 +1,38 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connector.AffinityGroupValue.ORGANISATION
-import connector.CredentialRole
+
 import play.api.libs.json.Json
 
 import scala.util.Random
 
 trait CommonStubs {
 
-  val user = CredentialRole("User")
-  val assistant = CredentialRole("Assistant")
-
-  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: CredentialRole = CredentialRole("User")) = {
-    stubFor(get(urlMatching("/user-details-uri"))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(
-            s"""
-               |{
-               |    "name": "test",
-               |    "email": "test@test.com",
-               |    "affinityGroup": "${affinityGroup.getOrElse(ORGANISATION)}",
-               |    "description": "description",
-               |    "lastName": "test",
-               |    "dateOfBirth": "1980-06-31",
-               |    "postcode": "NW94HD",
-               |    "authProviderId": "12345-credId",
-               |    "credentialRole": "${credentialRole.value}",
-               |    "authProviderType": "Verify"
-               |}
-      """.stripMargin)
-      ))
-  }
+//  val user = CredentialRole("User")
+//  val assistant = CredentialRole("Assistant")
+//
+//  def stubUserDetails(affinityGroup: Option[String] = None, credentialRole: CredentialRole = CredentialRole("User")) = {
+//    stubFor(get(urlMatching("/user-details-uri"))
+//      .willReturn(
+//        aResponse()
+//          .withStatus(200)
+//          .withBody(
+//            s"""
+//               |{
+//               |    "name": "test",
+//               |    "email": "test@test.com",
+//               |    "affinityGroup": "${affinityGroup.getOrElse(ORGANISATION)}",
+//               |    "description": "description",
+//               |    "lastName": "test",
+//               |    "dateOfBirth": "1980-06-31",
+//               |    "postcode": "NW94HD",
+//               |    "authProviderId": "12345-credId",
+//               |    "credentialRole": "${credentialRole.value}",
+//               |    "authProviderType": "Verify"
+//               |}
+//      """.stripMargin)
+//      ))
+//  }
 
   def stubUserDetailsToReturn500() = {
     stubFor(get(urlMatching("/user-details-uri"))

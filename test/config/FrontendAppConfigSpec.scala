@@ -33,7 +33,7 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
       )
 
       val appConfig = new AppConfig {
-        override lazy val config = Configuration.from(testConfiguration)
+        override lazy val config: Configuration = Configuration.from(testConfiguration)
       }
 
       val result = appConfig.getThrottlingConfig("some-location")
@@ -43,7 +43,7 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
     "return default values if configuration absent" in {
       val appConfig = new AppConfig {
-        override lazy val config = Configuration.empty
+        override lazy val config: Configuration = Configuration.empty
       }
 
       val result = appConfig.getThrottlingConfig("some-location")
@@ -67,7 +67,7 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
       s"return enrolments for configuration - $testConfiguration" in {
         val appConfig = new AppConfig {
-          override lazy val config = Configuration.from(testConfiguration)
+          override lazy val config: Configuration = Configuration.from(testConfiguration)
         }
 
         val result = appConfig.businessEnrolments
@@ -92,7 +92,7 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
       s"return enrolments for configuration - $testConfiguration" in {
         val appConfig = new AppConfig {
-          override lazy val config = Configuration.from(testConfiguration)
+          override lazy val config: Configuration = Configuration.from(testConfiguration)
         }
 
         val result = appConfig.saEnrolments
@@ -104,7 +104,7 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
   "report a problem urls" in {
     val appConfig = new AppConfig {
-      override lazy val config = Configuration.empty
+      override lazy val config: Configuration = Configuration.empty
     }
 
     expectAll {

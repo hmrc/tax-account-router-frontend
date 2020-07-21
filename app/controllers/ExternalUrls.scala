@@ -17,18 +17,20 @@
 package controllers
 
 import config.AppConfigHelpers
+import play.api.{Configuration, Play}
 
 object ExternalUrls extends AppConfigHelpers {
 
-  def getUrl(locationName: String) = {
+  override val config: Configuration = Play.current.configuration
+
+  def getUrl(locationName: String): String = {
     val host = getConfigurationStringOption(s"$locationName.host").getOrElse("")
     val path = getConfigurationString(s"$locationName.path")
-
     host + path
   }
 
-  lazy val companyAuthHost = getConfigurationStringOption("company-auth.host").getOrElse("")
-  lazy val taxAccountRouterHost = getConfigurationStringOption("tax-account-router.host").getOrElse("")
+  lazy val companyAuthHost: String = getConfigurationStringOption("company-auth.host").getOrElse("")
+  lazy val taxAccountRouterHost: String = getConfigurationStringOption("tax-account-router.host").getOrElse("")
 
   lazy val signIn = s"$companyAuthHost/gg/sign-in?continue=$taxAccountRouterHost/account"
 

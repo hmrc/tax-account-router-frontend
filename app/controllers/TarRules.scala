@@ -18,36 +18,38 @@ package controllers
 
 import engine.dsl._
 import engine.{Rule, RuleEngine}
-import model.Conditions._
+import javax.inject.{Inject, Singleton}
+import model.Conditions
 import model.Locations._
-import model.RuleContext
+import model.{Location, RuleContext}
 
-object TarRules extends RuleEngine {
+@Singleton
+class TarRules @Inject()(conditions: Conditions) extends RuleEngine {
 
-  override val defaultLocation = BusinessTaxAccount
+  override val defaultLocation: Location = BusinessTaxAccount
 
   override val defaultRuleName = "bta-home-page-passed-through"
 
   override val rules: List[Rule[RuleContext]] = List(
 
-    when(loggedInViaVerify) thenReturn PersonalTaxAccount withName "pta-home-page-for-verify-user",
+    when(conditions.loggedInViaVerify) thenReturn PersonalTaxAccount withName "pta-home-page-for-verify-user",
 
-    when(isAGovernmentGatewayUser and not(ggEnrolmentsAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-gg-unavailable",
+    when(conditions.isAGovernmentGatewayUser and not(conditions.ggEnrolmentsAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-gg-unavailable",
 
-    when(isAGovernmentGatewayUser and hasAnyBusinessEnrolment) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasAnyBusinessEnrolment) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-business-enrolments",
 
-    when(isAGovernmentGatewayUser and hasSaEnrolments and not(saReturnAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-sa-unavailable",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasSaEnrolments and not(conditions.saReturnAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-sa-unavailable",
 
-    when(isAGovernmentGatewayUser and hasSaEnrolments and not(hasPreviousReturns)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasSaEnrolments and not(conditions.hasPreviousReturns)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-no-previous-return",
 
-    when(isAGovernmentGatewayUser and hasSaEnrolments and (isInAPartnership or isSelfEmployed)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasSaEnrolments and (conditions.isInAPartnership or conditions.isSelfEmployed)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-partnership-or-self-employment",
 
-    when(isAGovernmentGatewayUser and hasSaEnrolments and not(isInAPartnership) and not(isSelfEmployed) and not(hasNino)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasSaEnrolments and not(conditions.isInAPartnership) and not(conditions.isSelfEmployed) and not(conditions.hasNino)) thenReturn BusinessTaxAccount withName "bta-home-page-for-user-with-no-partnership-and-no-self-employment-and-no-nino",
 
-    when(isAGovernmentGatewayUser and hasSaEnrolments and not(isInAPartnership) and not(isSelfEmployed)) thenReturn PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
+    when(conditions.isAGovernmentGatewayUser and conditions.hasSaEnrolments and not(conditions.isInAPartnership) and not(conditions.isSelfEmployed)) thenReturn PersonalTaxAccount withName "pta-home-page-for-user-with-no-partnership-and-no-self-employment",
 
-    when(not(hasAnyInactiveEnrolment) and not(affinityGroupAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-affinity-group-unavailable",
+    when(not(conditions.hasAnyInactiveEnrolment) and not(conditions.affinityGroupAvailable)) thenReturn BusinessTaxAccount withName "bta-home-page-affinity-group-unavailable",
 
-    when(not(hasAnyInactiveEnrolment) and hasIndividualAffinityGroup) thenReturn PersonalTaxAccount withName "pta-home-page-individual"
+    when(not(conditions.hasAnyInactiveEnrolment) and conditions.hasIndividualAffinityGroup) thenReturn PersonalTaxAccount withName "pta-home-page-individual"
   )
 }

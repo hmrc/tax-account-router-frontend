@@ -16,57 +16,41 @@
 
 package controllers
 
-import auth.RouterAuthenticationProvider
-import config.FrontendAuditConnector
-import connector.FrontendAuthConnector
+import config.FrontendAppConfig
 import engine._
+import javax.inject.{Inject, Singleton}
 import model._
-import play.api.Play.current
+import play.api.Logger
 import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc._
-import play.api.{Logger, Play}
 import services._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import uk.gov.hmrc.play.frontend.auth._
-import uk.gov.hmrc.play.frontend.controller.FrontendController
+import uk.gov.hmrc.play.bootstrap.controller.FrontendController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object RouterController extends RouterController {
-  override protected def authConnector = FrontendAuthConnector
+@Singleton
+class RouterController @Inject()(val authConnector: AuthConnector,
+                                  auditConnector: AuditConnector,
+                                  ruleEngine: TarRules,
+                                  analyticsEventSender: AnalyticsEventSender,
+                                  throttlingService: ThrottlingService,
+                                  ruleContext: RuleContext,
+                                  appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext)
+  extends FrontendController with AuthorisedFunctions {
 
-  override val metricsMonitoringService = MetricsMonitoringService
+  val metricsMonitoringService: MetricsMonitoringService.type = MetricsMonitoringService
 
-  override val ruleEngine = TarRules
-
-  override val throttlingService = ThrottlingService
-
-  override val auditConnector = FrontendAuditConnector
-
-  override val analyticsEventSender = AnalyticsEventSender
-}
-
-trait RouterController extends FrontendController with Actions {
-
-  val metricsMonitoringService: MetricsMonitoringService
-
-  def ruleEngine: RuleEngine
-
-  def throttlingService: ThrottlingService
-
-  def auditConnector: AuditConnector
-
-  def analyticsEventSender: AnalyticsEventSender
-
-  val account = AuthenticatedBy(authenticationProvider = RouterAuthenticationProvider, pageVisibility = AllowAll).async {
-    implicit authContext => request =>
-      route(authContext, request)
+  val account: Action[AnyContent] = Action.async { implicit request =>
+    authorised().retrieve(Retrievals.authorisedEnrolments) {
+      implicit authContext => route
+    }
   }
 
-  def route(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
-    val ruleContext = RuleContext(None)
-
+  def route(implicit authContext: Enrolments, request: Request[AnyContent]): Future[Result] = {
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
     val destinationAfterThrottling: Future[(AuditInfo, Location)] = throttlingService.throttle(destinationAfterRulesApplied, ruleContext).run
     val futureAuditInfo = destinationAfterThrottling map { case (auditInfo, _) => auditInfo }
@@ -88,12 +72,12 @@ trait RouterController extends FrontendController with Actions {
   }
 
   def sendAuditEvent(ruleContext: RuleContext, auditInfo: AuditInfo, throttledLocation: Location)
-                    (implicit authContext: AuthContext, request: Request[AnyContent]) = {
+                    (implicit authContext: Enrolments, request: Request[AnyContent]): Unit = {
     val auditEvent: ExtendedDataEvent = auditInfo.toAuditEvent(throttledLocation)
     auditConnector.sendExtendedEvent(auditEvent)
     val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)
 
-    val extendedLoggingEnabled = Play.configuration.getBoolean("extended-logging-enabled").getOrElse(false)
+    val extendedLoggingEnabled = appConfig.extendedLoggingEnabled
 
     if (extendedLoggingEnabled) {
       Logger.warn(s"[AIV-1992] ${auditInfo.ruleApplied.getOrElse("No rule applied")}, " +

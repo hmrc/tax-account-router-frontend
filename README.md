@@ -1,7 +1,5 @@
 # tax-account-router-frontend
 
-[![Apache-2.0 license](http://img.shields.io/badge/license-Apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html) 
-
 A frontend service which provides routing and throttling functionality. 
 
 ## Run the application 
@@ -21,7 +19,3 @@ sbt test it:test
 ```
 
 There is also a 'sa-data-import' folder containing scripts to upload SA data from csv files.
-
-## License ##
-
-This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
