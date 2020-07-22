@@ -18,68 +18,68 @@ package model
 
 import connector._
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.{AnyContent, Request}
 import play.api.{Logger, LoggerLike}
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RuleContext @Inject()(val authConnector: AuthConnector,
-                            selfAssessmentConnector: SelfAssessmentConnector)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext)
+                            selfAssessmentConnector: SelfAssessmentConnector)(implicit ec: ExecutionContext)
   extends AuthorisedFunctions {
-
-  val request_ : Request[AnyContent] = request
-  val hc_ : HeaderCarrier = hc
 
   val logger: LoggerLike = Logger
 
-  lazy val isVerifyUser: Future[Boolean] = {
-    authorised(AuthProviders(AuthProvider.Verify)){ Future.successful(true) }.recover {case _ => false}
+  def isVerifyUser(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorised(AuthProviders(AuthProvider.Verify)){
+      Future.successful(true)
+    }.recover {case _ => false}
   }
 
-  lazy val isGovernmentGatewayUser: Future[Boolean] = {
-    authorised(AuthProviders(AuthProvider.GovernmentGateway)){ Future.successful(true) }.recover {case _ => false}
+  def isGovernmentGatewayUser(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorised(AuthProviders(AuthProvider.GovernmentGateway)){
+      Future.successful(true)
+    }.recover {case _ => false}
   }
 
-  lazy val hasNino: Future[Boolean] = {
+  def hasNino(implicit hc: HeaderCarrier): Future[Boolean] = {
     authorised().retrieve(Retrievals.nino){
-      case Some(nino) => Future.successful(true)
+      case Some(_)    => Future.successful(true)
       case _          => Future.successful(false)
-    }
+    }.recover {case _ => false}
   }
 
-  lazy val activeEnrolmentKeys: Future[Set[String]] = activeEnrolments.map(enrList => enrList.map(_.key).toSet[String])
+  def activeEnrolmentKeys(implicit hc: HeaderCarrier): Future[Set[String]] = activeEnrolments.map(enrList => enrList.map(_.key))
 
-  lazy val activeEnrolments: Future[Set[Enrolment]] = enrolments.map { enrolmentSeq =>
+  def activeEnrolments(implicit hc: HeaderCarrier): Future[Set[Enrolment]] = enrolments.map { enrolmentSeq =>
     enrolmentSeq.enrolments.filter(_.state == EnrolmentState.ACTIVATED)
   }
 
-  lazy val notActivatedEnrolmentKeys: Future[Set[String]] = enrolments.map { enrolmentSeq =>
-    enrolmentSeq.enrolments.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  def notActivatedEnrolmentKeys(implicit hc: HeaderCarrier): Future[Set[String]] = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.enrolments.filter(_.state != EnrolmentState.ACTIVATED).map(_.key)
   }
 
-  lazy val lastSaReturn: Future[SaReturn] =
+  def lastSaReturn(implicit hc: HeaderCarrier): Future[SaReturn] =
     authorised().retrieve(Retrievals.saUtr) {
       case Some(saUtr) => selfAssessmentConnector.lastReturn(saUtr)
       case _ => Future(SaReturn.empty)
-    }
+    }.recover {case _ => SaReturn.empty}
 
-  lazy val internalUserIdentifier: Future[Option[String]] =
+  def internalUserIdentifier(implicit hc: HeaderCarrier): Future[Option[String]] =
     authorised().retrieve(Retrievals.internalId) {
       case internalId => Future.successful(internalId)
       case _ => Future.successful(None)
-    }
+    }.recover {case _ => None}
 
-  lazy val enrolments: Future[Enrolments] =
+  def enrolments(implicit hc: HeaderCarrier): Future[Enrolments] =
     authorised().retrieve(Retrievals.allEnrolments) {
       case enrolments => Future.successful(enrolments)
       case _ => Future.successful(Enrolments(Set.empty[Enrolment]))
-    }
+    }.recoverWith {case _ => Future.failed(new RuntimeException("gg-unavailable"))}
 
-  lazy val affinityGroup: Future[String] = {
+  def affinityGroup(implicit hc: HeaderCarrier): Future[String] = {
     authorised().retrieve(Retrievals.affinityGroup){
       case Some(affinityGroup) => Future.successful(affinityGroup.toString)
       case _ => Future.failed(new RuntimeException("affinityGroup is not defined"))

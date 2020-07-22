@@ -1,20 +1,10 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import model.AffinityGroupValue.INDIVIDUAL
-import engine.AuditInfo
 import engine.RoutingReason._
 import model.AffinityGroupValue
-import org.scalatest.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
-import play.api.libs.json.{JsValue, Json}
-import play.api.test.FakeApplication
 import support.page._
 import support.stubs._
-
-import scala.collection.JavaConverters._
 
 class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditTools {
 
@@ -23,7 +13,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through Verify should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Verify")
-      SessionUser(loggedInViaGateway = false).stubLoggedIn()
+      setVerifyUser()
 
       val auditEventStub = stubAuditEvent()
       stubPersonalAccount()
@@ -50,10 +40,10 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser().stubLoggedIn()
+      setGGUser()
 
       And("the user has business related enrolments")
-      stubBusinessEnrolments()
+      stubRetrievalALLEnrolments(enrolmentKey = "enr1")
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -85,14 +75,12 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
-
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      setGGUser()
+      stubRetrievalALLEnrolments()
 
       And("the user has no previous returns")
+      stubRetrievalSAUTR()
       stubSaReturnWithNoPreviousReturns(saUtr)
 
       val auditEventStub = stubAuditEvent()
@@ -128,15 +116,13 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("when a user logged in through GG and has no sa and no business enrolment an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has no inactive enrolments")
-      stubNoEnrolments()
+      stubRetrievalALLEnrolments(hasEnrolments = false)
 
       And("the user has organisation affinity group")
-      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.ORGANISATION))
+      stubRetrievalAffinityGroup()
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -173,12 +159,12 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
@@ -218,12 +204,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
@@ -264,15 +249,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
+      stubRetrievalNINO(hasNino = false)
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -310,15 +295,15 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
       stubSaReturn(saUtr, previousReturns = true)
+      stubRetrievalNINO()
 
       val auditEventStub = stubAuditEvent()
       stubPersonalAccount()
@@ -356,13 +341,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with SAUTR and not registered for 2SV should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
-      //stubUserDetails()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -400,12 +383,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO and not registered for 2SV should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
-      //stubUserDetails()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -440,11 +422,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO, not registered for 2SV but already has strong credentials should be not redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-//      SessionUser(accounts = accounts, isRegisteredFor2SV = false, credentialStrength = CredentialStrength.Strong).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -479,11 +461,11 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("a BTA eligible user with NINO and not registered for 2SV and more than one enrolment should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-//      val accounts = Accounts(paye = Some(PayeAccount("link", Nino("CS100700A"))))
-//      SessionUser(accounts = accounts, isRegisteredFor2SV = false).stubLoggedIn()
+      setGGUser()
 
-      And("the user has self assessment enrolments")
-      stubMoreThanOneSAEnrolment()
+      And("the user with business  enrolments")
+      stubRetrievalALLEnrolments("enr1")
+      stubRetrievalSAUTR()
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -515,15 +497,13 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("when a user logged in through GG and has no sa and no business enrolment with individual affinity group an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+      setGGUser()
 
-      And("the user has self assessment enrolments and individual affinity group")
-      stubNoEnrolments()
+      And("the user has no self assessment enrolments and no business enrolment, but has individual affinity group")
+      stubRetrievalALLEnrolments(hasEnrolments = false)
 
       And("the user has individual affinity group")
-      //stubUserDetails(affinityGroup = Some(INDIVIDUAL))
+      stubRetrievalAffinityGroup(AffinityGroupValue.INDIVIDUAL)
 
       val auditEventStub = stubAuditEvent()
       stubPersonalAccount()
@@ -560,15 +540,12 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
     scenario("when a user logged in through GG and has no sa and no business enrolment and affinity group not available an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts, affinityGroup = INDIVIDUAL).stubLoggedIn()
+      setGGUser()
 
       And("the user has no enrolments")
-      stubNoEnrolments()
+      stubRetrievalALLEnrolments(hasEnrolments = false)
 
       And("affinity group is not available")
-      stubUserDetailsToReturn500()
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -602,84 +579,4 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
   }
 }
 
-class RouterAuditFeatureWithThrottling extends StubbedFeatureSpec with CommonStubs with AuditTools {
-  override lazy val app = FakeApplication(additionalConfiguration = config + (
-    "throttling.enabled" -> true,
-    "throttling.locations.personal-tax-account-verify.percentageBeToThrottled" -> "50",
-    "throttling.locations.personal-tax-account-verify.fallback" -> "business-tax-account"
-  ))
 
-  val discriminator99 = "c2103cec-03f5-4605-b980-dd2d309d48e9" // Math.abs("c2103cec-03f5-4605-b980-dd2d309d48e9".md5.hashCode % 100) = 99
-  val discriminator0 = "4c72d67c-df80-4967-953d-c64ffc22d720" // Math.abs("4c72d67c-df80-4967-953d-c64ffc22d720".md5.hashCode % 100) = 0
-
-  val scenarios = Tables.Table[String, String, Stub, WebPage, Boolean, String](
-    ("scenario", "userId", "stubPage", "expectedDestination", "expectedThrottledFlag", "expectedTransactionName"),
-    ("redirect user to fallback when throttled", discriminator0, BtaHomeStubPage, BtaHomePage, true, "sent to business tax account"),
-    ("route to original destination when not throttled", discriminator99, PtaHomeStubPage, PtaHomePage, false, "sent to personal tax account")
-  )
-  
-  TableDrivenPropertyChecks.forAll(scenarios) { (scenarioName, userId, stubPage, expectedDestination, expectedThrottledFlag, expectedTransactionName) =>
-
-    scenario(scenarioName) {
-
-      Given("a user logged in through Verify supposed to go to PTA")
-      SessionUser(loggedInViaGateway = false, internalUserIdentifier = Some(userId)).stubLoggedIn()
-
-      val auditEventStub = stubAuditEvent()
-
-      createStubs(stubPage)
-
-      When("the user hits the router")
-      go(RouterRootPath)
-
-      Then("the user should be routed to BTA Home Page")
-      on(expectedDestination)
-
-      And("user is sent to BTA an audit event should be sent")
-      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
-
-      And("the audit event raised should be the expected one")
-      val expectedReasons = toJson(emptyRoutingReasons + (IS_A_VERIFY_USER.key -> "true"))
-      val expectedThrottlingDetails = ThrottlingDetails(
-        enabled = true,
-        percentage = "50",
-        throttled = expectedThrottledFlag,
-        destinationUrlBeforeThrottling = "/personal-account",
-        destinationNameBeforeThrottling = "personal-tax-account"
-      )
-      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user", expectedThrottlingDetails)
-    }
-  }
-}
-
-trait AuditTools { self: Matchers =>
-
-  case class ThrottlingDetails(enabled: Boolean,
-                               percentage: String,
-                               throttled: Boolean,
-                               destinationUrlBeforeThrottling: String,
-                               destinationNameBeforeThrottling: String)
-
-  val emptyRoutingReasons = AuditInfo.emptyReasons.map { case (k, _) => k.key -> "-" }
-
-  def toJson(map: Map[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
-
-  def verifyAuditEvent(auditEventStub: RequestPatternBuilder,
-                       expectedReasons: JsValue,
-                       expectedTransactionName: String,
-                       ruleApplied: String,
-                       throttlingDetails: ThrottlingDetails): Unit = {
-
-    val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
-    val event = Json.parse(loggedRequests
-      .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
-    (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
-    (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
-    (event \ "detail" \ "reasons").get shouldBe expectedReasons
-    (event \ "detail" \ "throttling" \ "enabled").as[String] shouldBe throttlingDetails.enabled.toString
-    (event \ "detail" \ "throttling" \ "percentage").as[String] shouldBe throttlingDetails.percentage.toString
-    (event \ "detail" \ "throttling" \ "throttled").as[String] shouldBe throttlingDetails.throttled.toString
-    (event \ "detail" \ "throttling" \ "destination-url-before-throttling").as[String] should endWith(throttlingDetails.destinationUrlBeforeThrottling)
-    (event \ "detail" \ "throttling" \ "destination-name-before-throttling").as[String] shouldBe throttlingDetails.destinationNameBeforeThrottling
-  }
-}

@@ -3,7 +3,7 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock._
 import model.AffinityGroupValue
 import support.page._
-import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
+import support.stubs.{CommonStubs, StubbedFeatureSpec}
 
 
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
@@ -13,7 +13,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through Verify should be redirected to PTA") {
 
       Given("a user logged in through Verify")
-      SessionUser(loggedInViaGateway = false).stubLoggedIn()
+      setVerifyUser()
 
       createStubs(PtaHomeStubPage)
 
@@ -24,7 +24,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
 
       And("user's enrolments should not be fetched from Auth")
       verify(0, getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
@@ -39,10 +38,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with any business account be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser().stubLoggedIn()
+      setGGUser()
 
       And("the user has business related enrolments")
-      stubBusinessEnrolments()
+      stubRetrievalALLEnrolments("enr1")
 
       createStubs(BtaHomeStubPage)
 
@@ -53,10 +52,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -68,12 +63,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and no previous returns should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
@@ -87,10 +81,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -102,12 +92,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and sa returning 500 should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the sa is returning 500")
       stubSaReturnToReturn500(saUtr)
@@ -121,10 +110,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -136,12 +121,10 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and Auth returning 500 on GET enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("gg is returning 500")
-      stubEnrolmentsToReturn500()
+      stubRetrievalALLEnrolments(responsive = false)
 
       createStubs(BtaHomeStubPage)
 
@@ -152,10 +135,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -167,12 +146,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and in a partnership should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
@@ -186,10 +164,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -201,12 +175,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and self employed should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
@@ -220,10 +193,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -235,12 +204,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with no NINO should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = None)
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has no NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -254,10 +222,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -269,12 +233,12 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG with self assessment enrolments and has previous returns and not in a partnership and not self employed and with NINO should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))), paye = Some(PayeAccount("link", Nino("CS100700A"))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
+      stubRetrievalNINO()
 
       And("the user has previous returns and is not in a partnership and is not self employed and has NINO")
       stubSaReturn(saUtr, previousReturns = true)
@@ -287,9 +251,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       Then("the user should be routed to PTA Home Page")
       on(PtaHomePage)
 
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
@@ -300,11 +261,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and inactive enrolments should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
+      setGGUser()
 
       And("the user has an inactive enrolment and individual affinity group")
-      stubInactiveEnrolments()
-      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
+      stubRetrievalALLEnrolments()
+      stubRetrievalAffinityGroup(AffinityGroupValue.INDIVIDUAL)
 
       createStubs(BtaHomeStubPage)
 
@@ -315,10 +276,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
 
       And("user's details should not be fetched from User Details")
       verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
@@ -330,11 +287,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment with individual affinity group and no inactive enrolments should be redirected to PTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
+      setGGUser()
 
       And("the user has no inactive enrolments and individual affinity group")
-      stubNoEnrolments()
-      //stubUserDetails(affinityGroup = Some(AffinityGroupValue.INDIVIDUAL))
+      stubRetrievalALLEnrolments(hasEnrolments = false)
+      stubRetrievalAffinityGroup(AffinityGroupValue.INDIVIDUAL)
 
       createStubs(PtaHomeStubPage)
 
@@ -345,13 +302,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(PtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
-      And("user's details should be fetched from User Details")
-      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -360,11 +310,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG and has no sa and no business enrolment and no inactive enrolments and affinity group not available should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      SessionUser(affinityGroup = AffinityGroupValue.INDIVIDUAL).stubLoggedIn()
+      setGGUser()
 
       And("the user has no inactive enrolments and affinity group is not available")
-      stubNoEnrolments()
-      stubUserDetailsToReturn500()
+      stubRetrievalALLEnrolments(hasEnrolments = false)
+      stubRetrievalAffinityGroup(ready = false)
 
       createStubs(BtaHomeStubPage)
 
@@ -375,13 +325,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
       on(BtaHomePage)
 
       And("the authority object should be fetched once for AuthenticatedBy")
-      verifyAuthorityObjectIsFetched()
-
-      And("user's enrolments should be fetched from Auth")
-      verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
-      And("user's details should be fetched from User Details")
-      verify(getRequestedFor(urlEqualTo("/user-details-uri")))
 
       And("Sa micro service should not be invoked")
       verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
@@ -391,10 +334,11 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
   scenario("a user logged in through One Time Login or Privileged Access with no enrolments should go to BTA") {
 
     Given("a user logged in through One Time Login or Privileged Access")
-    SessionUser(internalUserIdentifier = None, userDetailsLink = None).stubLoggedIn()
+    stubRetrievalAuthorisedEnrolments()
+    stubRetrievalInternalId()
 
     And("the user has no inactive enrolments")
-    stubNoEnrolments()
+    stubRetrievalALLEnrolments(hasEnrolments = false)
 
     createStubs(BtaHomeStubPage)
 
@@ -404,13 +348,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     Then("the user should be routed to BTA Home Page")
     on(BtaHomePage)
 
-    And("the authority object should be fetched once for AuthenticatedBy, but ids are not fetched")
-    verify(getRequestedFor(urlEqualTo("/auth/authority")))
-    verify(0, getRequestedFor(urlEqualTo("/auth/ids-uri")))
-
-    And("user's enrolments should be fetched from Auth")
-    verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
     And("user's details should not be fetched from User Details")
     verify(0, getRequestedFor(urlEqualTo("/user-details-uri")))
 
@@ -418,8 +355,4 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
     verify(0, getRequestedFor(urlMatching("/sa/individual/.[^\\/]+/return/last")))
   }
 
-  private def verifyAuthorityObjectIsFetched() = {
-    verify(getRequestedFor(urlEqualTo("/auth/authority")))
-    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
-  }
 }

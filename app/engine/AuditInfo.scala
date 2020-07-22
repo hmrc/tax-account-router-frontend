@@ -36,7 +36,7 @@ sealed trait TAuditInfo {
     this match {
       case AuditInfo(routingReasons, ruleApplied, throttlingInfo) =>
         val enrolments: Set[Enrolment] = authContext.enrolments
-        val optionalAccounts: JsObject = Json.toJson[Set[Enrolment]](enrolments).as[JsObject]
+        val optionalAccounts: JsObject = Json.obj("enrolments" -> Json.toJson[Set[Enrolment]](enrolments))
         ExtendedDataEvent(
           auditSource = "tax-account-router-frontend",
           auditType = "Routing",

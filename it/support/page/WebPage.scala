@@ -26,31 +26,31 @@ trait WebPage extends Page with WebBrowser with Matchers with ImplicitWebDriverS
 
   def assertPageLoaded(): Unit
 
-  def heading = tagName("h1").element.text
+  def heading: String = tagName("h1").element.text
 
-  def bodyText = tagName("body").element.text
+  def bodyText: String = tagName("body").element.text
 
-  def at() = {
+  def at(): Unit = {
     loadPage()
     assertPageLoaded()
   }
 
-  def assertPageIs(expectedPage: String) {
+  def assertPageIs(expectedPage: String): Unit = {
     val title =  find(xpath("//h1")).map(_.text)
     assertResult(Some(expectedPage), s"The actual page url is [${webDriver.getCurrentUrl}] and the content is: [${webDriver.getPageSource}]")(title)
   }
 
-  def containsFragment(fragment: String) =
+  def containsFragment(fragment: String): Boolean =
     webDriver.getPageSource.contains(fragment)
 
-  def clickElement(elementId: String) = click on id(elementId)
+  def clickElement(elementId: String): Unit = click on id(elementId)
 
 
-  private def loadPage()(implicit webDriver: WebDriver) = {
+  private def loadPage()(implicit webDriver: WebDriver): WebElement = {
     val wait = new WebDriverWait(webDriver, 30)
     wait.until(
       new ExpectedCondition[WebElement] {
-        override def apply(d: WebDriver) = d.findElement(By.tagName("body"))
+        override def apply(d: WebDriver): WebElement = d.findElement(By.tagName("body"))
       }
     )
   }

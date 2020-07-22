@@ -21,5 +21,4 @@ import support.Env
 
 trait ImplicitWebDriverSugar {
   implicit val webDriver: WebDriver = Env.driver
-
 }

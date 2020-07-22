@@ -22,6 +22,7 @@ import engine.{AuditInfo, ThrottlingInfo}
 import model.Locations._
 import model._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
+import org.mockito.Matchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -29,8 +30,12 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import support.UnitSpec
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -65,6 +70,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     )
   }
 
+  implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
+
   "ThrottlingService" should {
 
     "not throttle if throttling disabled and sticky routing disabled" in {
@@ -76,7 +84,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
         //and
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+        when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
         //and
         val initialAuditInfo = AuditInfo.Empty
@@ -105,7 +113,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
         //and
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+        when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
         //and
         val initialAuditInfo = AuditInfo.Empty
@@ -158,7 +166,7 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
         running(fakeApplication) {
           //given
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+          when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
           //and
           val initialAuditInfo = AuditInfo.Empty

@@ -18,18 +18,21 @@ package engine
 
 import cats.data.WriterT
 import model._
+import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait RuleEngine {
 
-  def rules: List[Rule[RuleContext]]
+  def rules(implicit request: Request[AnyContent], hc: HeaderCarrier): List[Rule[RuleContext]]
 
   def defaultLocation: Location
 
   def defaultRuleName: String
 
-  def getLocation(ruleContext: RuleContext): EngineResult = {
+  def getLocation(ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): EngineResult = {
     rules.foldLeft(emptyRuleResult) { (result, rule) =>
       result.flatMap {
         case someLocation@Some(_) => WriterT(result.written.map(auditInfo => (auditInfo, someLocation)))

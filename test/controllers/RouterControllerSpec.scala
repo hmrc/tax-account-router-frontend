@@ -18,9 +18,8 @@ package controllers
 
 import cats.data.WriterT
 import config.FrontendAppConfig
-import connector.EnrolmentState
 import engine.{AuditInfo, EngineResult}
-import model._
+import model.{EnrolmentState, _}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
@@ -51,7 +50,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
 
       when(mockRuleEngine.getLocation(mockRuleContext)).thenReturn(engineResult)
 
-      when(mockThrottlingService.throttle(any[EngineResult], eqTo(mockRuleContext))).thenReturn(engineResult)
+      when(mockThrottlingService.throttle(any[EngineResult], eqTo(mockRuleContext))(any(),any())).thenReturn(engineResult)
 
       val mockAuditEvent: ExtendedDataEvent = mock[ExtendedDataEvent]
       when(mockAuditInfo.toAuditEvent(eqTo(location1))(any[HeaderCarrier], any(), any[Request[AnyContent]])).thenReturn(mockAuditEvent)
@@ -62,7 +61,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
       status(route) shouldBe 303
       Helpers.redirectLocation(route) should contain(location1.url)
 
-      verify(mockThrottlingService).throttle(any[EngineResult], eqTo(mockRuleContext))
+      verify(mockThrottlingService).throttle(any[EngineResult], eqTo(mockRuleContext))(any(),any())
       verify(mockAuditConnector).sendExtendedEvent(eqTo(mockAuditEvent))(any[HeaderCarrier], any[ExecutionContext])
       verify(mockAnalyticsEventSender).sendEvents(eqTo(mockAuditInfo), eqTo(location1.name))(eqTo(fakeRequest), any[HeaderCarrier], any[ExecutionContext])
     }
@@ -80,8 +79,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
       when(mockFrontendAppConfig.extendedLoggingEnabled).thenReturn(true)
 
       when(mockAuditInfo.ruleApplied).thenReturn(Some("some rule applied"))
-      when(mockRuleContext.affinityGroup).thenReturn(Future.successful("Organisation"))
-      when(mockRuleContext.activeEnrolmentKeys).thenReturn(Future.successful(Set.empty[String]))
+      when(mockRuleContext.affinityGroup(any())).thenReturn(Future.successful("Organisation"))
+      when(mockRuleContext.activeEnrolmentKeys(any())).thenReturn(Future.successful(Set.empty[String]))
 
       withCaptureOfLoggingFrom(Logger) { events =>
         testRouterController.sendAuditEvent(mockRuleContext, mockAuditInfo, location2)(expectedEnrolmentsSeq, fakeRequest)

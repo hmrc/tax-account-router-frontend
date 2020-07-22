@@ -23,6 +23,7 @@ import javax.inject.{Inject, Singleton}
 import model.Locations.PersonalTaxAccount
 import model._
 import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -61,7 +62,7 @@ class ThrottlingService @Inject()(appConfig: FrontendAppConfig)(implicit val ec:
 
   lazy val throttlingEnabled: Boolean = appConfig.throttlingEnabled
 
-  def throttle(currentResult: EngineResult, ruleContext: RuleContext): EngineResult = {
+  def throttle(currentResult: EngineResult, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): EngineResult = {
 
     def findFallbackFor(location: Location, throttlingConfig: ThrottlingConfig): Location = {
       val fallback = for {
@@ -95,7 +96,7 @@ class ThrottlingService @Inject()(appConfig: FrontendAppConfig)(implicit val ec:
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case Some(userId) if throttlingEnabled =>
-          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, ruleContext.request_)
+          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, request)
           doThrottle(auditInfo, location, userId, locationConfiguration)
         case _ =>
           val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)

@@ -1,5 +1,3 @@
-package configuration
-
 /*
  * Copyright 2015 HM Revenue & Customs
  *
@@ -16,23 +14,25 @@ package configuration
  * limitations under the License.
  */
 
+package configuration
+
 object StubApplicationConfiguration {
   val wiremockPort: Int = 6009
 }
 trait StubApplicationConfiguration {
 
-  val stubPort = StubApplicationConfiguration.wiremockPort
+  val stubPort: Int = StubApplicationConfiguration.wiremockPort
   val stubHost = "localhost"
 
   val databaseName = "tar-test"
 
-  val stubbedMicroServices = Seq("auth", "sa", "user-details", "platform-analytics")
+  val stubbedMicroServices: Map[String, Any] = Seq("auth", "sa", "user-details", "platform-analytics")
     .map(service => Map(
       s"microservice.services.$service.host" -> stubHost,
       s"microservice.services.$service.port" -> stubPort
     )).reduce(_ ++ _)
 
-  val config = Map[String, Any](
+  val config: Map[String, Any] = Map[String, Any](
     "auditing.consumer.baseUri.host" -> stubHost,
     "auditing.consumer.baseUri.port" -> stubPort,
     "business-tax-account.host" -> s"http://$stubHost:$stubPort",

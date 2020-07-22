@@ -84,7 +84,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
 
     val ruleEngineStubReturningLocation1: RuleEngine = new RuleEngine {
       override val defaultLocation: Location = testDefaultLocation
-      override val rules: List[Rule[RuleContext]] = {
+      override def rules(implicit request: Request[AnyContent], hc: HeaderCarrier): List[Rule[RuleContext]] = {
         import engine.dsl._
         List(
           when(alwaysTrueCondition) thenReturn location1 withName "always-true-rule"
@@ -96,7 +96,7 @@ class RuleEngineSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
 
     val ruleEngineStubReturningLocation2: RuleEngine = new RuleEngine {
       override val defaultLocation: Location = testDefaultLocation
-      override val rules: List[Rule[RuleContext]] = {
+      override def rules(implicit request: Request[AnyContent], hc: HeaderCarrier): List[Rule[RuleContext]] = {
         import engine.dsl._
         List(
           when(alwaysFalseCondition) thenReturn location2 withName "always-false-rule"

@@ -31,30 +31,30 @@ import scala.util.Properties
 
 object Env {
 
-  val host = s"http://localhost:${StubbedFeatureSpec.fakeApplicationPort}"
+  val host: String = s"http://localhost:${StubbedFeatureSpec.fakeApplicationPort}"
 
-  val stubPort = StubApplicationConfiguration.wiremockPort
-  val stubHost = "localhost"
-  val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
+  val stubPort: Int = StubApplicationConfiguration.wiremockPort
+  val stubHost: String = "localhost"
+  val wireMockServer: WireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  lazy val firefoxDriver = {
+  lazy val firefoxDriver: FirefoxDriver = {
     val profile: FirefoxProfile = new FirefoxProfile
     profile.setPreference("javascript.enabled", true)
     profile.setAcceptUntrustedCertificates(true)
     new FirefoxDriver(profile)
   }
 
-  def createBrowser() = {
+  def createBrowser(): ChromeDriver = {
     val capabilities = DesiredCapabilities.chrome()
     new ChromeDriver(capabilities)
   }
 
-  def getInstance() = {
+  def getInstance(): ChromeDriver = {
     val instance = createBrowser()
     instance
   }
 
-  lazy val chromeWebDriver = {
+  lazy val chromeWebDriver: ChromeDriver = {
     System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver")
     System.setProperty("browser", "chrome")
     getInstance()
@@ -70,12 +70,12 @@ object Env {
 
   private val browser: String = Properties.propOrElse("browser", "chrome")
 
-  val webDriver = browser match {
+  val webDriver: WebDriver = browser match {
     case "firefox"        => firefoxDriver
     case "chrome"         => chromeWebDriver
     case "remote-chrome"  => createRemoteChrome
     case "remote-firefox" => createRemoteFirefox
   }
 
-  val driver = webDriver
+  val driver: WebDriver = webDriver
 }

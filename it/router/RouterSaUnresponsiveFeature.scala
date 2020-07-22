@@ -1,14 +1,15 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.test.FakeApplication
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import support.page._
-import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
+import support.stubs.{CommonStubs, StubbedFeatureSpec}
 
 
 class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
-  val additionalConfiguration = Map[String, Any](
+  val additionalConfiguration: Map[String, Any] = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
@@ -16,38 +17,25 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
     "two-step-verification.enabled" -> true
   )
 
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(config ++ additionalConfiguration).build()
 
   feature("Router with SA unresponsive") {
 
     scenario("a user logged in through GG, SA is unresponsive, user should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
 
       And("the SA is unresponsive")
-      stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
+      stubRetrievalSAUTR(responsive = false)
 
       createStubs(BtaHomeStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
-
-      eventually {
-        Then("the authority object should be fetched once for AuthenticatedBy")
-        verifyAuthorityObjectIsFetched()
-
-        And("user's enrolments should be fetched from Auth")
-        verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-
-        And("SA returns should be fetched from SA micro service")
-        verify(getRequestedFor(urlEqualTo(s"/sa/individual/$saUtr/return/last")))
-      }
 
       And("the user should be routed to BTA Home Page")
       on(BtaHomePage)
@@ -58,26 +46,15 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
     scenario("a user logged in through GG, GG is unresponsive, user should be redirected to BTA") {
 
-      Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-//      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-//      SessionUser(accounts = accounts).stubLoggedIn()
-
-      And("GG is unresponsive")
-      stubEnrolmentsToReturnAfter2Seconds()
+      Given("a user logged in through Government Gateway but GG is unresponsive")
+      stubRetrievalAuthorisedEnrolments()
+      stubRetrievalInternalId()
+      stubRetrievalALLEnrolments(hasEnrolments = false)
 
       createStubs(BtaHomeStubPage)
 
       When("the user hits the router")
       go(RouterRootPath)
-
-      eventually {
-        Then("the authority object should be fetched once for AuthenticatedBy")
-        verifyAuthorityObjectIsFetched()
-
-        And("user's enrolments should be fetched from Auth")
-        verify(getRequestedFor(urlEqualTo("/auth/enrolments-uri")))
-      }
 
       And("the user should be routed to BTA Home Page")
       on(BtaHomePage)
@@ -90,8 +67,4 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
     }
   }
 
-  private def verifyAuthorityObjectIsFetched() = {
-    verify(getRequestedFor(urlEqualTo("/auth/authority")))
-    verify(getRequestedFor(urlEqualTo("/auth/ids-uri")))
-  }
 }

@@ -25,7 +25,6 @@ private object AppDependencies {
   abstract class TestDependencies(scope: String) {
     lazy val test: Seq[ModuleID] = Seq(
       "com.typesafe.play"      %% "play-test"                % PlayVersion.current % scope,
-      "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.15.0-play-25"    % scope,
       "uk.gov.hmrc"            %% "service-integration-test" % "0.9.0-play-25"     % scope,
       "org.scalatestplus.play" %% "scalatestplus-play"       % "2.0.1"             % scope,
       "org.pegdown"             % "pegdown"                  % "1.6.0"             % scope,

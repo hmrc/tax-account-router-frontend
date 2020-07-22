@@ -18,6 +18,7 @@ package support.stubs
 
 import com.github.tomakehurst.wiremock.matching.UrlPattern
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
 trait Stubs {
   def createStubs(stub: Stub) {
@@ -30,7 +31,7 @@ trait Stub {
 }
 
 trait StubbedPage {
-  def stubOut(urlMatchingStrategy: UrlPattern, heading: String, extraBodyHtml: Option[String] = None, prodUrl: Option[String] = None) = {
+  def stubOut(urlMatchingStrategy: UrlPattern, heading: String, extraBodyHtml: Option[String] = None, prodUrl: Option[String] = None): StubMapping = {
     stubFor(get(urlMatchingStrategy)
       .willReturn(
         aResponse()

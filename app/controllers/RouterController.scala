@@ -52,6 +52,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
 
   def route(implicit authContext: Enrolments, request: Request[AnyContent]): Future[Result] = {
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
+
     val destinationAfterThrottling: Future[(AuditInfo, Location)] = throttlingService.throttle(destinationAfterRulesApplied, ruleContext).run
     val futureAuditInfo = destinationAfterThrottling map { case (auditInfo, _) => auditInfo }
     val futureFinalDestination = destinationAfterThrottling map { case (_, finalDestination) => finalDestination }

@@ -5,7 +5,7 @@ import support.Env
 import support.stubs.{Stub, StubbedPage}
 
 object BtaHomeStubPage extends Stub with StubbedPage {
-  override def create() = {
+  override def create(): Unit = {
     stubOut(urlMatching("/business-account"), "BTA Home Page")
   }
 }
@@ -14,5 +14,5 @@ object BtaHomeStubPage extends Stub with StubbedPage {
 object BtaHomePage extends WebPage {
   override val url: String = Env.host
 
-  override def assertPageLoaded() = assertPageIs("BTA Home Page")
+  override def assertPageLoaded(): Unit = assertPageIs("BTA Home Page")
 }

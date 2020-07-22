@@ -22,6 +22,8 @@ import javax.inject.{Inject, Singleton}
 import model.Conditions
 import model.Locations._
 import model.{Location, RuleContext}
+import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class TarRules @Inject()(conditions: Conditions) extends RuleEngine {
@@ -30,7 +32,7 @@ class TarRules @Inject()(conditions: Conditions) extends RuleEngine {
 
   override val defaultRuleName = "bta-home-page-passed-through"
 
-  override val rules: List[Rule[RuleContext]] = List(
+  override def rules(implicit request: Request[AnyContent], hc: HeaderCarrier): List[Rule[RuleContext]] = List(
 
     when(conditions.loggedInViaVerify) thenReturn PersonalTaxAccount withName "pta-home-page-for-verify-user",
 

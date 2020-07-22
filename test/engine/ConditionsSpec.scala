@@ -47,6 +47,9 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
   val conf: FrontendAppConfig = new GuiceApplicationBuilder().configure(configuration).injector.instanceOf[FrontendAppConfig]
   val Conditions = new Conditions(conf)
 
+  implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
+
   "HasAnyBusinessEnrolment" should {
 
     "have an audit type specified" in {
@@ -185,27 +188,21 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
 
     val scenarios =
       Table(
-        ("scenario", "tokenPresent", "authClientDefinedAsVerify", "expectedResult"),
-        ("has no token and authClient not defined as verify", false, false, true),
-        ("has token and authClient defined as verify", true, true, true),
-        ("has token but authClient not defined as verify", true, false, false)
+        ("scenario", "authClientDefinedAsVerify", "expectedResult"),
+        ("authClient defined as verify", true, true),
+        ("authClient not defined as verify", false, false)
       )
 
-    forAll(scenarios) { (scenario: String, tokenPresent: Boolean, authClientDefinedAsVerify: Boolean,  expectedResult: Boolean) =>
+    forAll(scenarios) { (scenario: String, authClientDefinedAsVerify: Boolean,  expectedResult: Boolean) =>
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = if (tokenPresent) {
-          FakeRequest().withSession(("token", "token"))
-        } else {
-          FakeRequest()
-        }
+        implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
         val ruleContext = mock[RuleContext]
-        when(ruleContext.request_).thenReturn(fakeRequest)
         when(ruleContext.isVerifyUser).thenReturn(Future.successful(authClientDefinedAsVerify))
 
-        val (_, evaluationResult) = Conditions.loggedInViaVerify.evaluate(ruleContext).run.futureValue
+        val (_, evaluationResult) = await(Conditions.loggedInViaVerify.evaluate(ruleContext).run)
         evaluationResult shouldBe expectedResult
       }
     }
@@ -236,7 +233,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
         }
 
         val ruleContext = mock[RuleContext]
-        when(ruleContext.request_).thenReturn(fakeRequest)
         when(ruleContext.isGovernmentGatewayUser).thenReturn(Future.successful(authClientDefinedAsGG))
 
         val (_, evaluationResult) = Conditions.isAGovernmentGatewayUser.evaluate(ruleContext).run.futureValue
