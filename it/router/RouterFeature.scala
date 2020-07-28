@@ -334,7 +334,6 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
   scenario("a user logged in through One Time Login or Privileged Access with no enrolments should go to BTA") {
 
     Given("a user logged in through One Time Login or Privileged Access")
-    stubRetrievalAuthorisedEnrolments()
     stubRetrievalInternalId()
 
     And("the user has no inactive enrolments")

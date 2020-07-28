@@ -32,7 +32,9 @@ class AnalyticsEventSender @Inject()(analyticsPlatformConnector: AnalyticsPlatfo
 
   def sendEvents(auditInfo: AuditInfo, locationName: String)(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val gaClientId = request.cookies.get("_ga").map(_.value)
-    gaClientId.fold(Logger.info(s"No _ga cookie in request $request, skipping sending analytics event")) {
+    gaClientId.fold {
+      Logger.info(s"No _ga cookie in request $request, skipping sending analytics event")
+    } {
       clientId =>
         val routingEvent = List(GaEvent(routingCategory, locationName, auditInfo.ruleApplied.getOrElse(""), Nil))
         analyticsPlatformConnector.sendEvents(AnalyticsData(clientId, routingEvent))

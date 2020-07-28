@@ -45,7 +45,6 @@ trait WebPage extends Page with WebBrowser with Matchers with ImplicitWebDriverS
 
   def clickElement(elementId: String): Unit = click on id(elementId)
 
-
   private def loadPage()(implicit webDriver: WebDriver): WebElement = {
     val wait = new WebDriverWait(webDriver, 30)
     wait.until(
@@ -54,4 +53,5 @@ trait WebPage extends Page with WebBrowser with Matchers with ImplicitWebDriverS
       }
     )
   }
+
 }

@@ -24,7 +24,6 @@ import play.api.Logger
 import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc._
 import services._
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions, Enrolments}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
@@ -45,12 +44,13 @@ class RouterController @Inject()(val authConnector: AuthConnector,
   val metricsMonitoringService: MetricsMonitoringService.type = MetricsMonitoringService
 
   val account: Action[AnyContent] = Action.async { implicit request =>
-    authorised().retrieve(Retrievals.authorisedEnrolments) {
-      implicit authContext => route
+    ruleContext.activeEnrolments.flatMap{ enrolments =>
+      implicit val enrolmentsContext: Enrolments = Enrolments(enrolments)
+      route
     }
   }
 
-  def route(implicit authContext: Enrolments, request: Request[AnyContent]): Future[Result] = {
+  def route(implicit enrolmentsContext: Enrolments, request: Request[AnyContent]): Future[Result] = {
     val destinationAfterRulesApplied = ruleEngine.getLocation(ruleContext)
 
     val destinationAfterThrottling: Future[(AuditInfo, Location)] = throttlingService.throttle(destinationAfterRulesApplied, ruleContext).run
@@ -73,7 +73,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
   }
 
   def sendAuditEvent(ruleContext: RuleContext, auditInfo: AuditInfo, throttledLocation: Location)
-                    (implicit authContext: Enrolments, request: Request[AnyContent]): Unit = {
+                    (implicit enrolmentsContext: Enrolments, request: Request[AnyContent]): Unit = {
     val auditEvent: ExtendedDataEvent = auditInfo.toAuditEvent(throttledLocation)
     auditConnector.sendExtendedEvent(auditEvent)
     val reasons: JsValue = (auditEvent.detail \ "reasons").getOrElse(JsNull)

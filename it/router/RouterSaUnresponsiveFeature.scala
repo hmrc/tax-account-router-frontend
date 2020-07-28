@@ -1,23 +1,11 @@
 package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec}
 
 
 class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
-
-  val additionalConfiguration: Map[String, Any] = Map[String, Any](
-    "business-enrolments" -> "enr1,enr2",
-    // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 1000,
-    "ws.timeout.connection" -> 500,
-    "two-step-verification.enabled" -> true
-  )
-
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config ++ additionalConfiguration).build()
 
   feature("Router with SA unresponsive") {
 
@@ -47,7 +35,6 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG, GG is unresponsive, user should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway but GG is unresponsive")
-      stubRetrievalAuthorisedEnrolments()
       stubRetrievalInternalId()
       stubRetrievalALLEnrolments(hasEnrolments = false)
 

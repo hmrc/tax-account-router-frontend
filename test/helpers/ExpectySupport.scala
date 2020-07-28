@@ -16,9 +16,9 @@
 
 package helpers
 
-trait ExpectySupport {
-  import org.expecty.Expecty
+import org.expecty.Expecty
 
+trait ExpectySupport {
   val expect = new Expecty()
   val expectAll = new Expecty(failEarly = false)
 }

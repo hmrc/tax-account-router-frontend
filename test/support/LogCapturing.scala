@@ -22,6 +22,7 @@ import ch.qos.logback.core.read.ListAppender
 import play.api.LoggerLike
 
 import scala.collection.JavaConverters._
+
 trait LogCapturing {
 
   def withCaptureOfLoggingFrom(logger: LogbackLogger)(body: (=> List[ILoggingEvent]) => Unit) {

@@ -3,24 +3,16 @@ package support.stubs
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import connector.AnalyticsData
 import play.api.libs.json.Json
 
 trait CommonStubs {
 
   val saUtr: String = "12345"
 
-  def stubRetrievalAuthorisedEnrolments(enrolmentKey: String = "IR-SA", utr: String = "12345"): StubMapping = {
-    stubFor(post(urlEqualTo("/auth/authorise"))
-      .atPriority(1)
-      .withRequestBody(equalToJson(""" {"authorise":[],"retrieve":["authorisedEnrolments"]} """.stripMargin))
-      .willReturn(
-        aResponse()
-          .withStatus(200)
-          .withBody(
-            s"""
-              |{"authorisedEnrolments":[{"key":"$enrolmentKey","identifiers":[{"key":"UTR","value":"$utr"}],"state":"Activated"}]}
-            """.stripMargin)
-      ))
+  def verifyAnalytics(analyticsData: AnalyticsData): Unit = {
+    verify(1, postRequestedFor(urlEqualTo("/platform-analytics/event"))
+      .withRequestBody(equalToJson(Json.toJson(analyticsData).toString())))
   }
 
   def stubRetrievalALLEnrolments(enrolmentKey: String = "enr3", utr: String = "12345", hasEnrolments: Boolean = true, responsive: Boolean = true): StubMapping = {
@@ -83,13 +75,13 @@ trait CommonStubs {
   }
 
   def setVerifyUser(): StubMapping = {
-    stubRetrievalAuthorisedEnrolments(saUtr)
+    stubRetrievalALLEnrolments()
     stubVerifyUser()
     stubRetrievalInternalId()
   }
 
   def setGGUser(): StubMapping = {
-    stubRetrievalAuthorisedEnrolments()
+    stubRetrievalALLEnrolments()
     stubVerifyUser(false)
     stubGGUser()
     stubRetrievalInternalId()
@@ -155,8 +147,7 @@ trait CommonStubs {
 
   def stubSaReturnWithNoPreviousReturns(saUtr: String): StubMapping = {
     stubFor(get(urlMatching(s"/sa/individual/$saUtr/return/last"))
-      .willReturn(aResponse()
-        .withStatus(404)))
+      .willReturn(aResponse().withStatus(404)))
   }
 
   def stubSaReturnToReturn500(saUtr: String): StubMapping = {

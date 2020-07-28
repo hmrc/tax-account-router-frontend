@@ -32,10 +32,10 @@ sealed trait TAuditInfo {
     Locations.BusinessTaxAccount -> "sent to business tax account"
   )
 
-  def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, authContext: Enrolments, request: Request[AnyContent]): ExtendedDataEvent = {
+  def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, enrolmentsContext: Enrolments, request: Request[AnyContent]): ExtendedDataEvent = {
     this match {
       case AuditInfo(routingReasons, ruleApplied, throttlingInfo) =>
-        val enrolments: Set[Enrolment] = authContext.enrolments
+        val enrolments: Set[Enrolment] = enrolmentsContext.enrolments
         val optionalAccounts: JsObject = Json.obj("enrolments" -> Json.toJson[Set[Enrolment]](enrolments))
         ExtendedDataEvent(
           auditSource = "tax-account-router-frontend",

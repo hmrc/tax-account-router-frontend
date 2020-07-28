@@ -55,11 +55,11 @@ class RuleContext @Inject()(val authConnector: AuthConnector,
 
   def activeEnrolments(implicit hc: HeaderCarrier): Future[Set[Enrolment]] = enrolments.map { enrolmentSeq =>
     enrolmentSeq.enrolments.filter(_.state == EnrolmentState.ACTIVATED)
-  }
+  }.recover { case _ => Set.empty[Enrolment]}
 
   def notActivatedEnrolmentKeys(implicit hc: HeaderCarrier): Future[Set[String]] = enrolments.map { enrolmentSeq =>
     enrolmentSeq.enrolments.filter(_.state != EnrolmentState.ACTIVATED).map(_.key)
-  }
+  }.recover { case _ => Set.empty[String]}
 
   def lastSaReturn(implicit hc: HeaderCarrier): Future[SaReturn] =
     authorised().retrieve(Retrievals.saUtr) {
