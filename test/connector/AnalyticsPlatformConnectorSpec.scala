@@ -16,19 +16,22 @@
 
 package connector
 
-import config.HttpClient
+import config.FrontendAppConfig
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import support.UnitSpec
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
+class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
   "AnalyticsPlatformConnector" should {
 
@@ -38,18 +41,20 @@ class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
       ("response status different from 2xx", Future.failed(new RuntimeException()))
     )
 
-    forAll(scenarios) { (scenario: String, response: Future[HttpResponse]) =>
-      s"send a GA event to platform-analytics - $scenario" in new Setup {
-        when(
-          mockHttp.POST[AnalyticsData, HttpResponse]
-          (eqTo(s"$aServiceUrl/platform-analytics/event"), eqTo(data), any[Seq[(String, String)]])
-          (any[Writes[AnalyticsData]], any[HttpReads[HttpResponse]], any[HeaderCarrier], any[ExecutionContext])
-        ).thenReturn(response)
+    forAll(scenarios) { (scenario: String, _: Future[HttpResponse]) =>
+      s"send a GA event to platform-analytics - $scenario" in {
+
+        val data: AnalyticsData = AnalyticsData("gaClientId", List.empty)
+        val mockHttp: HttpClient = mock[HttpClient]
+        val configuration: FrontendAppConfig = mock[FrontendAppConfig]
+        val analyticsPlatformConnector = new AnalyticsPlatformConnector(mockHttp, configuration)
+
+        implicit val hc: HeaderCarrier = HeaderCarrier()
 
         noException should be thrownBy analyticsPlatformConnector.sendEvents(data)
 
         verify(mockHttp).POST[AnalyticsData, HttpResponse](
-          eqTo(s"$aServiceUrl/platform-analytics/event"),
+          eqTo(s"null/platform-analytics/event"),
           eqTo(data),
           eqTo(Seq.empty)
         )(
@@ -59,19 +64,6 @@ class AnalyticsPlatformConnectorSpec extends UnitSpec with MockitoSugar {
           any[ExecutionContext]
         )
       }
-    }
-  }
-
-  trait Setup {
-    val data = AnalyticsData("gaClientId", List.empty)
-    val aServiceUrl = "service-url"
-    implicit val hc = HeaderCarrier()
-    implicit val ec = ExecutionContext.Implicits.global
-
-    val mockHttp = mock[HttpClient]
-    val analyticsPlatformConnector = new AnalyticsPlatformConnector {
-      override val serviceUrl = aServiceUrl
-      override val httpClient = mockHttp
     }
   }
 

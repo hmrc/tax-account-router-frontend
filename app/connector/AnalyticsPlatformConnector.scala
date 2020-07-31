@@ -16,18 +16,17 @@
 
 package connector
 
-import config.{HttpClient, WSHttpClient}
-import play.api.{Configuration, Play}
-import play.api.Mode.Mode
+import config.FrontendAppConfig
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{Json, Writes}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext
 
-case class Dimension(index : String, value : String)
+case class Dimension(index: String, value: String)
 
-case class GaEvent(category: String, action: String, label: String, dimensions : List[Dimension])
+case class GaEvent(category: String, action: String, label: String, dimensions: List[Dimension])
 
 object GaEvent {
   implicit val dimensionWrites: Writes[Dimension] = Json.writes[Dimension]
@@ -40,19 +39,12 @@ object AnalyticsData {
   implicit val writes: Writes[AnalyticsData] = Json.writes[AnalyticsData]
 }
 
-trait AnalyticsPlatformConnector {
-  def serviceUrl: String
+@Singleton
+class AnalyticsPlatformConnector @Inject()(httpClient: HttpClient,
+                                           appConfig: FrontendAppConfig){
+  val serviceUrl: String = appConfig.paServiceUrl
 
-  def httpClient: HttpClient
+  def sendEvents(data: AnalyticsData)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
+    httpClient.POST[AnalyticsData, HttpResponse](s"$serviceUrl/platform-analytics/event", data, Seq.empty)
 
-  def sendEvents(data: AnalyticsData)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = httpClient.POST[AnalyticsData, HttpResponse](s"$serviceUrl/platform-analytics/event", data, Seq.empty)
-}
-
-object AnalyticsPlatformConnector extends AnalyticsPlatformConnector with ServicesConfig {
-  override val serviceUrl = baseUrl("platform-analytics")
-  override lazy val httpClient = WSHttpClient
-
-  override protected def mode: Mode = Play.current.mode
-
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

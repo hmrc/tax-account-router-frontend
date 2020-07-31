@@ -17,34 +17,37 @@
 package services
 
 import cats.data.WriterT
-import config.AppConfig
-import connector.InternalUserIdentifier
+import config.FrontendAppConfig
 import engine.{AuditInfo, ThrottlingInfo}
-import helpers.SpecHelpers
 import model.Locations._
 import model._
 import org.joda.time.{DateTime, DateTimeUtils, DateTimeZone}
-import org.mockito.Matchers.{eq => eqTo}
+import org.mockito.Matchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.Tables.Table
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.test.{FakeApplication, FakeRequest}
 import support.UnitSpec
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with SpecHelpers with ScalaFutures {
+class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with ScalaFutures {
 
   private val longLiveDocumentExpirationTime: String = "3016-02-15T00:00"
   private val shortLiveDocumentExpirationSeconds: Int = 1
 
   val expirationDate: DateTime = DateTime.parse(longLiveDocumentExpirationTime)
 
-  val fixedDateTime = DateTime.now().withZone(DateTimeZone.UTC)
+  val fixedDateTime: DateTime = DateTime.now().withZone(DateTimeZone.UTC)
 
   override protected def beforeAll(): Unit = {
     DateTimeUtils.setCurrentMillisFixed(fixedDateTime.getMillis)
@@ -54,10 +57,9 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     DateTimeUtils.setCurrentMillisSystem()
   }
 
-  private val discriminatorWithThrottlerModulus50 = "f3c48669-ecd2-41a4-ac51-aa6b9898b462"
-  val userIdentifier = InternalUserIdentifier(discriminatorWithThrottlerModulus50)
+  val userIdentifier: String = "f3c48669-ecd2-41a4-ac51-aa6b9898b462"
 
-  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageToBeThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false) = {
+  def createConfiguration(enabled: Boolean = true, locationName: String = "default-location-name", percentageToBeThrottled: Int = 0, fallbackLocation: String = "default-fallback-location", stickyRoutingEnabled: Boolean = false): Map[String, Any] = {
     Map[String, Any](
       "throttling.enabled" -> enabled,
       s"throttling.locations.$locationName.percentageToBeThrottled" -> percentageToBeThrottled,
@@ -68,31 +70,30 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     )
   }
 
+  implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
+
   "ThrottlingService" should {
 
     "not throttle if throttling disabled and sticky routing disabled" in {
-      val fakeApplication = FakeApplication(additionalConfiguration = createConfiguration(enabled = false))
+      val fakeApplication = GuiceApplicationBuilder().configure(createConfiguration(enabled = false)).build()
+
       running(fakeApplication) {
         //given
         val initialLocation = BusinessTaxAccount
-        implicit val mockRequest = FakeRequest()
 
         //and
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+        when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
         //and
         val initialAuditInfo = AuditInfo.Empty
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
-        val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: AppConfig = new AppConfig {
-            override lazy val config = fakeApplication.configuration
-          }
-        }
-
         //when
-        val throttler = new ThrottlingServiceTest(locationConfigurationFactory)
+        val mockAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+
+        val throttler = new ThrottlingService(mockAppConfig)
         val (auditInfo, location) = throttler.throttle(ruleEngineResult, mockRuleContext).run.futureValue
 
         //then
@@ -104,28 +105,24 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
     }
 
     "not throttle if throttling enabled and decides no" in {
-      val fakeApplication = FakeApplication(additionalConfiguration = createConfiguration())
+      val fakeApplication = GuiceApplicationBuilder().configure(createConfiguration()).build()
       running(fakeApplication) {
         //given
         val initialLocation = BusinessTaxAccount
-        implicit val mockRequest = FakeRequest()
+        //implicit val mockRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
         //and
         val mockRuleContext = mock[RuleContext]
-        when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+        when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
         //and
         val initialAuditInfo = AuditInfo.Empty
         val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
-        val locationConfigurationFactory = new LocationConfigurationFactory {
-          override val configuration: AppConfig = new AppConfig {
-            override lazy val config = fakeApplication.configuration
-          }
-        }
-
         //when
-        val throttler = new ThrottlingServiceTest(locationConfigurationFactory)
+        val appConfig: FrontendAppConfig = fakeApplication.injector.instanceOf[FrontendAppConfig]
+
+        val throttler = new ThrottlingService(appConfig)
         val (auditInfo, location) = throttler.throttle(ruleEngineResult, mockRuleContext).run.futureValue
 
         //then
@@ -139,6 +136,13 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
   }
 
   it should {
+
+    def evaluateUsingPlay[T](block: => T): T = {
+      running(GuiceApplicationBuilder().build()) {
+        block
+      }
+    }
+
     val initialLocation = evaluateUsingPlay(BusinessTaxAccount)
 
     val scenarios = evaluateUsingPlay {
@@ -152,29 +156,26 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
 
     forAll(scenarios) { (scenario: String, percentageBeToThrottled: Int, fallbackLocation, expectedLocation: Location, throttled: Boolean) =>
       scenario in {
-        val fakeApplication = FakeApplication(additionalConfiguration = createConfiguration(
-          locationName = initialLocation.name,
-          percentageToBeThrottled = percentageBeToThrottled,
-          fallbackLocation = fallbackLocation
-        ))
+        val fakeApplication = GuiceApplicationBuilder()
+          .configure(
+            createConfiguration(locationName = initialLocation.name,
+              percentageToBeThrottled = percentageBeToThrottled,
+              fallbackLocation = fallbackLocation)
+          ).build()
 
         running(fakeApplication) {
           //given
           val mockRuleContext = mock[RuleContext]
-          when(mockRuleContext.internalUserIdentifier).thenReturn(Future.successful(Some(userIdentifier)))
+          when(mockRuleContext.internalUserIdentifier(any())).thenReturn(Future.successful(Some(userIdentifier)))
 
           //and
           val initialAuditInfo = AuditInfo.Empty
           val ruleEngineResult = WriterT(Future.successful((initialAuditInfo, initialLocation)))
 
-          val locationConfigurationFactory = new LocationConfigurationFactory {
-            override val configuration: AppConfig =  new AppConfig {
-              override lazy val config = fakeApplication.configuration
-            }
-          }
-
           //when
-          val throttler = new ThrottlingServiceTest(locationConfigurationFactory)
+          val appConfig: FrontendAppConfig = fakeApplication.injector.instanceOf[FrontendAppConfig]
+
+          val throttler = new ThrottlingService(appConfig)
           val (auditInfo, returnedLocation) = throttler.throttle(ruleEngineResult, mockRuleContext).run.futureValue
 
           //then
@@ -186,6 +187,5 @@ class ThrottlingServiceSpec extends UnitSpec with MockitoSugar with BeforeAndAft
       }
     }
   }
-}
 
-class ThrottlingServiceTest(override val locationConfigurationFactory: LocationConfigurationFactory) extends ThrottlingService
+}

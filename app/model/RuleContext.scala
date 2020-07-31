@@ -17,61 +17,73 @@
 package model
 
 import connector._
-import play.api.mvc.{AnyContent, Request}
+import javax.inject.{Inject, Singleton}
 import play.api.{Logger, LoggerLike}
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
-case class RuleContext(credId: Option[String])(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext) {
-
-  val request_ = request
-  val hc_ = hc
+@Singleton
+class RuleContext @Inject()(val authConnector: AuthConnector,
+                            selfAssessmentConnector: SelfAssessmentConnector)(implicit ec: ExecutionContext)
+  extends AuthorisedFunctions {
 
   val logger: LoggerLike = Logger
 
-  val selfAssessmentConnector: SelfAssessmentConnector = SelfAssessmentConnector
-  val authConnector: FrontendAuthConnector = FrontendAuthConnector
-  val userDetailsConnector: UserDetailsConnector = UserDetailsConnector
-
-  lazy val userDetails = authority.flatMap { authority =>
-    authority.userDetailsUri.map(userDetailsConnector.getUserDetails).getOrElse {
-      logger.warn("failed to get user details because userDetailsUri is not defined")
-      Future.failed(new RuntimeException("userDetailsUri is not defined"))
-    }
+  def isVerifyUser(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorised(AuthProviders(AuthProvider.Verify)){
+      Future.successful(true)
+    }.recover {case _ => false}
   }
 
-  lazy val activeEnrolmentKeys = activeEnrolments.map(enrList => enrList.map(_.key).toSet[String])
-
-  lazy val activeEnrolments = enrolments.map { enrolmentSeq =>
-    enrolmentSeq.filter(_.state == EnrolmentState.ACTIVATED)
+  def isGovernmentGatewayUser(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorised(AuthProviders(AuthProvider.GovernmentGateway)){
+      Future.successful(true)
+    }.recover {case _ => false}
   }
 
-  lazy val notActivatedEnrolmentKeys = enrolments.map { enrolmentSeq =>
-    enrolmentSeq.filter(_.state != EnrolmentState.ACTIVATED).map(_.key).toSet[String]
+  def hasNino(implicit hc: HeaderCarrier): Future[Boolean] = {
+    authorised().retrieve(Retrievals.nino){
+      case Some(_)    => Future.successful(true)
+      case _          => Future.successful(false)
+    }.recover {case _ => false}
   }
 
-  lazy val lastSaReturn = authority.flatMap { auth => auth.saUtr.fold(Future(SaReturn.empty))(saUtr => selfAssessmentConnector.lastReturn(saUtr.utr)) }
+  def activeEnrolmentKeys(implicit hc: HeaderCarrier): Future[Set[String]] = activeEnrolments.map(enrList => enrList.map(_.key))
 
-  lazy val authority = credId match {
-    case Some(aCredId) => authConnector.userAuthority(aCredId)
-    case None => authConnector.currentUserAuthority
-  }
+  def activeEnrolments(implicit hc: HeaderCarrier): Future[Set[Enrolment]] = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.enrolments.filter(_.state == EnrolmentState.ACTIVATED)
+  }.recover { case _ => Set.empty[Enrolment]}
 
-  lazy val internalUserIdentifier = authority.flatMap { authority =>
-    authority.idsUri match {
-      case Some(uri) => authConnector.getIds(uri).map(Option(_))
+  def notActivatedEnrolmentKeys(implicit hc: HeaderCarrier): Future[Set[String]] = enrolments.map { enrolmentSeq =>
+    enrolmentSeq.enrolments.filter(_.state != EnrolmentState.ACTIVATED).map(_.key)
+  }.recover { case _ => Set.empty[String]}
+
+  def lastSaReturn(implicit hc: HeaderCarrier): Future[SaReturn] =
+    authorised().retrieve(Retrievals.saUtr) {
+      case Some(saUtr) => selfAssessmentConnector.lastReturn(saUtr)
+      case _ => Future(SaReturn.empty)
+    }.recover {case _ => SaReturn.empty}
+
+  def internalUserIdentifier(implicit hc: HeaderCarrier): Future[Option[String]] =
+    authorised().retrieve(Retrievals.internalId) {
+      case internalId => Future.successful(internalId)
       case _ => Future.successful(None)
+    }.recover {case _ => None}
+
+  def enrolments(implicit hc: HeaderCarrier): Future[Enrolments] =
+    authorised().retrieve(Retrievals.allEnrolments) {
+      case enrolments => Future.successful(enrolments)
+      case _ => Future.successful(Enrolments(Set.empty[Enrolment]))
+    }.recoverWith {case _ => Future.failed(new RuntimeException("gg-unavailable"))}
+
+  def affinityGroup(implicit hc: HeaderCarrier): Future[String] = {
+    authorised().retrieve(Retrievals.affinityGroup){
+      case Some(affinityGroup) => Future.successful(affinityGroup.toString)
+      case _ => Future.failed(new RuntimeException("affinityGroup is not defined"))
     }
   }
 
-  lazy val enrolments = authority.flatMap { authority =>
-    lazy val noEnrolments = Future.successful(Seq.empty[GovernmentGatewayEnrolment])
-    authority.enrolmentsUri.fold(noEnrolments)(authConnector.getEnrolments)
-  }
-
-  lazy val affinityGroup = userDetails.map(_.affinityGroup)
-
-  lazy val isAdmin = userDetails.map(_.isAdmin)
 }

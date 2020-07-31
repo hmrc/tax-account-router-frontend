@@ -16,21 +16,20 @@
 
 package connector
 
-import config.{HttpClient, WSHttpClient}
-import play.api.Mode.Mode
-import play.api.{Configuration, Logger, Play}
+import config.FrontendAppConfig
+import javax.inject.Inject
+import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait SelfAssessmentConnector {
 
-  val serviceUrl: String
+class SelfAssessmentConnector @Inject()(httpClient: HttpClient,
+                                        appConfig: FrontendAppConfig)(implicit ec: ExecutionContext) {
 
-  def httpClient: HttpClient
+  lazy val serviceUrl: String = appConfig.saServiceUrl
 
   def lastReturn(utr: String)(implicit hc: HeaderCarrier): Future[SaReturn] = {
 
@@ -44,24 +43,13 @@ trait SelfAssessmentConnector {
 
 }
 
-object SelfAssessmentConnector extends SelfAssessmentConnector with ServicesConfig {
-
-  override val serviceUrl: String = baseUrl("sa")
-
-  lazy val httpClient = WSHttpClient
-
-  override protected def mode: Mode = Play.current.mode
-
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
-}
-
 case class SaReturn(supplementarySchedules: List[String] = List.empty, previousReturns: Boolean = true) {
   private val selfEmploymentKey = "self_employment"
   private val partnershipKey = "partnership"
 
-  def selfEmployment = supplementarySchedules.contains(selfEmploymentKey)
+  def selfEmployment: Boolean = supplementarySchedules.contains(selfEmploymentKey)
 
-  def partnership = supplementarySchedules.contains(partnershipKey)
+  def partnership: Boolean = supplementarySchedules.contains(partnershipKey)
 }
 
 object SaReturn {

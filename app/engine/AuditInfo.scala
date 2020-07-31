@@ -17,18 +17,14 @@
 package engine
 
 import cats.Semigroup
-import engine.RoutingReason.{RoutingReason, _}
+import engine.RoutingReason._
 import model.{Location, Locations}
-import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import uk.gov.hmrc.play.config.AppName
-import uk.gov.hmrc.play.frontend.auth.AuthContext
-import play.api.Play.current
-
 
 sealed trait TAuditInfo {
   lazy val transactionNames = Map(
@@ -36,15 +32,11 @@ sealed trait TAuditInfo {
     Locations.BusinessTaxAccount -> "sent to business tax account"
   )
 
-  def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, authContext: AuthContext, request: Request[AnyContent]): ExtendedDataEvent = {
+  def toAuditEvent(location: Location)(implicit hc: HeaderCarrier, enrolmentsContext: Enrolments, request: Request[AnyContent]): ExtendedDataEvent = {
     this match {
       case AuditInfo(routingReasons, ruleApplied, throttlingInfo) =>
-        val accounts = authContext.principal.accounts
-        val accountMap = accounts.toMap
-        val accountsAsJson: Seq[(String, JsValueWrapper)] = accountMap
-          .map { case (k, v) => (k, Json.toJsFieldJsValueWrapper(v.toString)) }
-          .toSeq
-        val optionalAccounts: JsObject = Json.obj(accountsAsJson: _*)
+        val enrolments: Set[Enrolment] = enrolmentsContext.enrolments
+        val optionalAccounts: JsObject = Json.obj("enrolments" -> Json.toJson[Set[Enrolment]](enrolments))
         ExtendedDataEvent(
           auditSource = "tax-account-router-frontend",
           auditType = "Routing",
@@ -82,7 +74,7 @@ object AuditInfo {
 
   val emptyReasons: Map[RoutingReason.Reason, Option[Boolean]] = allReasons.map(reason => reason -> None).toMap
 
-  val Empty = AuditInfo(routingReasons = emptyReasons, ruleApplied = None, throttlingInfo = None)
+  val Empty: AuditInfo = AuditInfo(routingReasons = emptyReasons, ruleApplied = None, throttlingInfo = None)
 
   def apply(routingReasons: Map[RoutingReason, Option[Boolean]]): AuditInfo = AuditInfo(routingReasons = routingReasons, ruleApplied = None, throttlingInfo = None)
 

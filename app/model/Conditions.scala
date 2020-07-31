@@ -16,78 +16,83 @@
 
 package model
 
-import config.{AppConfig, FrontendAppConfig}
-import connector.AffinityGroupValue
-import engine._
+import config.FrontendAppConfig
 import engine.RoutingReason._
+import engine._
+import javax.inject.{Inject, Singleton}
+import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait Conditions {
-
-  val config: AppConfig
-
+@Singleton
+class Conditions @Inject()(appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
   object predicates {
-    type ConditionPredicate = (RuleContext) => Future[Boolean]
-    val ggEnrolmentsAvailableF: ConditionPredicate = rc =>
-      rc.enrolments.map(_ => true).recover { case _ => false }
 
-    val affinityGroupAvailableF: ConditionPredicate = rc =>
-      rc.affinityGroup.map(_ => true).recover { case _ => false }
+    type ConditionPredicate = RuleContext => Future[Boolean]
 
-    val loggedInViaVerifyF: ConditionPredicate = rc =>
-      Future.successful(!rc.request_.session.data.contains("token") && rc.credId.isEmpty)
+    def ggEnrolmentsAvailableF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
+      rc.enrolments.map( _ => true).recover { case _ => false }
 
-    val hasAnyBusinessEnrolmentF: ConditionPredicate = rc =>
-      rc.activeEnrolmentKeys.map(_.intersect(config.businessEnrolments).nonEmpty)
+    def affinityGroupAvailableF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
+      rc.affinityGroup.map( _ => true).recover { case _ => false }
 
-    val saReturnAvailableF: ConditionPredicate = rc =>
+    def loggedInViaVerifyF(implicit request: Request[AnyContent], hc: HeaderCarrier): ConditionPredicate = rc => {
+      for {
+        isVerifyUser <- rc.isVerifyUser
+      } yield isVerifyUser
+    }
+
+    def hasAnyBusinessEnrolmentF(implicit hc: HeaderCarrier): ConditionPredicate = rc => {
+      rc.activeEnrolmentKeys.map(_.intersect(appConfig.businessEnrolments).nonEmpty)
+    }
+
+    def saReturnAvailableF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_ => true).recover { case _ => false }
 
-    val hasSaEnrolmentsF: ConditionPredicate = rc =>
-      rc.activeEnrolmentKeys.map(_.intersect(config.saEnrolments).nonEmpty)
+    def hasSaEnrolmentsF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
+      rc.activeEnrolmentKeys.map(_.intersect(appConfig.saEnrolments).nonEmpty)
 
-    val hasPreviousReturnsF: ConditionPredicate = rc =>
+    def hasPreviousReturnsF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.previousReturns)
 
-    val isInAPartnershipF: ConditionPredicate = rc =>
+    def isInAPartnershipF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.partnership)
 
-    val isSelfEmployedF: ConditionPredicate = rc =>
+    def isSelfEmployedF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.selfEmployment)
 
-    val isAGovernmentGatewayUserF: ConditionPredicate = rc =>
-      Future.successful(rc.request_.session.data.contains("token") || rc.credId.isDefined)
+    def isAGovernmentGatewayUserF(implicit request: Request[AnyContent], hc: HeaderCarrier): ConditionPredicate = rc =>
+      for {
+        isGovernmentGatewayUser <- rc.isGovernmentGatewayUser
+      } yield {
+        request.session.data.contains("token") || isGovernmentGatewayUser
+      }
 
-    val hasNinoF: ConditionPredicate = rc =>
-      rc.authority.map(_.nino.isDefined)
+    def hasNinoF(implicit hc: HeaderCarrier): ConditionPredicate = rc => rc.hasNino
 
-    val hasIndividualAffinityGroupF: ConditionPredicate = rc =>
+    def hasIndividualAffinityGroupF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
     rc.affinityGroup.map(_ == AffinityGroupValue.INDIVIDUAL)
 
-    val hasAnyInactiveEnrolmentF: ConditionPredicate = rc =>
+    def hasAnyInactiveEnrolmentF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.notActivatedEnrolmentKeys.map(_.nonEmpty)
   }
 
   import predicates._
 
-  val ggEnrolmentsAvailable = Pure(ggEnrolmentsAvailableF, GG_ENROLMENTS_AVAILABLE)
-  val affinityGroupAvailable = Pure(affinityGroupAvailableF, AFFINITY_GROUP_AVAILABLE)
-  val loggedInViaVerify = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
-  val hasAnyBusinessEnrolment = Pure(hasAnyBusinessEnrolmentF, HAS_BUSINESS_ENROLMENTS)
-  val saReturnAvailable = Pure(saReturnAvailableF, SA_RETURN_AVAILABLE)
-  val hasSaEnrolments = Pure(hasSaEnrolmentsF, HAS_SA_ENROLMENTS)
-  val hasPreviousReturns = Pure(hasPreviousReturnsF, HAS_PREVIOUS_RETURNS)
-  val isInAPartnership = Pure(isInAPartnershipF, IS_IN_A_PARTNERSHIP)
-  val isSelfEmployed = Pure(isSelfEmployedF, IS_SELF_EMPLOYED)
-  val isAGovernmentGatewayUser = Pure(isAGovernmentGatewayUserF, IS_A_GOVERNMENT_GATEWAY_USER)
-  val hasNino = Pure(hasNinoF, HAS_NINO)
-  val hasIndividualAffinityGroup = Pure(hasIndividualAffinityGroupF, HAS_INDIVIDUAL_AFFINITY_GROUP)
-  val hasAnyInactiveEnrolment = Pure(hasAnyInactiveEnrolmentF, HAS_ANY_INACTIVE_ENROLMENT)
+  def ggEnrolmentsAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(ggEnrolmentsAvailableF, GG_ENROLMENTS_AVAILABLE)
+  def affinityGroupAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(affinityGroupAvailableF, AFFINITY_GROUP_AVAILABLE)
+  def loggedInViaVerify(implicit request: Request[AnyContent], hc: HeaderCarrier): Pure[RuleContext] = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
+  def hasAnyBusinessEnrolment(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasAnyBusinessEnrolmentF, HAS_BUSINESS_ENROLMENTS)
+  def saReturnAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(saReturnAvailableF, SA_RETURN_AVAILABLE)
+  def hasSaEnrolments(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasSaEnrolmentsF, HAS_SA_ENROLMENTS)
+  def hasPreviousReturns(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasPreviousReturnsF, HAS_PREVIOUS_RETURNS)
+  def isInAPartnership(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(isInAPartnershipF, IS_IN_A_PARTNERSHIP)
+  def isSelfEmployed(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(isSelfEmployedF, IS_SELF_EMPLOYED)
+  def isAGovernmentGatewayUser(implicit request: Request[AnyContent], hc: HeaderCarrier): Pure[RuleContext] = Pure(isAGovernmentGatewayUserF, IS_A_GOVERNMENT_GATEWAY_USER)
+  def hasNino(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasNinoF, HAS_NINO)
+  def hasIndividualAffinityGroup(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasIndividualAffinityGroupF, HAS_INDIVIDUAL_AFFINITY_GROUP)
+  def hasAnyInactiveEnrolment(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasAnyInactiveEnrolmentF, HAS_ANY_INACTIVE_ENROLMENT)
 
 }
 
-object Conditions extends Conditions {
-  override val config: AppConfig = FrontendAppConfig
-}

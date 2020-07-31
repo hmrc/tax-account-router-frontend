@@ -16,52 +16,24 @@
 
 package support.sugar
 
-import org.openqa.selenium.support.ui.{ExpectedCondition, WebDriverWait}
-import org.openqa.selenium.{By, WebDriver, WebElement}
+import org.openqa.selenium.{By, WebDriver}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.selenium.WebBrowser
 import org.scalatest.selenium.WebBrowser.{go => goo}
-import org.scalatest.{Assertions, Matchers}
 import support.page.WebPage
 
 
-trait NavigationSugar extends WebBrowser with Eventually with Assertions with Matchers with IntegrationPatience {
+trait NavigationSugar extends WebBrowser with Eventually with IntegrationPatience {
 
-  def goOn(page: WebPage)(implicit webDriver: WebDriver) = {
-    go(page)
-    on(page)
-  }
-
-  def go(page: WebPage)(implicit webDriver: WebDriver) = {
+  def go(page: WebPage)(implicit webDriver: WebDriver): Unit = {
     goo to page
   }
 
-  def on(page: WebPage)(implicit webDriver: WebDriver) = {
+  def on(page: WebPage)(implicit webDriver: WebDriver): Unit = {
     eventually {
       webDriver.findElement(By.tagName("body"))
       page.assertPageLoaded()
     }
-  }
-
-  def loadPage()(implicit webDriver: WebDriver) = {
-    val wait = new WebDriverWait(webDriver, 30)
-    wait.until(
-      new ExpectedCondition[WebElement] {
-        override def apply(d: WebDriver) = d.findElement(By.tagName("body"))
-      }
-    )
-  }
-
-  def anotherTabIsOpened()(implicit webDriver: WebDriver) = {
-    webDriver.getWindowHandles.size() should be(2)
-  }
-
-  def browserGoBack()(implicit webDriver: WebDriver) = {
-    webDriver.navigate().back()
-  }
-
-  def iGoToPortalPage()(implicit webDriver: WebDriver) = {
-    goTo("https://ibt.hmrc.gov.uk/communication-messages/messages")
   }
 
 }

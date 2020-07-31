@@ -23,7 +23,8 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
 import org.scalatestplus.play.OneServerPerSuite
-import play.api.test.FakeApplication
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import support.Env
 import support.sugar._
 
@@ -40,22 +41,20 @@ trait StubbedFeatureSpec
   with BeforeAndAfterEach
   with ImplicitWebDriverSugar
   with NavigationSugar
-  with StubSugar
   with OptionValues
-  with AssertionSugar
   with StubApplicationConfiguration {
 
-  override lazy val port = StubbedFeatureSpec.fakeApplicationPort
-  override lazy val app = FakeApplication(additionalConfiguration = config)
+  override lazy val port: Int = StubbedFeatureSpec.fakeApplicationPort
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
 
   val wireMockServer: WireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  override def beforeAll() = {
+  override def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
   }
 
-  override def afterAll() = {
+  override def afterAll(): Unit = {
     wireMockServer.stop()
   }
 
@@ -63,7 +62,7 @@ trait StubbedFeatureSpec
     webDriver.quit()
   }
 
-  override def beforeEach() = {
+  override def beforeEach(): Unit = {
     Env.driver.manage().deleteAllCookies()
     WireMock.reset()
     stubAudit()

@@ -1,24 +1,23 @@
 package router
 
-import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import engine.AuditInfo
-import play.api.libs.json.{JsValue, Json}
-import play.api.test.FakeApplication
 import engine.RoutingReason._
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsObject, JsValue, Json}
 import support.page._
-import support.stubs.{CommonStubs, SessionUser, StubbedFeatureSpec}
-import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, SaAccount}
+import support.stubs.{CommonStubs, StubbedFeatureSpec}
 
 import scala.collection.JavaConverters._
 
 class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
 
-  val emptyRoutingReasons = AuditInfo.emptyReasons.map { case (k, _) => k.key -> "-" }
+  val emptyRoutingReasons: Map[String, String] = AuditInfo.emptyReasons.map { case (k, _) => k.key -> "-" }
 
-  val additionalConfiguration = Map[String, Any](
+  val additionalConfiguration: Map[String, Any] = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
     "ws.timeout.request" -> 1000,
@@ -26,18 +25,18 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
     "two-step-verification.enabled" -> true
   )
 
-  override lazy val app = FakeApplication(additionalConfiguration = config ++ additionalConfiguration)
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(config ++ additionalConfiguration).build()
 
   feature("Router audit with SA unresponsive") {
+
     scenario("a user logged in through GG and sa is unresponsive should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubSelfAssessmentEnrolments()
+      stubRetrievalALLEnrolments()
+      stubRetrievalSAUTR()
 
       And("the user has previous returns")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
@@ -58,23 +57,22 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         GG_ENROLMENTS_AVAILABLE.key -> "true",
         HAS_BUSINESS_ENROLMENTS.key -> "false",
         HAS_SA_ENROLMENTS.key -> "true",
-        SA_RETURN_AVAILABLE.key -> "false"
+        SA_RETURN_AVAILABLE.key -> "true",
+        HAS_PREVIOUS_RETURNS.key -> "false"
         ))
       val expectedTransactionName = "sent to business tax account"
       eventually {
-        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-sa-unavailable")
+        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
       }
     }
 
     scenario("a user logged in through GG and GG is unresponsive should be redirected and an audit event should be raised") {
 
       Given("a user logged in through Government Gateway")
-      val saUtr = "12345"
-      val accounts = Accounts(sa = Some(SaAccount("", SaUtr(saUtr))))
-      SessionUser(accounts = accounts).stubLoggedIn()
+      setGGUser()
 
       And("the user has self assessment enrolments")
-      stubEnrolmentsToReturnAfter2Seconds()
+      stubRetrievalALLEnrolments(responsive = false)
 
       val auditEventStub = stubAuditEvent()
       stubBusinessAccount()
@@ -96,7 +94,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
     }
   }
 
-  def toJson(map: Map[String, String]) = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
+  def toJson(map: Map[String, String]): JsObject = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
   def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
     val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList

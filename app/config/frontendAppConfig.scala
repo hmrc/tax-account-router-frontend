@@ -16,13 +16,15 @@
 
 package config
 
-import play.api.Configuration
-import play.api.Play.{configuration, current}
+import javax.inject.{Inject, Singleton}
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment}
 import services.ThrottlingConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 
 trait AppConfigHelpers {
 
-  lazy val config: Configuration = configuration
+  val config: Configuration
 
   def getConfigurationStringOption(key: String): Option[String] = config.getString(key)
 
@@ -75,6 +77,17 @@ trait AppConfig extends AppConfigHelpers {
   lazy val financiallySensitiveEnrolments: Set[String] = getConfigurationStringSet("financially-sensitive-enrolments")
 }
 
-object FrontendAppConfig extends AppConfig {
-  override lazy val config = configuration
+@Singleton
+class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration, environment: Environment) extends AppConfig with ServicesConfig {
+
+  lazy override val config: Configuration = runModeConfiguration
+  override protected def mode: Mode = environment.mode
+
+  lazy val extendedLoggingEnabled: Boolean = runModeConfiguration.getBoolean("extended-logging-enabled").getOrElse(false)
+
+  lazy val throttlingEnabled: Boolean = runModeConfiguration.getBoolean("throttling.enabled").getOrElse(false)
+
+  lazy val paServiceUrl: String = baseUrl("platform-analytics")
+  lazy val saServiceUrl: String = baseUrl("sa")
+
 }

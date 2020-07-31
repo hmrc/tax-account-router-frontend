@@ -18,16 +18,14 @@ package services
 
 import cats.data.WriterT
 import config.{AppConfig, FrontendAppConfig}
-import connector.InternalUserIdentifier
 import engine.{AuditInfo, EngineResult, ThrottlingInfo}
+import javax.inject.{Inject, Singleton}
 import model.Locations.PersonalTaxAccount
 import model._
-import play.api.Play
-import play.api.Play.current
 import play.api.mvc.{AnyContent, Request}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ThrottlingConfig(percentageToBeThrottled: Int, fallback: Option[String])
 
@@ -54,13 +52,17 @@ trait LocationConfigurationFactory {
   }
 }
 
-trait ThrottlingService {
 
-  def locationConfigurationFactory: LocationConfigurationFactory
+@Singleton
+class ThrottlingService @Inject()(appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
 
-  val throttlingEnabled = Play.configuration.getBoolean("throttling.enabled").getOrElse(false)
+  lazy val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
+    override val configuration: AppConfig = appConfig
+  }
 
-  def throttle(currentResult: EngineResult, ruleContext: RuleContext): EngineResult = {
+  lazy val throttlingEnabled: Boolean = appConfig.throttlingEnabled
+
+  def throttle(currentResult: EngineResult, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): EngineResult = {
 
     def findFallbackFor(location: Location, throttlingConfig: ThrottlingConfig): Location = {
       val fallback = for {
@@ -73,7 +75,7 @@ trait ThrottlingService {
       fallback.getOrElse(location)
     }
 
-    def doThrottle(auditInfo: AuditInfo, location: Location, userId: InternalUserIdentifier, throttlingConfig: ThrottlingConfig): (AuditInfo, Location) = {
+    def doThrottle(auditInfo: AuditInfo, location: Location, userId: String, throttlingConfig: ThrottlingConfig): (AuditInfo, Location) = {
       val percentageToBeThrottled = throttlingConfig.percentageToBeThrottled
 
       if (Throttler.shouldThrottle(userId, percentageToBeThrottled)) {
@@ -94,7 +96,7 @@ trait ThrottlingService {
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case Some(userId) if throttlingEnabled =>
-          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, ruleContext.request_)
+          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, request)
           doThrottle(auditInfo, location, userId, locationConfiguration)
         case _ =>
           val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)
@@ -104,11 +106,5 @@ trait ThrottlingService {
       WriterT(result)
     }
   }
-}
 
-object ThrottlingService extends ThrottlingService {
-
-  override val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
-    override val configuration: AppConfig = FrontendAppConfig
-  }
 }

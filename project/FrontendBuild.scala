@@ -13,16 +13,18 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"   %% "frontend-bootstrap"  % "12.9.0",
+    "uk.gov.hmrc"   %% "bootstrap-play-25"   % "5.3.0",
     "uk.gov.hmrc"   %% "http-caching-client" % "9.1.0-play-25",
     "uk.gov.hmrc"   %% "mongo-caching"       % "6.15.0-play-25",
+    "uk.gov.hmrc"   %% "auth-client"         % "3.0.0-play-25",
+    "uk.gov.hmrc"   %% "play-ui"             % "8.11.0-play-25",
+    "uk.gov.hmrc"   %% "govuk-template"      % "5.55.0-play-25",
     "org.typelevel" %% "cats"                % "0.9.0"
   )
 
   abstract class TestDependencies(scope: String) {
     lazy val test: Seq[ModuleID] = Seq(
       "com.typesafe.play"      %% "play-test"                % PlayVersion.current % scope,
-      "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.15.0-play-25"    % scope,
       "uk.gov.hmrc"            %% "service-integration-test" % "0.9.0-play-25"     % scope,
       "org.scalatestplus.play" %% "scalatestplus-play"       % "2.0.1"             % scope,
       "org.pegdown"             % "pegdown"                  % "1.6.0"             % scope,

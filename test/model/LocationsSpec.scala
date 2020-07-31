@@ -19,37 +19,31 @@ package model
 import config.AppConfig
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Configuration
+import play.api.inject.guice.GuiceApplicationBuilder
 import support.UnitSpec
 
-class LocationsSpec extends UnitSpec with MockitoSugar {
+class LocationsSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
   "locations" should {
 
     "return Location when config has no missing keys" in {
-      val mockAppConfig = mock[AppConfig]
-      when(mockAppConfig.getLocationConfig("pta", "name")).thenReturn(Some("some-name"))
-      when(mockAppConfig.getLocationConfig("pta", "url")).thenReturn(Some("some-url"))
-
-      val locations = new Locations {
-        val appConfig = mockAppConfig
-      }
-
-      val result = locations.PersonalTaxAccount
-
-      result shouldBe Location("some-name", "some-url")
+      val result = Locations.PersonalTaxAccount
+      result shouldBe Location("personal-tax-account", "http://localhost:9232/personal-account")
     }
 
     "return Location when config has no missing url key" in {
-      val mockAppConfig = mock[AppConfig]
-      when(mockAppConfig.getLocationConfig("tax-account-router", "name")).thenReturn(Some("some-name"))
-      when(mockAppConfig.getLocationConfig("tax-account-router", "url")).thenReturn(None)
 
-      val locations = new Locations {
-        val appConfig = mockAppConfig
-      }
+      val configuration: Map[String, Any] = Map[String, Any](
+        "locations.tax-account-router.name" -> "some-name"
+      )
 
       val caught = intercept[RuntimeException] {
-        locations.TaxAccountRouterHome
+        new Locations {
+          lazy override val config: Configuration =
+            GuiceApplicationBuilder(loadConfiguration = env => Configuration.load(env)).configure(configuration).configuration
+        }.TaxAccountRouterHome
       }
 
       caught shouldNot be(null)
@@ -57,15 +51,14 @@ class LocationsSpec extends UnitSpec with MockitoSugar {
     }
 
     "return Location when config has no missing name key" in {
-      val mockAppConfig = mock[AppConfig]
-      when(mockAppConfig.getLocationConfig("bta", "name")).thenReturn(None)
 
-      val locations = new Locations {
-        val appConfig = mockAppConfig
-      }
+      val configuration: Map[String, Any] = Map[String, Any]()
 
       val caught = intercept[RuntimeException] {
-        locations.BusinessTaxAccount
+        new Locations {
+          lazy override val config: Configuration =
+            GuiceApplicationBuilder(loadConfiguration = env => Configuration.load(env)).configure(configuration).configuration
+        }.BusinessTaxAccount
       }
 
       caught shouldNot be(null)

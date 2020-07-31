@@ -21,6 +21,6 @@ import support.Env
 object RouterRootPath extends WebPage {
 
   override val url: String = s"${Env.host}/account"
+  override def assertPageLoaded(): Unit = assertPageIs("")
 
-  override def assertPageLoaded() = assertPageIs("")
 }
