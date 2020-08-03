@@ -2,6 +2,8 @@ package router
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import model.AffinityGroupValue
+import play.api.test.Helpers._
+import play.api.test.WsTestClient
 import support.page._
 import support.stubs.{CommonStubs, StubbedFeatureSpec}
 
@@ -9,6 +11,23 @@ import support.stubs.{CommonStubs, StubbedFeatureSpec}
 class RouterFeature extends StubbedFeatureSpec with CommonStubs {
 
   feature("Router feature") {
+
+    scenario("a user is not Authenticated") {
+
+      Given("a user is not Authenticated")
+      stubNotAuthenticatedUser()
+
+      When("the user hits the router")
+      go(RouterRootPath)
+
+      Then("the user should be routed to GG login page")
+      WsTestClient.withClient { client ⇒
+        val result = await(client.url(s"http://localhost:$port/account").withFollowRedirects(false).get())
+          result.status shouldBe 303
+          result.header("Location").get.contains("/gg/sign-in?continue=/account") shouldBe true
+      }
+
+    }
 
     scenario("a user logged in through Verify should be redirected to PTA") {
 
@@ -334,6 +353,7 @@ class RouterFeature extends StubbedFeatureSpec with CommonStubs {
   scenario("a user logged in through One Time Login or Privileged Access with no enrolments should go to BTA") {
 
     Given("a user logged in through One Time Login or Privileged Access")
+    stubAuthenticatedUser()
     stubRetrievalInternalId()
 
     And("the user has no inactive enrolments")

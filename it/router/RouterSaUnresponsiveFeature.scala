@@ -35,6 +35,7 @@ class RouterSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStubs {
     scenario("a user logged in through GG, GG is unresponsive, user should be redirected to BTA") {
 
       Given("a user logged in through Government Gateway but GG is unresponsive")
+      stubAuthenticatedUser()
       stubRetrievalInternalId()
       stubRetrievalALLEnrolments(hasEnrolments = false)
 

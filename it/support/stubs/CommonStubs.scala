@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import connector.AnalyticsData
 import play.api.libs.json.Json
 
+
 trait CommonStubs {
 
   val saUtr: String = "12345"
@@ -34,6 +35,43 @@ trait CommonStubs {
             }
           )
       ))
+  }
+
+  def stubNotAuthenticatedUser(): StubMapping = {
+    stubFor(post(urlEqualTo("/auth/authorise")).withRequestBody(equalToJson("{}".stripMargin))
+      .willReturn(
+        aResponse()
+          .withStatus(401)
+          .withHeader("WWW-Authenticate", s"""MDTP detail="MissingBearerToken"""")
+
+      )
+    )
+  }
+
+  def stubAuthenticatedUser(): StubMapping = {
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .atPriority(1)
+        .withRequestBody(equalToJson("{}"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              s"""{
+                 |  "allEnrolments": [
+                 |   { "key":"enr3", "identifiers": [
+                 |      { "key":"UTR", "value": "12345" }
+                 |    ], "state":"Activated"}
+                 |  ],
+                 |  "optionalCredentials": {
+                 |    "providerId": "12345-credId",
+                 |    "providerType": "GovernmentGateway"
+                 |  }
+                 |}""".stripMargin
+            )
+        )
+    )
   }
 
   def stubVerifyUser(verifyUser: Boolean = true): StubMapping = {
@@ -75,12 +113,14 @@ trait CommonStubs {
   }
 
   def setVerifyUser(): StubMapping = {
+    stubAuthenticatedUser()
     stubRetrievalALLEnrolments()
     stubVerifyUser()
     stubRetrievalInternalId()
   }
 
   def setGGUser(): StubMapping = {
+    stubAuthenticatedUser()
     stubRetrievalALLEnrolments()
     stubVerifyUser(false)
     stubGGUser()

@@ -44,10 +44,17 @@ class RouterController @Inject()(val authConnector: AuthConnector,
   val metricsMonitoringService: MetricsMonitoringService.type = MetricsMonitoringService
 
   val account: Action[AnyContent] = Action.async { implicit request =>
-    ruleContext.activeEnrolments.flatMap{ enrolments =>
-      implicit val enrolmentsContext: Enrolments = Enrolments(enrolments)
-      route
+    authorised() {
+      ruleContext.activeEnrolments.flatMap{ enrolments =>
+        implicit val enrolmentsContext: Enrolments = Enrolments(enrolments)
+        route
+      }
+    }.recoverWith {
+      case _ =>
+        Logger.info(s"unauthorised user - redirecting to login.")
+        Future.successful(Redirect(ExternalUrls.signIn))
     }
+
   }
 
   def route(implicit enrolmentsContext: Enrolments, request: Request[AnyContent]): Future[Result] = {
