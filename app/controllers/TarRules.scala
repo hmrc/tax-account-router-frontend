@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 @Singleton
 class TarRules @Inject()(conditions: Conditions) extends RuleEngine {
 
-  override val defaultLocation: Location = BusinessTaxAccount
+  override lazy val defaultLocation: Location = BusinessTaxAccount
 
   override val defaultRuleName = "bta-home-page-passed-through"
 

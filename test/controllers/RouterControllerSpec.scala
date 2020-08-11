@@ -20,7 +20,7 @@ import cats.data.WriterT
 import config.FrontendAppConfig
 import engine.{AuditInfo, EngineResult}
 import model.{EnrolmentState, _}
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -101,6 +101,10 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     val mockThrottlingService: ThrottlingService = mock[ThrottlingService]
     val mockRuleContext: RuleContext = mock[RuleContext]
     val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+    val mockMetricsService: MetricsMonitoringService = mock[MetricsMonitoringService]
+    val mockExternalUrls: ExternalUrls = mock[ExternalUrls]
+
+    val messagesControllerComponents: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
 
     val gaClientId = "gaClientId"
 
@@ -109,7 +113,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
     val testRouterController = new RouterController(mockAuthConnector, mockAuditConnector,
-      mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig)
+      mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig,
+    messagesControllerComponents, mockMetricsService, mockExternalUrls)
 
     val expectedEnrolmentsSeq: Enrolments =
       Enrolments(

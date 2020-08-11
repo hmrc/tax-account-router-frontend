@@ -19,17 +19,16 @@ package services
 import com.codahale.metrics.{Meter, MetricRegistry}
 import engine.{AuditInfo, RoutingReason, ThrottlingInfo}
 import model.Location
-import org.mockito.Matchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.TableFor4
 import org.scalatest.prop.Tables.Table
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
 import support.UnitSpec
-import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Eventually {
 
@@ -49,9 +48,6 @@ class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with Event
       s"send monitoring events - scenario: $scenario" in new Setup {
 
         import engine.RoutingReason._
-
-        implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-        implicit val hc: HeaderCarrier = HeaderCarrier()
 
         // given
         val trueCondition1: RoutingReason.RoutingReason = Reason("trueCondition1")

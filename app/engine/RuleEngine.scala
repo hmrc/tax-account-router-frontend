@@ -19,7 +19,6 @@ package engine
 import cats.data.WriterT
 import model._
 import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global

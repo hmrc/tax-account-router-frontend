@@ -38,7 +38,8 @@ trait CommonStubs {
   }
 
   def stubNotAuthenticatedUser(): StubMapping = {
-    stubFor(post(urlEqualTo("/auth/authorise")).withRequestBody(equalToJson("{}".stripMargin))
+    stubFor(post(urlEqualTo("/auth/authorise"))
+      .withRequestBody(equalToJson("""{"authorise":[], "retrieve":[]}""".stripMargin))
       .willReturn(
         aResponse()
           .withStatus(401)
@@ -48,11 +49,12 @@ trait CommonStubs {
     )
   }
 
+  // TODO not sure how this was working before with an empty Json body "{}" ???
   def stubAuthenticatedUser(): StubMapping = {
     stubFor(
       post(urlEqualTo("/auth/authorise"))
         .atPriority(1)
-        .withRequestBody(equalToJson("{}"))
+        .withRequestBody(equalToJson("""{"authorise":[], "retrieve":[]}"""))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -230,7 +232,7 @@ trait CommonStubs {
              | """.stripMargin)))
   }
 
-  def stubAuditEvent(): RequestPatternBuilder = postRequestedFor(urlMatching("/write/audit.*"))
+  def auditEventPattern(): RequestPatternBuilder = postRequestedFor(urlMatching("/write/audit.*"))
 
   def stubBusinessAccount(): StubMapping = stubFor(get(urlMatching("/business-account.*")).willReturn(
     aResponse().withStatus(200)

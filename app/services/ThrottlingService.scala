@@ -54,13 +54,13 @@ trait LocationConfigurationFactory {
 
 
 @Singleton
-class ThrottlingService @Inject()(appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
+class ThrottlingService @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
 
   lazy val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
-    override val configuration: AppConfig = appConfig
+    override val configuration: AppConfig = frontendAppConfig
   }
 
-  lazy val throttlingEnabled: Boolean = appConfig.throttlingEnabled
+  lazy val throttlingEnabled: Boolean = frontendAppConfig.throttlingEnabled
 
   def throttle(currentResult: EngineResult, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): EngineResult = {
 

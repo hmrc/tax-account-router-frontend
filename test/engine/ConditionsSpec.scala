@@ -197,8 +197,6 @@ class ConditionsSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite
 
       s"be true whether the user has logged in using Verify - scenario: $scenario" in {
 
-        implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-
         val ruleContext = mock[RuleContext]
         when(ruleContext.isVerifyUser).thenReturn(Future.successful(authClientDefinedAsVerify))
 

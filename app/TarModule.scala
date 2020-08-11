@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package model
+import com.google.inject.AbstractModule
+import services.{MetricsMonitoringService, MetricsMonitoringServiceImpl}
 
-object EnrolmentState {
-  val ACTIVATED = "Activated"
-  val NOT_YET_ACTIVATED = "NotYetActivated"
-  val HANDED_TO_AGENT = "HandedToAgent"
-  val PENDING = "Pending"
+class TarModule extends AbstractModule {
+
+  override def configure(): Unit = {
+    bind(classOf[MetricsMonitoringService])
+      .to(classOf[MetricsMonitoringServiceImpl])
+  }
+
 }

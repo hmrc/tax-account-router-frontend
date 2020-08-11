@@ -31,7 +31,7 @@ class RouterAnalyticsFeature extends StubbedFeatureSpec with CommonStubs with Ws
       withClient{ wsClient =>
         wsClient
           .url(s"http://localhost:$port/account")
-          .withHeaders("Cookie" -> """_ga=GA1.4.405633776.1470748420""")
+          .withHttpHeaders("Cookie" -> """_ga=GA1.4.405633776.1470748420""")
           .get().futureValue.status shouldBe 404
       }
 
