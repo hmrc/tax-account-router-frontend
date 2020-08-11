@@ -25,13 +25,13 @@ trait AppConfigHelpers {
 
   val config: Configuration
 
-  def getConfigurationStringOption(key: String): Option[String] = config.getString(key)
+  def getConfigurationStringOption(key: String): Option[String] = config.getOptional[String](key)
 
-  def getConfigurationString(key: String): String = config.getString(key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
+  def getConfigurationString(key: String): String = config.getOptional[String](key).getOrElse(throw new Exception(s"Missing configuration key: $key"))
 
-  def getConfigurationBoolean(key: String): Boolean = config.getBoolean(key).getOrElse(false)
+  def getConfigurationBoolean(key: String): Boolean = config.getOptional[Boolean](key).getOrElse(false)
 
-  def getConfiguration(key: String): Configuration = config.getConfig(key).getOrElse(Configuration.empty)
+  def getConfiguration(key: String): Configuration = config.getOptional[Configuration](key).getOrElse(Configuration.empty)
 
   def getConfigurationStringSet(key: String): Set[String] = {
     import utils.StringSeparationHelper._
@@ -59,13 +59,13 @@ trait AppConfig extends AppConfigHelpers {
     val incorrectConfigurationKey = "percentageBeToThrottled"
     val configurationKey = "percentageToBeThrottled"
 
-    val percentageToBeThrottled = config.getInt(configurationKey)
+    val percentageToBeThrottled = config.getOptional[Int](configurationKey)
       .getOrElse(
-        config.getInt(incorrectConfigurationKey)
+        config.getOptional[Int](incorrectConfigurationKey)
           .getOrElse(0)
       )
 
-    val fallback = config.getString("fallback")
+    val fallback = config.getOptional[String]("fallback")
 
     ThrottlingConfig(percentageToBeThrottled, fallback)
   }

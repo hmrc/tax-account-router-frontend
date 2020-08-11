@@ -68,16 +68,12 @@ class RuleContext @Inject()(val authConnector: AuthConnector,
     }.recover {case _ => SaReturn.empty}
 
   def internalUserIdentifier(implicit hc: HeaderCarrier): Future[Option[String]] =
-    authorised().retrieve(Retrievals.internalId) {
-      case internalId => Future.successful(internalId)
-      case _ => Future.successful(None)
-    }.recover {case _ => None}
+    authorised().retrieve(Retrievals.internalId)(Future.successful)
+      .recover {case _ => None}
 
   def enrolments(implicit hc: HeaderCarrier): Future[Enrolments] =
-    authorised().retrieve(Retrievals.allEnrolments) {
-      case enrolments => Future.successful(enrolments)
-      case _ => Future.successful(Enrolments(Set.empty[Enrolment]))
-    }.recoverWith {case _ => Future.failed(new RuntimeException("gg-unavailable"))}
+    authorised().retrieve(Retrievals.allEnrolments)(Future.successful)
+      .recoverWith {case _ => Future.failed(new RuntimeException("gg-unavailable"))}
 
   def affinityGroup(implicit hc: HeaderCarrier): Future[String] = {
     authorised().retrieve(Retrievals.affinityGroup){
