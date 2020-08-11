@@ -19,7 +19,7 @@ package services
 import com.codahale.metrics.{Meter, MetricRegistry}
 import engine.{AuditInfo, RoutingReason, ThrottlingInfo}
 import model.Location
-import org.mockito.Matchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar

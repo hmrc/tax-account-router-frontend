@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class Conditions @Inject()(appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
+class Conditions @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
   object predicates {
 
     type ConditionPredicate = RuleContext => Future[Boolean]
@@ -44,14 +44,14 @@ class Conditions @Inject()(appConfig: FrontendAppConfig)(implicit val ec: Execut
     }
 
     def hasAnyBusinessEnrolmentF(implicit hc: HeaderCarrier): ConditionPredicate = rc => {
-      rc.activeEnrolmentKeys.map(_.intersect(appConfig.businessEnrolments).nonEmpty)
+      rc.activeEnrolmentKeys.map(_.intersect(frontendAppConfig.businessEnrolments).nonEmpty)
     }
 
     def saReturnAvailableF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_ => true).recover { case _ => false }
 
     def hasSaEnrolmentsF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
-      rc.activeEnrolmentKeys.map(_.intersect(appConfig.saEnrolments).nonEmpty)
+      rc.activeEnrolmentKeys.map(_.intersect(frontendAppConfig.saEnrolments).nonEmpty)
 
     def hasPreviousReturnsF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.lastSaReturn.map(_.previousReturns)

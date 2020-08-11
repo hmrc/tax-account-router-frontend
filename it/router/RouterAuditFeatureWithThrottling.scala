@@ -29,7 +29,7 @@ class RouterAuditFeatureWithThrottling extends StubbedFeatureSpec with CommonStu
       Given("a user logged in through Verify supposed to go to PTA")
       setVerifyUser()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
 
       createStubs(stubPage)
 

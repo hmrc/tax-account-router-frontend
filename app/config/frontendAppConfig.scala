@@ -17,10 +17,9 @@
 package config
 
 import javax.inject.{Inject, Singleton}
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment}
+import play.api.Configuration
 import services.ThrottlingConfig
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 trait AppConfigHelpers {
 
@@ -78,16 +77,18 @@ trait AppConfig extends AppConfigHelpers {
 }
 
 @Singleton
-class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration, environment: Environment) extends AppConfig with ServicesConfig {
+class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration,
+                                  val servicesConfig: ServicesConfig) extends AppConfig {
 
   lazy override val config: Configuration = runModeConfiguration
-  override protected def mode: Mode = environment.mode
 
-  lazy val extendedLoggingEnabled: Boolean = runModeConfiguration.getBoolean("extended-logging-enabled").getOrElse(false)
+  lazy val extendedLoggingEnabled: Boolean = runModeConfiguration
+    .getOptional[Boolean]("extended-logging-enabled").getOrElse(false)
 
-  lazy val throttlingEnabled: Boolean = runModeConfiguration.getBoolean("throttling.enabled").getOrElse(false)
+  lazy val throttlingEnabled: Boolean = runModeConfiguration
+    .getOptional[Boolean]("throttling.enabled").getOrElse(false)
 
-  lazy val paServiceUrl: String = baseUrl("platform-analytics")
-  lazy val saServiceUrl: String = baseUrl("sa")
+  lazy val paServiceUrl: String = servicesConfig.baseUrl("platform-analytics")
+  lazy val saServiceUrl: String = servicesConfig.baseUrl("sa")
 
 }

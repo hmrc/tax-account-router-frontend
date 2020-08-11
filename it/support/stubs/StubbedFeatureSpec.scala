@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
-import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import support.Env
@@ -35,7 +35,7 @@ trait StubbedFeatureSpec
   extends FeatureSpec
   with GivenWhenThen
   with Matchers
-  with OneServerPerSuite
+  with GuiceOneServerPerSuite
   with Stubs
   with BeforeAndAfterAll
   with BeforeAndAfterEach
@@ -70,7 +70,7 @@ trait StubbedFeatureSpec
   }
 
   private def stubAudit() = stubFor(post(urlMatching("/write/audit.*")).willReturn(
-    aResponse().withStatus(200)
+    aResponse().withStatus(204)
   ))
 
   private def stubPlatformAnalytics() = stubFor(post(urlMatching("/platform-analytics/event.*")).willReturn(

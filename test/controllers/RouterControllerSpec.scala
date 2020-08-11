@@ -20,7 +20,7 @@ import cats.data.WriterT
 import config.FrontendAppConfig
 import engine.{AuditInfo, EngineResult}
 import model.{EnrolmentState, _}
-import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -102,6 +102,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     val mockRuleContext: RuleContext = mock[RuleContext]
     val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
 
+    val messagesControllerComponents: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
+
     val gaClientId = "gaClientId"
 
     implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest().withCookies(Cookie("_ga", gaClientId))
@@ -109,7 +111,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
     val testRouterController = new RouterController(mockAuthConnector, mockAuditConnector,
-      mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig)
+      mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig,
+    messagesControllerComponents)
 
     val expectedEnrolmentsSeq: Enrolments =
       Enrolments(

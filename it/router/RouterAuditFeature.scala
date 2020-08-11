@@ -15,7 +15,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       Given("a user logged in through Verify")
       setVerifyUser()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubPersonalAccount()
 
       When("the user hits the router")
@@ -45,7 +45,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user has business related enrolments")
       stubRetrievalALLEnrolments(enrolmentKey = "enr1")
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -83,7 +83,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubRetrievalSAUTR()
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -124,7 +124,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user has organisation affinity group")
       stubRetrievalAffinityGroup()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -169,7 +169,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user is in a partnership")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("partnership"))
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -213,7 +213,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user is self employed")
       stubSaReturn(saUtr, previousReturns = true, supplementarySchedules = List("self_employment"))
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -259,7 +259,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubSaReturn(saUtr, previousReturns = true)
       stubRetrievalNINO(hasNino = false)
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -305,7 +305,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubSaReturn(saUtr, previousReturns = true)
       stubRetrievalNINO()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubPersonalAccount()
 
       When("the user hits the router")
@@ -350,7 +350,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user has no previous returns")
       stubSaReturnWithNoPreviousReturns(saUtr)
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -389,7 +389,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubRetrievalALLEnrolments()
       stubRetrievalSAUTR()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -428,7 +428,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubRetrievalALLEnrolments()
       stubRetrievalSAUTR()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -467,7 +467,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       stubRetrievalALLEnrolments("enr1")
       stubRetrievalSAUTR()
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -505,7 +505,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
       And("the user has individual affinity group")
       stubRetrievalAffinityGroup(AffinityGroupValue.INDIVIDUAL)
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubPersonalAccount()
 
       When("the user hits the router")
@@ -547,7 +547,7 @@ class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditT
 
       And("affinity group is not available")
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")

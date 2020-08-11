@@ -3,6 +3,7 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import engine.AuditInfo
 import engine.RoutingReason._
 import play.api.Application
@@ -20,8 +21,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
   val additionalConfiguration: Map[String, Any] = Map[String, Any](
     "business-enrolments" -> "enr1,enr2",
     // The request timeout must be less than the value used in the wiremock stubs that use withFixedDelay to simulate network problems.
-    "ws.timeout.request" -> 1000,
-    "ws.timeout.connection" -> 500,
+    "play.ws.timeout.request" -> "1 second",
     "two-step-verification.enabled" -> true
   )
 
@@ -41,7 +41,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       And("the user has previous returns")
       stubSaReturnToProperlyRespondAfter2Seconds(saUtr)
 
-      val auditEventStub = stubAuditEvent()
+      val auditPattern = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -62,7 +62,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
         ))
       val expectedTransactionName = "sent to business tax account"
       eventually {
-        verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
+        verifyAuditEvent(auditPattern, expectedReasons, expectedTransactionName, "bta-home-page-for-user-with-no-previous-return")
       }
     }
 
@@ -74,7 +74,7 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
       And("the user has self assessment enrolments")
       stubRetrievalALLEnrolments(responsive = false)
 
-      val auditEventStub = stubAuditEvent()
+      val auditEventStub = auditEventPattern()
       stubBusinessAccount()
 
       When("the user hits the router")
@@ -96,12 +96,12 @@ class RouterAuditSaUnresponsiveFeature extends StubbedFeatureSpec with CommonStu
 
   def toJson(map: Map[String, String]): JsObject = Json.obj(map.map { case (k, v) => k -> Json.toJsFieldJsValueWrapper(v) }.toSeq: _*)
 
-  def verifyAuditEvent(auditEventStub: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
-    val loggedRequests = WireMock.findAll(auditEventStub).asScala.toList
+  def verifyAuditEvent(auditPattern: RequestPatternBuilder, expectedReasons: JsValue, expectedTransactionName: String, ruleApplied: String): Unit = {
+    val loggedRequests = WireMock.findAll(auditPattern).asScala.toList
     val event = Json.parse(loggedRequests
       .filter(s => s.getBodyAsString.matches( """^.*"auditType"[\s]*\:[\s]*"Routing".*$""")).head.getBodyAsString)
     (event \ "tags" \ "transactionName").as[String] shouldBe expectedTransactionName
-    (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
     (event \ "detail" \ "reasons").get shouldBe expectedReasons
+    (event \ "detail" \ "ruleApplied").as[String] shouldBe ruleApplied
   }
 }

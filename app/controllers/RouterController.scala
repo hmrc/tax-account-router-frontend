@@ -38,8 +38,10 @@ class RouterController @Inject()(val authConnector: AuthConnector,
                                   analyticsEventSender: AnalyticsEventSender,
                                   throttlingService: ThrottlingService,
                                   ruleContext: RuleContext,
-                                  appConfig: FrontendAppConfig)(implicit val ec: ExecutionContext)
-  extends FrontendController with AuthorisedFunctions {
+                                  appConfig: FrontendAppConfig,
+                                  val messagesControllerComponents: MessagesControllerComponents)
+                                (implicit val ec: ExecutionContext)
+  extends FrontendController(messagesControllerComponents) with AuthorisedFunctions {
 
   val metricsMonitoringService: MetricsMonitoringService.type = MetricsMonitoringService
 

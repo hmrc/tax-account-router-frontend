@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetai
 import scala.concurrent.Future
 
 object MetricsMonitoringService extends MetricsMonitoringService {
-  override val metricsRegistry = Play.current.injector.instanceOf[Metrics].defaultRegistry
+  override lazy val metricsRegistry = Play.current.injector.instanceOf[Metrics].defaultRegistry
 }
 
 trait MetricsMonitoringService {
