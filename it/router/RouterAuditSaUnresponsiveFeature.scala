@@ -3,7 +3,6 @@ package router
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import engine.AuditInfo
 import engine.RoutingReason._
 import play.api.Application

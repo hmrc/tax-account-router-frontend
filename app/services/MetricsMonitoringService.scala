@@ -19,23 +19,22 @@ package services
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import engine.AuditInfo
+import javax.inject.{Inject, Singleton}
 import model.Location
-import play.api.Play
-import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext.fromLoggingDetails
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object MetricsMonitoringService extends MetricsMonitoringService {
-  override lazy val metricsRegistry = Play.current.injector.instanceOf[Metrics].defaultRegistry
+@Singleton
+class MetricsMonitoringServiceImpl @Inject()(metrics: Metrics) extends MetricsMonitoringService {
+  override lazy val metricsRegistry: MetricRegistry = metrics.defaultRegistry
 }
 
 trait MetricsMonitoringService {
 
   val metricsRegistry: MetricRegistry
 
-  def sendMonitoringEvents(auditInfo: AuditInfo, throttledLocation: Location)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  def sendMonitoringEvents(auditInfo: AuditInfo, throttledLocation: Location)
+                          (implicit ec: ExecutionContext): Future[Unit] = {
 
     Future {
       val destinationNameBeforeThrottling = auditInfo.throttlingInfo.map(_.initialDestination.name)

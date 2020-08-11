@@ -17,11 +17,13 @@
 package controllers
 
 import config.AppConfigHelpers
-import play.api.{Configuration, Play}
+import javax.inject.{Inject, Singleton}
+import play.api.Configuration
 
-object ExternalUrls extends AppConfigHelpers {
+@Singleton
+class ExternalUrls @Inject() (configuration: Configuration) extends AppConfigHelpers {
 
-  override val config: Configuration = Play.current.configuration
+  override val config: Configuration = configuration
 
   def getUrl(locationName: String): String = {
     val host = getConfigurationStringOption(s"$locationName.host").getOrElse("")

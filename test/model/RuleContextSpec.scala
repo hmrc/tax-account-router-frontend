@@ -87,7 +87,7 @@ class RuleContextSpec extends UnitSpec with MockitoSugar {
       when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future.successful(None))
 
       await(ruleContext.lastSaReturn) shouldBe SaReturn.empty
-      verifyZeroInteractions(mockSelfAssessmentConnector)
+      verifyNoMoreInteractions(mockSelfAssessmentConnector)
     }
   }
 

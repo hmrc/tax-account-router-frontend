@@ -37,7 +37,7 @@ class Conditions @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec
     def affinityGroupAvailableF(implicit hc: HeaderCarrier): ConditionPredicate = rc =>
       rc.affinityGroup.map( _ => true).recover { case _ => false }
 
-    def loggedInViaVerifyF(implicit request: Request[AnyContent], hc: HeaderCarrier): ConditionPredicate = rc => {
+    def loggedInViaVerifyF(implicit hc: HeaderCarrier): ConditionPredicate = rc => {
       for {
         isVerifyUser <- rc.isVerifyUser
       } yield isVerifyUser
@@ -82,7 +82,7 @@ class Conditions @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec
 
   def ggEnrolmentsAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(ggEnrolmentsAvailableF, GG_ENROLMENTS_AVAILABLE)
   def affinityGroupAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(affinityGroupAvailableF, AFFINITY_GROUP_AVAILABLE)
-  def loggedInViaVerify(implicit request: Request[AnyContent], hc: HeaderCarrier): Pure[RuleContext] = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
+  def loggedInViaVerify(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(loggedInViaVerifyF, IS_A_VERIFY_USER)
   def hasAnyBusinessEnrolment(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasAnyBusinessEnrolmentF, HAS_BUSINESS_ENROLMENTS)
   def saReturnAvailable(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(saReturnAvailableF, SA_RETURN_AVAILABLE)
   def hasSaEnrolments(implicit hc: HeaderCarrier): Pure[RuleContext] = Pure(hasSaEnrolmentsF, HAS_SA_ENROLMENTS)

@@ -39,11 +39,11 @@ class RouterController @Inject()(val authConnector: AuthConnector,
                                   throttlingService: ThrottlingService,
                                   ruleContext: RuleContext,
                                   appConfig: FrontendAppConfig,
-                                  val messagesControllerComponents: MessagesControllerComponents)
-                                (implicit val ec: ExecutionContext)
+                                  val messagesControllerComponents: MessagesControllerComponents,
+                                  metricsMonitoringService: MetricsMonitoringService,
+                                  externalUrls: ExternalUrls)
+                                  (implicit val ec: ExecutionContext)
   extends FrontendController(messagesControllerComponents) with AuthorisedFunctions {
-
-  val metricsMonitoringService: MetricsMonitoringService.type = MetricsMonitoringService
 
   val account: Action[AnyContent] = Action.async { implicit request =>
     authorised() {
@@ -54,7 +54,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
     }.recoverWith {
       case _ =>
         Logger.info(s"unauthorised user - redirecting to login.")
-        Future.successful(Redirect(ExternalUrls.signIn))
+        Future.successful(Redirect(externalUrls.signIn))
     }
 
   }

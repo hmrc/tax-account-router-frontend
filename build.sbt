@@ -1,4 +1,5 @@
 import play.sbt.PlayImport.PlayKeys.playDefaultPort
+import sbt.Keys.scalacOptions
 import sbt._
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, defaultSettings, scalaSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
@@ -13,12 +14,15 @@ lazy val microservice = Project(appName, file("."))
   .settings(defaultSettings(): _*)
   .settings(playDefaultPort := 9280)
   .settings(
-    scalaVersion := "2.11.7",
+    scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies(),
     parallelExecution in Test := false,
     fork in Test := false,
     retrieveManaged := true,
-    evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
+    evictionWarningOptions in update :=
+      EvictionWarningOptions.default.withWarnScalaVersionEviction(true),
+    scalacOptions += "-feature",
+    scalacOptions += "-language:implicitConversions"
   )
   .configs(IntegrationTest extend Test)
   .settings(inConfig(IntegrationTest)(Defaults.testSettings) : _*)

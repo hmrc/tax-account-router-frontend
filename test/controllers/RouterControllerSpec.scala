@@ -101,6 +101,8 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     val mockThrottlingService: ThrottlingService = mock[ThrottlingService]
     val mockRuleContext: RuleContext = mock[RuleContext]
     val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+    val mockMetricsService: MetricsMonitoringService = mock[MetricsMonitoringService]
+    val mockExternalUrls: ExternalUrls = mock[ExternalUrls]
 
     val messagesControllerComponents: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
 
@@ -112,7 +114,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
 
     val testRouterController = new RouterController(mockAuthConnector, mockAuditConnector,
       mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig,
-    messagesControllerComponents)
+    messagesControllerComponents, mockMetricsService, mockExternalUrls)
 
     val expectedEnrolmentsSeq: Enrolments =
       Enrolments(
