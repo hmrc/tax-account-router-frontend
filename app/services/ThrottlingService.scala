@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,50 @@
 package services
 
 import cats.data.WriterT
-import config.{AppConfig, FrontendAppConfig}
+import cats.instances.all._
+import config.FrontendAppConfig
 import engine.{AuditInfo, EngineResult, ThrottlingInfo}
-import javax.inject.{Inject, Singleton}
 import model.Locations.PersonalTaxAccount
 import model._
 import play.api.mvc.{AnyContent, Request}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ThrottlingConfig(percentageToBeThrottled: Int, fallback: Option[String])
+case class ThrottlingConfig (percentageToBeThrottled: Int, fallback: Option[String])
 
-trait LocationConfigurationFactory {
+//trait LocationConfigurationFactory {
+//
+//  val configuration: AppConfig
+//
+//  def configurationForLocation(location: Location, request: Request[AnyContent]): ThrottlingConfig = {
+//
+//    def getLocationSuffix(location: Location, request: Request[AnyContent]): String = {
+//      location match {
+//        case PersonalTaxAccount =>
+//          if (request.session.data.contains("token")) {
+//            "-gg"
+//          } else {
+//            "-verify"
+//          }
+//        case _ => ""
+//      }
+//    }
+//
+//    val suffix = getLocationSuffix(location, request)
+//    configuration.getThrottlingConfig(s"${location.name}$suffix")
+//  }
+//}
+//
 
-  val configuration: AppConfig
+class ThrottlingService @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
+
+//  lazy val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
+//    override val configuration: AppConfig = frontendAppConfig
+//  }
+
+  lazy val throttlingEnabled: Boolean = frontendAppConfig.throttlingEnabled
 
   def configurationForLocation(location: Location, request: Request[AnyContent]): ThrottlingConfig = {
 
@@ -48,19 +77,8 @@ trait LocationConfigurationFactory {
     }
 
     val suffix = getLocationSuffix(location, request)
-    configuration.getThrottlingConfig(s"${location.name}$suffix")
+    frontendAppConfig.getThrottlingConfig(s"${location.name}$suffix")
   }
-}
-
-
-@Singleton
-class ThrottlingService @Inject()(frontendAppConfig: FrontendAppConfig)(implicit val ec: ExecutionContext){
-
-  lazy val locationConfigurationFactory: LocationConfigurationFactory = new LocationConfigurationFactory {
-    override val configuration: AppConfig = frontendAppConfig
-  }
-
-  lazy val throttlingEnabled: Boolean = frontendAppConfig.throttlingEnabled
 
   def throttle(currentResult: EngineResult, ruleContext: RuleContext)(implicit request: Request[AnyContent], hc: HeaderCarrier): EngineResult = {
 
@@ -88,7 +106,6 @@ class ThrottlingService @Inject()(frontendAppConfig: FrontendAppConfig)(implicit
       }
     }
 
-    import cats.instances.all._
 
     currentResult flatMap { location =>
       val result: Future[(AuditInfo, Location)] = for {
@@ -96,7 +113,7 @@ class ThrottlingService @Inject()(frontendAppConfig: FrontendAppConfig)(implicit
         auditInfo <- currentResult.written
       } yield userIdentifier match {
         case Some(userId) if throttlingEnabled =>
-          val locationConfiguration = locationConfigurationFactory.configurationForLocation(location, request)
+          val locationConfiguration = configurationForLocation(location, request)
           doThrottle(auditInfo, location, userId, locationConfiguration)
         case _ =>
           val throttlingInfo = ThrottlingInfo(percentage = None, throttled = false, location, throttlingEnabled = false)
