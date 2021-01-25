@@ -22,10 +22,12 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.scalatest._
+import org.scalatestplus.play.PortNumber
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import support.Env
+import support.stubs.StubbedFeatureSpec.fakeApplicationPort
 import support.sugar._
 
 object StubbedFeatureSpec {
@@ -44,7 +46,12 @@ trait StubbedFeatureSpec
   with OptionValues
   with StubApplicationConfiguration {
 
-  override lazy val port: Int = StubbedFeatureSpec.fakeApplicationPort
+  //override lazy val port: Int = StubbedFeatureSpec.fakeApplicationPort
+
+  override def portNumber(): PortNumber = {
+    PortNumber(fakeApplicationPort)
+  }
+
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
 
   val wireMockServer: WireMockServer = new WireMockServer(wireMockConfig().port(stubPort))

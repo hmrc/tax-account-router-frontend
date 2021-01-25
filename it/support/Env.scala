@@ -17,13 +17,12 @@
 package support
 
 import java.net.URL
-
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import configuration.StubApplicationConfiguration
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxProfile}
+import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxOptions, FirefoxProfile}
 import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
 import support.stubs.StubbedFeatureSpec
 
@@ -41,8 +40,10 @@ object Env {
     val profile: FirefoxProfile = new FirefoxProfile
     profile.setPreference("javascript.enabled", true)
     profile.setAcceptUntrustedCertificates(true)
-    new FirefoxDriver(profile)
+    val opt: FirefoxOptions = new FirefoxOptions().setProfile(profile);
+    new FirefoxDriver(opt)
   }
+
 
   def createBrowser(): ChromeDriver = {
     val capabilities = DesiredCapabilities.chrome()
