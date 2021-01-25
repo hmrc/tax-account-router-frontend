@@ -28,6 +28,7 @@ import org.scalatest.prop.TableFor4
 import org.scalatest.prop.Tables.Table
 import support.UnitSpec
 
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetricsMonitoringServiceSpec extends UnitSpec with MockitoSugar with

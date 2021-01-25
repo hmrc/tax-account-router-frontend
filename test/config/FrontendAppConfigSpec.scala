@@ -22,6 +22,7 @@ import play.api.Configuration
 import services.ThrottlingConfig
 import support.UnitSpec
 
+
 class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
 
   "getThrottlingConfig" should {

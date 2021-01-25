@@ -22,8 +22,9 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.{AnyContentAsEmpty, Cookie}
 import play.api.test.FakeRequest
-import support.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
+import support.UnitSpec
+
 
 import scala.concurrent.ExecutionContext
 

@@ -34,9 +34,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import support.UnitSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
+import support.UnitSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
