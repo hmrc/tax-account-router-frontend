@@ -1,7 +1,7 @@
 package support.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
+import com.github.tomakehurst.wiremock.matching.{RequestPatternBuilder, UrlPattern}
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import connector.AnalyticsData
 import play.api.libs.json.Json
@@ -241,4 +241,13 @@ trait CommonStubs {
   def stubPersonalAccount(): StubMapping = stubFor(get(urlMatching("/personal-account.*")).willReturn(
     aResponse().withStatus(200)
   ))
+
+  def stubOut(urlMatchingStrategy: UrlPattern, heading: String, extraBodyHtml: Option[String] = None, prodUrl: Option[String] = None): StubMapping = {
+    stubFor(get(urlMatchingStrategy)
+      .willReturn(
+        aResponse()
+          .withStatus(200)
+          .withBody(s"<html><body>${extraBodyHtml.getOrElse("")}<h1>$heading</h1>This is a stub</body></html>")
+      ))
+  }
 }

@@ -1,15 +1,11 @@
 package router
 
-import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
 import org.scalatest.{GivenWhenThen, MustMatchers, WordSpec}
-import play.api.libs.json.Json
-import play.api.test.Helpers.await
 import support.TARIntegrationTest
 import support.stubs.stubs.StubAnalyticsPlatformConnector
 import support.stubs.{CommonStubs, StubHelper}
 import uk.gov.hmrc.http.HeaderCarrier
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class RouterAnalyticsFeature extends WordSpec with MustMatchers with TARIntegrationTest with GivenWhenThen with CommonStubs with StubHelper {
