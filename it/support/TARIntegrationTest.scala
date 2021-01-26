@@ -97,9 +97,6 @@ trait TARIntegrationTest
     "platform-analytics"
   )
 
-//  protected def resetAllFeatures(): Unit =
-//    Feature.allTogglableFeatures.foreach(removeOverride)
-
   lazy val wmConfig: WireMockConfiguration = wireMockConfig() port stubPort
 
   lazy val wireMockServer: WireMockServer = new WireMockServer(wmConfig)
@@ -108,18 +105,15 @@ trait TARIntegrationTest
     super.beforeAll()
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
-   // resetAllFeatures()
   }
 
   override def afterAll(): Unit = {
     super.beforeAll()
     wireMockServer.stop()
-    //resetAllFeatures()
   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
- //   resetAllFeatures()
     WireMock.reset()
   }
 

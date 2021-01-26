@@ -17,8 +17,9 @@ object AppDependencies {
   abstract class TestDependencies(scope: String) {
     lazy val test: Seq[ModuleID] = Seq(
       "com.typesafe.play"      %% "play-test"                % PlayVersion.current % scope,
-      "uk.gov.hmrc"            %% "service-integration-test" % "0.13.0-play-27"     % scope,
+      "org.scalatest"           %% "scalatest"          % "3.0.9" % scope,
       "org.scalatestplus.play" %% "scalatestplus-play"       % "4.0.3"             % scope,
+      "org.scalacheck"          %% "scalacheck"         % "1.14.3" % scope,
       "org.pegdown"             % "pegdown"                  % "1.6.0"             % scope,
       "org.jsoup"               % "jsoup" % "1.13.1" % scope,
       "com.github.tomakehurst"  % "wiremock-jre8" % "2.27.1" % scope,
@@ -26,6 +27,7 @@ object AppDependencies {
       "me.scf37.expecty"       %% "expecty"                  % "1.0.2"             % scope
     )
   }
+
 
   object Test extends TestDependencies("test")
 

@@ -2,7 +2,9 @@ package support.stubs
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.http.{HttpHeader, HttpHeaders}
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import uk.gov.hmrc.audit.handler.HttpHandler
 
 trait StubHelper {
 
@@ -14,6 +16,14 @@ trait StubHelper {
           case Some(x) => response.withBody(x)
           case _ => response
         }
+      }
+    )
+  }
+
+  def stubGetWithHeaders(url: String, status: Int): StubMapping = {
+    stubFor(
+      get(urlEqualTo(url)) willReturn {
+       aResponse().withStatus(status).withHeader("Cookie",  """_ga=GA1.4.405633776.1470748420""")
       }
     )
   }

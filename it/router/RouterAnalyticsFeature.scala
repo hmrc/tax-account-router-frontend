@@ -1,54 +1,46 @@
 package router
 
-import org.scalatest.{FeatureSpec, GivenWhenThen, MustMatchers}
-import play.api.libs.ws.WSResponse
+import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import connector.{AnalyticsData, AnalyticsPlatformConnector, GaEvent}
+import org.scalatest.{GivenWhenThen, MustMatchers, WordSpec}
+import play.api.libs.json.Json
+import play.api.test.Helpers.await
 import support.TARIntegrationTest
-import support.TARIntegrationTestClient.TARRoutes
+import support.stubs.stubs.StubAnalyticsPlatformConnector
+import support.stubs.{CommonStubs, StubHelper}
+import uk.gov.hmrc.http.HeaderCarrier
 
-class RouterAnalyticsFeature extends FeatureSpec with MustMatchers with TARIntegrationTest with GivenWhenThen{
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  def gotoHomePage(): WSResponse = TARRoutes.get("/")
+class RouterAnalyticsFeature extends WordSpec with MustMatchers with TARIntegrationTest with GivenWhenThen with CommonStubs with StubHelper {
 
+  lazy val connector: AnalyticsPlatformConnector = inject[AnalyticsPlatformConnector]
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+  val testData = AnalyticsData("GA1.4.405633776.1470748420",
+    List(GaEvent("routing", "business-tax-account", "bta-home-page-for-user-with-no-previous-return", Nil)))
 
-  feature("Router analytics feature") {
+  val postJson = """{
+               |  "gaClientId" : "GA1.4.405633776.1470748420",
+               |  "events" : [
+               |    {
+               |      "category": "routing",
+               |      "action": "business-tax-account",
+               |      "label": "bta-home-page-for-user-with-no-previous-return",
+               |      "dimensions": []
+               |    }
+               |  ]
+               |}""".stripMargin
 
-    scenario("check service is reachable") {
-
-      val result = gotoHomePage()
-
-      result.status mustBe 200
-
-//      WsTestClient.withClient { client ⇒
-//        client.url(s"http://localhost:$port/ping/ping").get().futureValue.status shouldBe 200
-
+  "AnalyticsPlatformConnector" when {
+    "sendEvents" should {
+      "send a GA event to platform-analytics with the correct json " in {
+        connector.sendEvents(testData)
+        StubAnalyticsPlatformConnector.stubAnalyticsPost(postJson)(200, None)
+        verifyAnalytics(
+              AnalyticsData("GA1.4.405633776.1470748420", List(
+                GaEvent("routing", "business-tax-account", "bta-home-page-for-user-with-no-previous-return", Nil)
+              )))
+      }
     }
-
-//    scenario("send analytics details") {
-//
-//      Given("a user logged in through Government Gateway and the user has self assessment enrolments")
-//      setGGUser()
-//
-//      And("the user has no previous returns")
-//      stubRetrievalSAUTR()
-//      stubSaReturnWithNoPreviousReturns(saUtr)
-//
-//      And("User has google analytics cookie in browser")
-//      When("the user hits the router")
-//
-//      withClient{ wsClient =>
-//        wsClient
-//          .url(s"http://localhost:$port/account")
-//          .withHttpHeaders("Cookie" -> """_ga=GA1.4.405633776.1470748420""")
-//          .get().futureValue.status shouldBe 404
-//      }
-//
-//      And("analytic details were sent to google")
-//
-//      verifyAnalytics(
-//        AnalyticsData("GA1.4.405633776.1470748420", List(
-//          GaEvent("routing", "business-tax-account", "bta-home-page-for-user-with-no-previous-return", Nil)
-//        ))
-//      )
-//    }
   }
 }

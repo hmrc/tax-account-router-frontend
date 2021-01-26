@@ -2,9 +2,11 @@
 //
 //import com.github.tomakehurst.wiremock.client.WireMock._
 //import engine.RoutingReason._
-//import model.AffinityGroupValue
+//import org.scalatest.{GivenWhenThen, MustMatchers}
+//import support.TARIntegrationTest
+//import support.stubs.{AuditTools, CommonStubs}
 //
-//class RouterAuditFeature extends StubbedFeatureSpec with CommonStubs with AuditTools {
+//class RouterAuditFeature extends CommonStubs with AuditTools with TARIntegrationTest with GivenWhenThen with MustMatchers {
 //
 //  feature("Router audit feature") {
 //
@@ -17,7 +19,6 @@
 //      stubPersonalAccount()
 //
 //      When("the user hits the router")
-//      go(RouterRootPath)
 //
 //      Then("an audit event should be sent")
 //      verify(postRequestedFor(urlMatching("^/write/audit.*$")))
@@ -34,6 +35,8 @@
 //      )
 //      verifyAuditEvent(auditEventStub, expectedReasons, expectedTransactionName, "pta-home-page-for-verify-user", expectedThrottlingDetails)
 //    }
+//  }
+//}
 //
 //    scenario("a user logged in through GG with any business account will be redirected and an audit event should be raised") {
 //
