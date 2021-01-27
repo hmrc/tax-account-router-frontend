@@ -20,14 +20,6 @@ trait StubHelper {
     )
   }
 
-  def stubGetWithHeaders(url: String, status: Int): StubMapping = {
-    stubFor(
-      get(urlEqualTo(url)) willReturn {
-       aResponse().withStatus(status).withHeader("Cookie",  """_ga=GA1.4.405633776.1470748420""")
-      }
-    )
-  }
-
   def stubPost(url: String, status: Int, postBody: String, responseBody: Option[String]): StubMapping = {
     stubFor(
       post(urlEqualTo(url))

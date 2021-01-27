@@ -4,11 +4,12 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import engine.AuditInfo
 import org.scalatest.Matchers
+import org.scalatest.Matchers.{convertToAnyShouldWrapper, endWith}
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.collection.JavaConverters._
 
-trait AuditTools { self: Matchers =>
+trait AuditTools {
 
   case class ThrottlingDetails(enabled: Boolean,
                                percentage: String,
