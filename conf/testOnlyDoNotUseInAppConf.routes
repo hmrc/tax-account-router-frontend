@@ -10,5 +10,4 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 # Add all the application routes to the prod.routes file
-->         /                          prod.Routes
-->         /account/test-only         test.Routes
+->         /account                   test.Routes
