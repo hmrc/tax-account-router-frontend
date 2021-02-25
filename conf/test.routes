@@ -1,0 +1,3 @@
+# test only routes
+
+GET        /                        controllers.test.TestController.discoveryRules
