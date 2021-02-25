@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-package helpers
+package controllers.test
 
-import org.expecty.Expecty
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
+import uk.gov.hmrc.play.bootstrap.controller.FrontendController
 
-trait ExpectySupport {
-  val expect = new Expecty()
-  val expectAll = new Expecty(failEarly = false)
+import javax.inject.Inject
+
+class TestController @Inject()(mcc: MessagesControllerComponents,
+                               val authConnector: AuthConnector)
+  extends FrontendController(mcc) with AuthorisedFunctions {
+
+  def discoveryRules(): Action[AnyContent] = Action {
+    Ok("Ok")
+  }
+
 }

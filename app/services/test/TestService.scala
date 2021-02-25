@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package helpers
+package services.test
 
-import org.expecty.Expecty
+class TestService {
 
-trait ExpectySupport {
-  val expect = new Expecty()
-  val expectAll = new Expecty(failEarly = false)
 }
