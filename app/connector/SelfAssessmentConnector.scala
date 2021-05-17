@@ -17,28 +17,31 @@
 package connector
 
 import config.FrontendAppConfig
+
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class SelfAssessmentConnector @Inject()(httpClient: HttpClient,
-                                        appConfig: FrontendAppConfig)(implicit ec: ExecutionContext) {
+class SelfAssessmentConnector @Inject()(http: HttpClient,
+                                        appConfig: FrontendAppConfig,
+                                        implicit val executionContext: ExecutionContext) {
 
   lazy val serviceUrl: String = appConfig.saServiceUrl
 
   def lastReturn(utr: String)(implicit hc: HeaderCarrier): Future[SaReturn] = {
 
-    httpClient.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last").recover {
-      case _: NotFoundException => SaReturn.empty
-      case e: Throwable =>
-        Logger.warn(s"Unable to retrieve last sa return details for user with utr $utr", e)
-        throw e
-    }
+    http.GET[SaReturn](s"$serviceUrl/sa/individual/$utr/return/last")
+      .recover {
+        case _: NotFoundException => SaReturn.empty
+        case e: Throwable =>
+          Logger.warn(s"Unable to retrieve last sa return details for user with utr $utr", e)
+          throw e
+      }
   }
 
 }
