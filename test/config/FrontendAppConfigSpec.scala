@@ -16,13 +16,12 @@
 
 package config
 
-import helpers.ExpectySupport
 import org.scalatest.prop.{TableDrivenPropertyChecks, Tables}
 import play.api.Configuration
 import services.ThrottlingConfig
 import support.UnitSpec
 
-class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
+class FrontendAppConfigSpec extends UnitSpec {
 
   "getThrottlingConfig" should {
     "return configuration for throttling location" in {
@@ -107,9 +106,8 @@ class FrontendAppConfigSpec extends UnitSpec with ExpectySupport {
       override lazy val config: Configuration = Configuration.empty
     }
 
-    expectAll {
-      appConfig.reportAProblemPartialUrl == "/contact/problem_reports_ajax?service=tax-account-router-frontend"
-      appConfig.reportAProblemNonJSUrl == "/contact/problem_reports_nonjs?service=tax-account-router-frontend"
-    }
+
+    appConfig.reportAProblemPartialUrl == "/contact/problem_reports_ajax?service=tax-account-router-frontend"
+    appConfig.reportAProblemNonJSUrl == "/contact/problem_reports_nonjs?service=tax-account-router-frontend"
   }
 }

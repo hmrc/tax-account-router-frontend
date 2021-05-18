@@ -21,8 +21,7 @@ object AppDependencies {
       "org.scalatestplus.play" %% "scalatestplus-play"       % "3.1.3"             % scope,
       "org.pegdown"             % "pegdown"                  % "1.6.0"             % scope,
       "org.jsoup"               % "jsoup"                    % "1.13.1"            % scope,
-      "com.github.tomakehurst"  % "wiremock-jre8"            % "2.28.0"            % scope,
-      "me.scf37.expecty"       %% "expecty"                  % "1.0.2"             % scope
+      "com.github.tomakehurst"  % "wiremock-jre8"            % "2.28.0"            % scope
     )
   }
 

@@ -3,11 +3,12 @@ import sbt.Keys.scalacOptions
 import sbt._
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, defaultSettings, scalaSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc.sbtsettingkeys.Keys.isPublicArtefact
 
 val appName = "tax-account-router-frontend"
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory) : _*)
+  .enablePlugins(Seq(play.sbt.PlayScala, SbtDistributablesPlugin) : _*)
   .settings(majorVersion := 1)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
@@ -22,7 +23,8 @@ lazy val microservice = Project(appName, file("."))
     evictionWarningOptions in update :=
       EvictionWarningOptions.default.withWarnScalaVersionEviction(true),
     scalacOptions += "-feature",
-    scalacOptions += "-language:implicitConversions"
+    scalacOptions += "-language:implicitConversions",
+    isPublicArtefact := true
   )
   .configs(IntegrationTest extend Test)
   .settings(inConfig(IntegrationTest)(Defaults.testSettings) : _*)
@@ -33,14 +35,6 @@ lazy val microservice = Project(appName, file("."))
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := TestPhases.oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     parallelExecution in IntegrationTest := false
-  )
-  .settings(
-    resolvers := Seq(
-      Resolver.bintrayRepo("hmrc", "releases"),
-      Resolver.bintrayRepo("scf37", "maven"),
-      Resolver.typesafeRepo("releases"),
-      Resolver.jcenterRepo
-    )
   )
   .disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
 
