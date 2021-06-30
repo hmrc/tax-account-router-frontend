@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package controllers.test
+package model
 
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
-import uk.gov.hmrc.play.bootstrap.controller.FrontendController
+import uk.gov.hmrc.auth.core.retrieve.Credentials
+import uk.gov.hmrc.auth.core.{AffinityGroup, ConfidenceLevel, CredentialRole, CredentialStrength, Enrolment}
 
-import javax.inject.Inject
+case class UserProfile(enrolments: Set[Enrolment],
+                       affinityGroup: Option[AffinityGroup],
+                       confidenceLevel: ConfidenceLevel,
+                       credentialRole: Option[CredentialRole],
+                       credentialStrength: Option[String],
+                       credentials: Option[Credentials],
+                       groupId: Option[String])
 
-class TestController @Inject()(mcc: MessagesControllerComponents,
-                               val authConnector: AuthConnector)
-  extends FrontendController(mcc) with AuthorisedFunctions {
-
-  def discoveryRules(): Action[AnyContent] = Action {
-    Ok("Ok")
-  }
-
-}
