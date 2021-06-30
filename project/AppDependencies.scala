@@ -16,12 +16,13 @@ object AppDependencies {
   abstract class TestDependencies(scope: String) {
     lazy val test: Seq[ModuleID] = Seq(
       "com.typesafe.play"      %% "play-test"                % PlayVersion.current % scope,
+      "org.scalatest"          %% "scalatest"                % "3.0.8"             % "test",
       "uk.gov.hmrc"            %% "service-integration-test" % "0.13.0-play-26"    % scope,
-      "org.mockito"             % "mockito-core"             % "3.10.0"             % scope,
+      "org.mockito"             % "mockito-core"             % "3.10.0"            % scope,
       "org.scalatestplus.play" %% "scalatestplus-play"       % "3.1.3"             % scope,
       "org.pegdown"             % "pegdown"                  % "1.6.0"             % scope,
       "org.jsoup"               % "jsoup"                    % "1.13.1"            % scope,
-      "com.github.tomakehurst"  % "wiremock-jre8"            % "2.28.0"            % scope
+      "com.github.tomakehurst"  % "wiremock-jre8"            % "2.23.2"            % scope
     )
   }
 

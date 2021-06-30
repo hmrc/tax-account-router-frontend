@@ -16,34 +16,94 @@
 
 package controllers
 
+import actions.AuthAction
 import config.FrontendAppConfig
+import connector.EacdConnector
 import engine._
+
 import javax.inject.{Inject, Singleton}
 import model._
 import play.api.Logger
 import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.mvc._
 import services._
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions, Enrolments}
+import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
+import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
+import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, AuthorisedFunctions, Enrolments, User}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-import uk.gov.hmrc.play.bootstrap.controller.FrontendController
+import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class RouterController @Inject()(val authConnector: AuthConnector,
-                                  auditConnector: AuditConnector,
-                                  ruleEngine: TarRules,
-                                  analyticsEventSender: AnalyticsEventSender,
-                                  throttlingService: ThrottlingService,
-                                  ruleContext: RuleContext,
-                                  appConfig: FrontendAppConfig,
-                                  val messagesControllerComponents: MessagesControllerComponents,
-                                  metricsMonitoringService: MetricsMonitoringService,
-                                  externalUrls: ExternalUrls)
-                                  (implicit val ec: ExecutionContext)
+                                 authAction: AuthAction,
+                                 auditConnector: AuditConnector,
+                                 ruleEngine: TarRules,
+                                 analyticsEventSender: AnalyticsEventSender,
+                                 throttlingService: ThrottlingService,
+                                 ruleContext: RuleContext,
+                                 appConfig: FrontendAppConfig,
+                                 val messagesControllerComponents: MessagesControllerComponents,
+                                 metricsMonitoringService: MetricsMonitoringService,
+                                 externalUrls: ExternalUrls,
+                                 eacd: EacdConnector)
+                                (implicit val ec: ExecutionContext)
   extends FrontendController(messagesControllerComponents) with AuthorisedFunctions {
+
+  private val saEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT", "HMRC-NI")
+
+  private val PTA: Future[Result] = Future.successful(Redirect(appConfig.pta))
+  private val BTA: Future[Result] = Future.successful(Redirect(appConfig.bta))
+  private val AgentServices: Future[Result] = Future.successful(Redirect(appConfig.agents))
+  private val AgentClassic: Future[Result] = Future.successful(Redirect(appConfig.agentsClassic))
+
+  def redirectUser: Action[AnyContent] = if(appConfig.useNewRules) {
+    Action.async { implicit request =>
+      authAction.userProfile { user =>
+        val enrolments = user.enrolments
+
+        def isNotGateway: Boolean = user.credentials.exists(_.providerType == "Verify")
+
+        def isVerified: Boolean = user.confidenceLevel >= L200
+
+        def isAdmin: Boolean = user.credentialRole.contains(User)
+
+        def hasOnlySAenrolments: Boolean = enrolments.nonEmpty && enrolments.map(_.key).forall(e => saEnrolmentSet(e))
+
+        def hasNoGroupEnrolments: Future[Boolean] = eacd.checkGroupEnrolments(user.groupId)
+
+        def isAffinity(a: AffinityGroup): Boolean = user.affinityGroup.contains(a)
+
+        def activeAgent: Boolean = enrolments.size == 1 && enrolments.map(_.key).contains("HMRC-AS-AGENT")
+
+        def hasNonSAenrolments = enrolments.collect { case e if e.key != "HMRC-AS-AGENT" => e.key }.exists(e => !saEnrolmentSet(e))
+
+        if (isNotGateway) PTA else if (isAdmin) {
+          if (hasOnlySAenrolments) {
+            if (isVerified) PTA else BTA
+          } else if (hasNonSAenrolments) {
+            BTA
+          } else {
+            hasNoGroupEnrolments flatMap { noEnrolments =>
+              if (noEnrolments) {
+                if (isAffinity(Organisation)) {
+                  BTA
+                } else if (isAffinity(Individual)) {
+                  PTA
+                } else if (activeAgent) {
+                  AgentServices
+                } else {
+                  AgentClassic
+                }
+              } else BTA
+            }
+          }
+        } else BTA
+      }
+    }
+  } else account
 
   val account: Action[AnyContent] = Action.async { implicit request =>
     authorised() {

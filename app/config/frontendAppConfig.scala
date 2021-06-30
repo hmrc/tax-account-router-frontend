@@ -91,4 +91,11 @@ class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration,
   lazy val paServiceUrl: String = servicesConfig.baseUrl("platform-analytics")
   lazy val saServiceUrl: String = servicesConfig.baseUrl("sa")
 
+  lazy val enrolmentStore: String = servicesConfig.baseUrl("enrolment-store")
+  lazy val bta: String = servicesConfig.getString("business-tax-account.host") + servicesConfig.getString("business-tax-account.path")
+  lazy val pta: String = servicesConfig.getString("personal-tax-account.host") + servicesConfig.getString("personal-tax-account.path")
+  lazy val agents: String = servicesConfig.getString("agents.host") + servicesConfig.getString("agents.path")
+  lazy val agentsClassic: String = servicesConfig.getString("agents-classic.host") + servicesConfig.getString("agents-classic.path")
+
+  lazy val useNewRules: Boolean = servicesConfig.getBoolean("new-rules")
 }

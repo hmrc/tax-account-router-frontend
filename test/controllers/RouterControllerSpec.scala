@@ -16,8 +16,10 @@
 
 package controllers
 
+import actions.AuthAction
 import cats.data.WriterT
 import config.FrontendAppConfig
+import connector.EacdConnector
 import engine.{AuditInfo, EngineResult}
 import model.{EnrolmentState, _}
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
@@ -112,9 +114,9 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(fakeRequest.headers)
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-    val testRouterController = new RouterController(mockAuthConnector, mockAuditConnector,
+    val testRouterController = new RouterController(mockAuthConnector, mock[AuthAction], mockAuditConnector,
       mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig,
-    messagesControllerComponents, mockMetricsService, mockExternalUrls)
+    messagesControllerComponents, mockMetricsService, mockExternalUrls, mock[EacdConnector])
 
     val expectedEnrolmentsSeq: Enrolments =
       Enrolments(
