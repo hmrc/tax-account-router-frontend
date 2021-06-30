@@ -1,3 +1,3 @@
 # microservice specific routes
 
-GET        /                        controllers.RouterController.account
+GET        /                        controllers.RouterController.redirectUser
