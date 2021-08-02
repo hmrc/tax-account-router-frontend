@@ -141,7 +141,7 @@ class RouterControllerISpec extends SpecCommonHelper {
         noEnrolments()
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
-        redirectLocation(route).get mustBe "http://localhost:9400/agent"
+        redirectLocation(route).get mustBe "http://localhost:9440/agent-usher/optin"
       }
     }
 

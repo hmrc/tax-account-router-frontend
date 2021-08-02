@@ -24,7 +24,7 @@ import engine.{AuditInfo, EngineResult}
 import model.{EnrolmentState, _}
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
@@ -35,9 +35,9 @@ import services._
 import support._
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -105,6 +105,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
     val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
     val mockMetricsService: MetricsMonitoringService = mock[MetricsMonitoringService]
     val mockExternalUrls: ExternalUrls = mock[ExternalUrls]
+    val mockAudit: AuditService = mock[AuditService]
 
     val messagesControllerComponents: MessagesControllerComponents = app.injector.instanceOf[MessagesControllerComponents]
 
@@ -116,7 +117,7 @@ class RouterControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPe
 
     val testRouterController = new RouterController(mockAuthConnector, mock[AuthAction], mockAuditConnector,
       mockRuleEngine, mockAnalyticsEventSender, mockThrottlingService, mockRuleContext, mockFrontendAppConfig,
-    messagesControllerComponents, mockMetricsService, mockExternalUrls, mock[EacdConnector])
+    messagesControllerComponents, mockMetricsService, mockExternalUrls, mock[EacdConnector], mockAudit)
 
     val expectedEnrolmentsSeq: Enrolments =
       Enrolments(
