@@ -62,7 +62,7 @@ trait WireMockMocks {
 
   def stubEnrolments(body: String): StubMapping = {
     wireMock.wireMockServer.stubFor(
-      get(urlMatching("/enrolment-store/groups/12345678/enrolments"))
+      get(urlMatching("/enrolment-store-proxy/enrolment-store/groups/12345678/enrolments"))
         .willReturn(
           aResponse()
             .withStatus(Status.OK)
@@ -73,7 +73,7 @@ trait WireMockMocks {
 
   def noEnrolments(): StubMapping = {
     wireMock.wireMockServer.stubFor(
-      get(urlMatching("/enrolment-store/groups/12345678/enrolments"))
+      get(urlMatching("/enrolment-store-proxy/enrolment-store/groups/12345678/enrolments"))
         .willReturn(
           aResponse()
             .withStatus(Status.NO_CONTENT)

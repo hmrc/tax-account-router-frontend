@@ -24,8 +24,7 @@ trait SpecCommonHelper extends PlaySpec with GuiceOneServerPerSuite with WireMoc
       "auditing.consumer.baseUri.port" -> stubPort,
       "microservice.services.auth.host" -> stubHost,
       "microservice.services.auth.port" -> stubPort,
-      "microservice.services.enrolment-store.host" -> stubHost,
-      "microservice.services.enrolment-store.port" -> stubPort,
+      "enrolment-store.host" -> s"http://$stubHost:$stubPort",
       "new-rules" -> true
     )
   }

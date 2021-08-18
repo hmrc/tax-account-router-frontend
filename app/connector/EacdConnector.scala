@@ -17,23 +17,35 @@
 package connector
 
 import config.FrontendAppConfig
+import controllers.Assets.OK
+import play.api.{Logger, LoggerLike}
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Success, Try}
 
 class EacdConnector @Inject()(httpClient: HttpClient,
                               config: FrontendAppConfig,
                               implicit val ec: ExecutionContext) {
 
+  val logger: LoggerLike = Logger
   lazy val enrolmentProxyBase: String = config.enrolmentStore
 
   def checkGroupEnrolments(groupId: Option[String])(implicit hc: HeaderCarrier): Future[Boolean] = {
     groupId map { id =>
-      httpClient.GET[HttpResponse](enrolmentProxyBase + s"/enrolment-store/groups/$id/enrolments").map { res =>
+      httpClient.GET[HttpResponse](enrolmentProxyBase + s"/enrolment-store-proxy/enrolment-store/groups/$id/enrolments").map { res =>
           res.status match {
-            case 200 => res.json.as[GroupEnrolments].enrolments.isEmpty
+            case OK =>
+              Try {
+                res.json.as[GroupEnrolments].enrolments.isEmpty
+              } match {
+                case Success(b) => b
+                case _ =>
+                  logger.warn(s"Failed to parse ${res.json}")
+                  true
+              }
             case _ => true
           }
       }
