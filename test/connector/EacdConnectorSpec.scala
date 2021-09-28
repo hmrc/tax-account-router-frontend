@@ -20,7 +20,7 @@ import config.FrontendAppConfig
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import support.UnitSpec
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
@@ -30,14 +30,15 @@ import scala.concurrent.Future
 class EacdConnectorSpec extends UnitSpec with MockitoSugar {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  val mockHttp = mock[HttpClient]
+  val mockHttp: HttpClient = mock[HttpClient]
   val mockConfig: FrontendAppConfig = mock[FrontendAppConfig]
 
-  val connector = new EacdConnector(mockHttp, mockConfig, global){
+  val connector: EacdConnector = new EacdConnector(mockHttp, mockConfig, global){
     override lazy val enrolmentProxyBase: String = "test"
   }
 
-  val responseWithEnrolments = {Json.parse(
+  val responseWithEnrolments: JsValue = {
+    Json.parse(
     """
       |{
       |    "startRecord": 1,
@@ -81,6 +82,15 @@ class EacdConnectorSpec extends UnitSpec with MockitoSugar {
       "EACD returns no group enrolments for an ID with expected 204 code" in {
         when(mockHttp.GET[HttpResponse](any(), any(), any())(any(), any(), any()))
           .thenReturn(Future.successful(HttpResponse(204, """{}""")))
+
+        when(mockConfig.enrolmentStore)
+          .thenReturn("testValue")
+
+        await(connector.checkGroupEnrolments(Some("groupId"))) shouldBe true
+      }
+      "EACD returns invalid JSON" in {
+        when(mockHttp.GET[HttpResponse](any(), any(), any())(any(), any(), any()))
+          .thenReturn(Future.successful(HttpResponse(200, """{"enrolments": "what is this?!"}""")))
 
         when(mockConfig.enrolmentStore)
           .thenReturn("testValue")

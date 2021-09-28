@@ -16,10 +16,10 @@
 
 package config
 
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
-import services.ThrottlingConfig
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import javax.inject.{Inject, Singleton}
 
 trait AppConfigHelpers {
 
@@ -33,11 +33,6 @@ trait AppConfigHelpers {
 
   def getConfiguration(key: String): Configuration = config.getOptional[Configuration](key).getOrElse(Configuration.empty)
 
-  def getConfigurationStringSet(key: String): Set[String] = {
-    import utils.StringSeparationHelper._
-    val values = getConfigurationStringOption(key)
-    values.map(_.asCommaSeparatedValues.toSet).getOrElse(Set.empty[String])
-  }
 }
 
 trait AppConfig extends AppConfigHelpers {
@@ -51,29 +46,6 @@ trait AppConfig extends AppConfigHelpers {
   lazy val reportAProblemPartialUrl: String = s"$contactHost/contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
   lazy val reportAProblemNonJSUrl: String = s"$contactHost/contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
 
-  def getLocationConfig(locationName: String, key: String): Option[String] = getConfigurationStringOption(s"locations.$locationName.$key")
-
-  def getThrottlingConfig(locationWithSuffix: String): ThrottlingConfig = {
-    val config = getConfiguration(s"throttling.locations.$locationWithSuffix")
-
-    val incorrectConfigurationKey = "percentageBeToThrottled"
-    val configurationKey = "percentageToBeThrottled"
-
-    val percentageToBeThrottled = config.getOptional[Int](configurationKey)
-      .getOrElse(
-        config.getOptional[Int](incorrectConfigurationKey)
-          .getOrElse(0)
-      )
-
-    val fallback = config.getOptional[String]("fallback")
-
-    ThrottlingConfig(percentageToBeThrottled, fallback)
-  }
-
-  lazy val businessEnrolments: Set[String] = getConfigurationStringSet("business-enrolments")
-  lazy val saEnrolments: Set[String] = getConfigurationStringSet("self-assessment-enrolments")
-
-  lazy val financiallySensitiveEnrolments: Set[String] = getConfigurationStringSet("financially-sensitive-enrolments")
 }
 
 @Singleton
@@ -81,6 +53,11 @@ class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration,
                                   val servicesConfig: ServicesConfig) extends AppConfig {
 
   lazy override val config: Configuration = runModeConfiguration
+
+  lazy val companyAuthHost: String = getConfigurationStringOption("company-auth.host").getOrElse("")
+  lazy val taxAccountRouterHost: String = getConfigurationStringOption("tax-account-router.host").getOrElse("")
+
+  lazy val signIn = s"$companyAuthHost/gg/sign-in?continue=$taxAccountRouterHost/account"
 
   lazy val extendedLoggingEnabled: Boolean = runModeConfiguration
     .getOptional[Boolean]("extended-logging-enabled").getOrElse(false)

@@ -15,13 +15,9 @@
  */
 
 import com.google.inject.AbstractModule
-import services.{MetricsMonitoringService, MetricsMonitoringServiceImpl}
 
 class TarModule extends AbstractModule {
 
-  override def configure(): Unit = {
-    bind(classOf[MetricsMonitoringService])
-      .to(classOf[MetricsMonitoringServiceImpl])
-  }
+  override def configure(): Unit = {}
 
 }

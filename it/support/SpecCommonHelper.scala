@@ -4,6 +4,7 @@ import config.FrontendAppConfig
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}
 import support.WireMockConstants.{stubHost, stubPort}
@@ -29,11 +30,11 @@ trait SpecCommonHelper extends PlaySpec with GuiceOneServerPerSuite with WireMoc
     )
   }
 
-  override lazy val app = new GuiceApplicationBuilder()
+  override lazy val app: Application = new GuiceApplicationBuilder()
     .configure(extraConfig)
     .build()
 
-  lazy val appConfig = app.injector.instanceOf[FrontendAppConfig]
+  lazy val appConfig: FrontendAppConfig = app.injector.instanceOf[FrontendAppConfig]
 
   override protected def beforeAll(): Unit = {
     wireMock.start()
