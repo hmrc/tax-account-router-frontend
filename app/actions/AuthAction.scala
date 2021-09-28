@@ -16,10 +16,10 @@
 
 package actions
 
-import controllers.Assets.Redirect
-import controllers.ExternalUrls
+import config.FrontendAppConfig
 import model.UserProfile
 import play.api.mvc.Result
+import play.api.mvc.Results.Redirect
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisationException, AuthorisedFunctions}
@@ -29,7 +29,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class AuthAction @Inject()(val externalUrls: ExternalUrls, val authConnector: AuthConnector) extends AuthorisedFunctions {
+class AuthAction @Inject()(val config: FrontendAppConfig, val authConnector: AuthConnector) extends AuthorisedFunctions {
 
   def userProfile(body: UserProfile => Future[Result])
                  (implicit ex: ExecutionContext, hc: HeaderCarrier): Future[Result] = {
@@ -40,7 +40,7 @@ class AuthAction @Inject()(val externalUrls: ExternalUrls, val authConnector: Au
           body(UserProfile(enrolments.enrolments, affinityGroup, confidenceLevel, credentialRole, credentialStrength, credentials, groupId))
       } recover {
       case _: AuthorisationException =>
-        Redirect(externalUrls.signIn)
+        Redirect(config.signIn)
     }
   }
 

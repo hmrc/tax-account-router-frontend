@@ -17,10 +17,11 @@
 package connector
 
 import config.FrontendAppConfig
-import controllers.Assets.OK
-import play.api.{Logger, LoggerLike}
+import play.api.Logging
+import play.api.http.Status.OK
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,9 +29,8 @@ import scala.util.{Success, Try}
 
 class EacdConnector @Inject()(httpClient: HttpClient,
                               config: FrontendAppConfig,
-                              implicit val ec: ExecutionContext) {
+                              implicit val ec: ExecutionContext) extends Logging {
 
-  val logger: LoggerLike = Logger
   lazy val enrolmentProxyBase: String = config.enrolmentStore
 
   def checkGroupEnrolments(groupId: Option[String])(implicit hc: HeaderCarrier): Future[Boolean] = {
@@ -51,8 +51,8 @@ class EacdConnector @Inject()(httpClient: HttpClient,
       }
     } getOrElse Future.successful(true)
   }
-
 }
+
 case class GroupEnrolment(service: String)
 object Enrolment {
   implicit val reads: Reads[GroupEnrolment] = Json.reads[GroupEnrolment]

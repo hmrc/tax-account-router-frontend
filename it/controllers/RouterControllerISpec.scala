@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 class RouterControllerISpec extends SpecCommonHelper {
 
-  val responseWithEnrolments = {
+  val responseWithEnrolments: String = {
     """
       |{
       |    "startRecord": 1,
@@ -105,7 +105,7 @@ class RouterControllerISpec extends SpecCommonHelper {
         redirectLocation(route).get mustBe BTA
       }
       "when group has no enrolments and has Organisation affinity" in {
-        stubAuthorised(authResponse(affinity = "Organisation").toString)
+        stubAuthorised(authResponse().toString)
         noEnrolments()
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
