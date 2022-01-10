@@ -9,7 +9,7 @@ import uk.gov.hmrc.sbtsettingkeys.Keys.isPublicArtefact
 
 val appName = "tax-account-router-frontend"
 
-val silencerVersion = "1.7.1"
+val silencerVersion = "1.7.7"
 
 
 lazy val scoverageSettings = Seq(
