@@ -90,7 +90,11 @@ class RouterController @Inject()(val authConnector: AuthConnector,
 
         def hasNonSAenrolments = enrolments.collect { case e if e.key != "HMRC-AS-AGENT" => e.key }.exists(e => !saEnrolmentSet(e))
 
-        if (isNotGateway) PTA("verify-user") else if (isAdmin) {
+        def hasPTEnrolment: Boolean = enrolments.nonEmpty && enrolments.map(_.key).contains("HMRC-PT")
+
+        if(hasPTEnrolment){
+          PTA("PT-enrolment-user")
+        } else if (isNotGateway) PTA("verify-user") else if (isAdmin) {
           if (hasOnlySAenrolments) {
             if (isVerified) PTA("user-with-sa-enrolments-and-cl250") else BTA("user-with-sa-enrolments-and-not-cl250")
           } else if (hasNonSAenrolments) {
