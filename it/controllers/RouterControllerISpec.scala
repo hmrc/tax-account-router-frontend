@@ -43,6 +43,7 @@ class RouterControllerISpec extends SpecCommonHelper {
                    withSA: Boolean = false,
                    withMoreThanSA: Boolean = false,
                    isAgent: Boolean = false,
+                   isPTEnrolment: Boolean = false,
                    affinity: String = "Organisation"): JsValue = {
     val enrolments = if(withSA) {
       """[
@@ -56,6 +57,10 @@ class RouterControllerISpec extends SpecCommonHelper {
       """[
         |{"key":"IR-SA","identifiers": [{"key" : "UTR" , "value": "2222222226"}],"state": "Activated"},
         |{"key":"IR-CT","identifiers": [{"key" : "UTR" , "value": "2222222227"}],"state": "Activated"}
+        |]""".stripMargin
+    }else if(isPTEnrolment) {
+      """[
+        |{"key":"HMRC-PT","identifiers": [{"key" : "NINO" , "value": "2222222226"}],"state": "Activated"}
         |]""".stripMargin
     } else "[]"
     Json.parse(s"""
@@ -133,6 +138,12 @@ class RouterControllerISpec extends SpecCommonHelper {
 
         redirectLocation(route).get mustBe PTA
       }
+      "when user has PT enrolment" in {
+        stubAuthorised(authResponse(isPTEnrolment = true).toString())
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe PTA
+      }
     }
 
     "redirect the user to Agents (Classic)" when {
@@ -154,6 +165,7 @@ class RouterControllerISpec extends SpecCommonHelper {
         redirectLocation(route).get mustBe "http://localhost:9401/agent-services-account"
       }
     }
+
   }
 
 }
