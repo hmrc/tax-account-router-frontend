@@ -27,8 +27,9 @@ import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
-
 import javax.inject.{Inject, Singleton}
+import play.api.Logging
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -39,7 +40,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
                                  eacd: EacdConnector,
                                  auditService: AuditService)
                                 (implicit val ec: ExecutionContext)
-  extends FrontendController(messagesControllerComponents) with AuthorisedFunctions {
+  extends FrontendController(messagesControllerComponents) with AuthorisedFunctions with Logging {
 
   private val saEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT", "HMRC-NI")
 
@@ -52,7 +53,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
          |}""".stripMargin
     )
     auditService.audit(AuditModel(reason, data))
-
+    logger.info(s"[RouterController][route] ${location} ${reason}")
     Future {
       location match {
         case "PTA" => Redirect(appConfig.pta)
