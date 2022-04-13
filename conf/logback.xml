@@ -50,11 +50,11 @@
 
     <logger name="application" level="INFO"/>
 
-    <logger name="connector" level="WARN">
-        <appender-ref ref="STDOUT"/>
+    <logger name="connector" level="TRACE">
+        <appender-ref ref="CONNECTOR_LOG_FILE"/>
     </logger>
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
     </root>

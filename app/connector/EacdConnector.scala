@@ -36,29 +36,31 @@ class EacdConnector @Inject()(httpClient: HttpClient,
   def checkGroupEnrolments(groupId: Option[String])(implicit hc: HeaderCarrier): Future[Boolean] = {
     groupId map { id =>
       httpClient.GET[HttpResponse](enrolmentProxyBase + s"/enrolment-store-proxy/enrolment-store/groups/$id/enrolments").map { res =>
-          res.status match {
-            case OK =>
-              Try {
-                res.json.as[GroupEnrolments].enrolments.isEmpty
-              } match {
-                case Success(b) => b
-                case _ =>
-                  logger.warn(s"Failed to parse ${res.json}")
-                  true
-              }
-            case _ => true
-          }
+        res.status match {
+          case OK =>
+            Try {
+              res.json.as[GroupEnrolments].enrolments.isEmpty
+            } match {
+              case Success(b) => b
+              case _ =>
+                logger.warn(s"Failed to parse ${res.json}")
+                true
+            }
+          case _ => true
+        }
       }
     } getOrElse Future.successful(true)
   }
 }
 
 case class GroupEnrolment(service: String)
+
 object Enrolment {
   implicit val reads: Reads[GroupEnrolment] = Json.reads[GroupEnrolment]
 }
 
 case class GroupEnrolments(enrolments: Seq[GroupEnrolment])
+
 object GroupEnrolments {
   implicit val enrolmentReads: Reads[GroupEnrolment] = Enrolment.reads
   implicit val reads: Reads[GroupEnrolments] = Json.reads[GroupEnrolments]
