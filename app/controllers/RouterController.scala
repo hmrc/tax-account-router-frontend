@@ -28,6 +28,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 import javax.inject.{Inject, Singleton}
+import model.UserProfile
 import play.api.Logging
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,16 +45,21 @@ class RouterController @Inject()(val authConnector: AuthConnector,
 
   private val saEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT", "HMRC-NI")
 
-  private def route(reason: String, location: String)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = {
+  private def route(reason: String, location: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = {
     val data = Json.parse(
       s"""{
          |  "reason": "$reason",
          |  "location": "$location",
-         |  "enrolments": ${Json.toJson(e)}
+         |  "enrolments": ${Json.toJson(e)},
+         |  "affinityGroup": "${userProfile.affinityGroup.getOrElse("")}",
+         |  "confidenceLevel": "${userProfile.confidenceLevel.level}",
+         |  "credentials": "${userProfile.credentials.getOrElse("")}",
+         |  "credentialRole": "${userProfile.credentialRole.getOrElse("")}"
          |}""".stripMargin
     )
+    
     auditService.audit(AuditModel(reason, data))
-    logger.info(s"[RouterController][route] ${location} ${reason}")
+    logger.info(s"[RouterController][route] $location $reason")
     Future {
       location match {
         case "PTA" => Redirect(appConfig.pta)
@@ -64,10 +70,10 @@ class RouterController @Inject()(val authConnector: AuthConnector,
     }
   }
 
-  private def PTA(reason: String)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "PTA")
-  private def BTA(reason: String)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "BTA")
-  private def AgentServices()(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-services", "AgentServices")
-  private def AgentClassic()(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-classic", "AgentClassic")
+  private def PTA(reason: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "PTA", userProfile)
+  private def BTA(reason: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "BTA", userProfile)
+  private def AgentServices(userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-services", "AgentServices", userProfile)
+  private def AgentClassic(userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-classic", "AgentClassic", userProfile)
 
 
   def redirectUser: Action[AnyContent] = {
@@ -94,28 +100,28 @@ class RouterController @Inject()(val authConnector: AuthConnector,
         def hasPTEnrolment: Boolean = enrolments.nonEmpty && enrolments.map(_.key).contains("HMRC-PT")
 
         if(hasPTEnrolment){
-          PTA("PT-enrolment-user")
-        } else if (isNotGateway) PTA("verify-user") else if (isAdmin) {
+          PTA("PT-enrolment-user", user)
+        } else if (isNotGateway) PTA("verify-user", user) else if (isAdmin) {
           if (hasOnlySAenrolments) {
-            if (isVerified) PTA("user-with-sa-enrolments-and-cl250") else BTA("user-with-sa-enrolments-and-not-cl250")
+            if (isVerified) PTA("user-with-sa-enrolments-and-cl250", user) else BTA("user-with-sa-enrolments-and-not-cl250", user)
           } else if (hasNonSAenrolments) {
-            BTA("no-sa-enrolments")
+            BTA("no-sa-enrolments", user)
           } else {
             hasNoGroupEnrolments flatMap { noEnrolments =>
               if (noEnrolments) {
                 if (isAffinity(Organisation)) {
-                  BTA("organisation-account")
+                  BTA("organisation-account", user)
                 } else if (isAffinity(Individual)) {
-                  PTA("individual-account")
+                  PTA("individual-account", user)
                 } else if (activeAgent) {
-                  AgentServices()
+                  AgentServices(user)
                 } else {
-                  AgentClassic()
+                  AgentClassic(user)
                 }
-              } else BTA("group-credential")
+              } else BTA("group-credential", user)
             }
           }
-        } else BTA("assistant-credential")
+        } else BTA("assistant-credential", user)
       }
     }
   }
