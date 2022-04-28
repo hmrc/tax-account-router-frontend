@@ -99,7 +99,23 @@ class RouterController @Inject()(val authConnector: AuthConnector,
 
         def hasPTEnrolment: Boolean = enrolments.nonEmpty && enrolments.map(_.key).contains("HMRC-PT")
 
-        if(hasPTEnrolment){
+        if (isAffinity(Organisation)) {
+          if(hasPTEnrolment){
+            BTA("user-having-OrganisationAffinity-and-PTEnrolment-routed-to-BTA-would-have-gone-to-PTA", user)
+          } else if (isNotGateway) {
+            BTA("user-having-OrganisationAffinity-and-is-not-a-gatewayUser-routed-to-BTA-would-have-gone-to-PTA", user)
+          } else if (isAdmin) {
+              if (hasOnlySAenrolments) {
+                if (isVerified)
+                  BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-cl250-routed-to-BTA-would-have-gone-to-PTA", user)
+                else
+                  BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-not-cl250-routed-to-BTA-would-have-gone-to-BTA", user)
+              } else if (hasNonSAenrolments) {
+                BTA("user-with-OrganisationAffinity-no-sa-enrolments-routed-to-BTA-would-have-gone-to-BTA", user)
+              }
+          }
+          BTA("user-with-orgAffinity-routed-to-BTA-would-have-gone-to-BTA", user)
+        } else if(hasPTEnrolment){
           PTA("PT-enrolment-user", user)
         } else if (isNotGateway) PTA("verify-user", user) else if (isAdmin) {
           if (hasOnlySAenrolments) {

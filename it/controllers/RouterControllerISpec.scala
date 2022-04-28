@@ -123,13 +123,13 @@ class RouterControllerISpec extends SpecCommonHelper {
         stubAuthorised(authResponse(provider = "Verify").toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
-        redirectLocation(route).get mustBe PTA
+        redirectLocation(route).get mustBe BTA
       }
       "has only SA enrolments and has gone through IV" in {
         stubAuthorised(authResponse(confidence = 200, withSA = true).toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
-        redirectLocation(route).get mustBe PTA
+        redirectLocation(route).get mustBe BTA
       }
       "when group has no enrolments and has Individual affinity" in {
         stubAuthorised(authResponse(affinity = "Individual").toString)
@@ -142,7 +142,7 @@ class RouterControllerISpec extends SpecCommonHelper {
         stubAuthorised(authResponse(isPTEnrolment = true).toString())
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
-        redirectLocation(route).get mustBe PTA
+        redirectLocation(route).get mustBe BTA
       }
     }
 
