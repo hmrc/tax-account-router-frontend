@@ -85,25 +85,25 @@ class RouterControllerISpec extends SpecCommonHelper {
   "redirectUser" must {
     "redirect the user to BTA" when {
       "when user is an assistant" in {
-        stubAuthorised(authResponse(role = "Assistant").toString)
+        stubAuthorised(authResponse(role = "Assistant", affinity = "Individual").toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
         redirectLocation(route).get mustBe BTA
       }
       "when user has only SA enrolments and not gone through IV" in {
-        stubAuthorised(authResponse(withSA = true).toString)
+        stubAuthorised(authResponse(withSA = true, affinity = "Individual").toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
         redirectLocation(route).get mustBe BTA
       }
       "when user has non-SA enrolments" in {
-        stubAuthorised(authResponse(withMoreThanSA = true).toString)
+        stubAuthorised(authResponse(withMoreThanSA = true, affinity = "Individual").toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
         redirectLocation(route).get mustBe BTA
       }
       "when group has enrolments" in {
-        stubAuthorised(authResponse().toString)
+        stubAuthorised(authResponse(affinity = "Individual").toString)
         stubEnrolments(responseWithEnrolments)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
@@ -116,20 +116,57 @@ class RouterControllerISpec extends SpecCommonHelper {
 
         redirectLocation(route).get mustBe BTA
       }
-    }
 
-    "redirect the user to PTA" when {
-      "authenticated by Verify instead of Gateway" in {
-        stubAuthorised(authResponse(provider = "Verify").toString)
+      "when user has PT enrolments and has Organisation affinity" in {
+        stubAuthorised(authResponse(isPTEnrolment = true).toString)
+        noEnrolments()
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
         redirectLocation(route).get mustBe BTA
       }
-      "has only SA enrolments and has gone through IV" in {
+
+      "when user has provider = Verify and has Organisation affinity" in {
+        stubAuthorised(authResponse(provider = "Verify").toString)
+        noEnrolments()
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe BTA
+      }
+
+      "when user is admin and has Organisation affinity verified with enrolments" in {
         stubAuthorised(authResponse(confidence = 200, withSA = true).toString)
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
         redirectLocation(route).get mustBe BTA
+      }
+
+      "when user is admin and has Organisation affinity with SA only enrolments" in {
+        stubAuthorised(authResponse(withSA = true).toString)
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe BTA
+      }
+
+      "when user is admin and has Organisation affinity with more than SA enrolments" in {
+        stubAuthorised(authResponse(withMoreThanSA = true).toString)
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe BTA
+      }
+    }
+
+    "redirect the user to PTA" when {
+      "authenticated by Verify instead of Gateway" in {
+        stubAuthorised(authResponse(provider = "Verify", affinity = "Individual").toString)
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe PTA
+      }
+      "has only SA enrolments and has gone through IV" in {
+        stubAuthorised(authResponse(confidence = 200, withSA = true, affinity = "Individual").toString)
+        val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
+
+        redirectLocation(route).get mustBe PTA
       }
       "when group has no enrolments and has Individual affinity" in {
         stubAuthorised(authResponse(affinity = "Individual").toString)
@@ -138,11 +175,12 @@ class RouterControllerISpec extends SpecCommonHelper {
 
         redirectLocation(route).get mustBe PTA
       }
+
       "when user has PT enrolment" in {
-        stubAuthorised(authResponse(isPTEnrolment = true).toString())
+        stubAuthorised(authResponse(isPTEnrolment = true, affinity = "Individual").toString())
         val route: Future[Result] = testRouterController.redirectUser(FakeRequest())
 
-        redirectLocation(route).get mustBe BTA
+        redirectLocation(route).get mustBe PTA
       }
     }
 
