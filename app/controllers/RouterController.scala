@@ -22,7 +22,7 @@ import connector.EacdConnector
 import play.api.libs.json.Json
 import play.api.mvc._
 import services._
-import uk.gov.hmrc.auth.core.AffinityGroup.{Individual, Organisation}
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HeaderCarrier
@@ -57,7 +57,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
          |  "credentialRole": "${userProfile.credentialRole.getOrElse("")}"
          |}""".stripMargin
     )
-    
+
     auditService.audit(AuditModel(reason, data))
     logger.info(s"[RouterController][route] $location $reason")
     Future {
@@ -71,8 +71,11 @@ class RouterController @Inject()(val authConnector: AuthConnector,
   }
 
   private def PTA(reason: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "PTA", userProfile)
+
   private def BTA(reason: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route(reason, "BTA", userProfile)
+
   private def AgentServices(userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-services", "AgentServices", userProfile)
+
   private def AgentClassic(userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = route("agent-classic", "AgentClassic", userProfile)
 
 
@@ -93,29 +96,35 @@ class RouterController @Inject()(val authConnector: AuthConnector,
 
         def isAffinity(a: AffinityGroup): Boolean = user.affinityGroup.contains(a)
 
-        def activeAgent: Boolean = enrolments.size == 1 && enrolments.map(_.key).contains("HMRC-AS-AGENT")
+        def activeAgent: Boolean = enrolments.map(_.key).contains("HMRC-AS-AGENT")
 
         def hasNonSAenrolments = enrolments.collect { case e if e.key != "HMRC-AS-AGENT" => e.key }.exists(e => !saEnrolmentSet(e))
 
         def hasPTEnrolment: Boolean = enrolments.nonEmpty && enrolments.map(_.key).contains("HMRC-PT")
 
         if (isAffinity(Organisation)) {
-          if(hasPTEnrolment){
+          if (hasPTEnrolment) {
             BTA("user-having-OrganisationAffinity-and-PTEnrolment-routed-to-BTA-would-have-gone-to-PTA", user)
           } else if (isNotGateway) {
             BTA("user-having-OrganisationAffinity-and-is-not-a-gatewayUser-routed-to-BTA-would-have-gone-to-PTA", user)
           } else if (isAdmin) {
-              if (hasOnlySAenrolments) {
-                if (isVerified)
-                  BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-cl250-routed-to-BTA-would-have-gone-to-PTA", user)
-                else
-                  BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-not-cl250-routed-to-BTA-would-have-gone-to-BTA", user)
-              } else if (hasNonSAenrolments) {
-                BTA("user-with-OrganisationAffinity-no-sa-enrolments-routed-to-BTA-would-have-gone-to-BTA", user)
-              }
+            if (hasOnlySAenrolments) {
+              if (isVerified)
+                BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-cl250-routed-to-BTA-would-have-gone-to-PTA", user)
+              else
+                BTA("user-with-OrganisationAffinity-Admin-sa-enrolments-and-not-cl250-routed-to-BTA-would-have-gone-to-BTA", user)
+            } else if (hasNonSAenrolments) {
+              BTA("user-with-OrganisationAffinity-no-sa-enrolments-routed-to-BTA-would-have-gone-to-BTA", user)
+            }
           }
           BTA("user-with-orgAffinity-routed-to-BTA-would-have-gone-to-BTA", user)
-        } else if(hasPTEnrolment){
+        } else if (isAffinity(Agent)) {
+          if (activeAgent) {
+            AgentServices(user)
+          } else {
+            AgentClassic(user)
+          }
+        } else if (hasPTEnrolment) {
           PTA("PT-enrolment-user", user)
         } else if (isNotGateway) PTA("verify-user", user) else if (isAdmin) {
           if (hasOnlySAenrolments) {
@@ -125,15 +134,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
           } else {
             hasNoGroupEnrolments flatMap { noEnrolments =>
               if (noEnrolments) {
-                if (isAffinity(Organisation)) {
-                  BTA("organisation-account", user)
-                } else if (isAffinity(Individual)) {
                   PTA("individual-account", user)
-                } else if (activeAgent) {
-                  AgentServices(user)
-                } else {
-                  AgentClassic(user)
-                }
               } else BTA("group-credential", user)
             }
           }
@@ -141,5 +142,5 @@ class RouterController @Inject()(val authConnector: AuthConnector,
       }
     }
   }
-
 }
+
