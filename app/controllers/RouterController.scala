@@ -18,7 +18,6 @@ package controllers
 
 import actions.AuthAction
 import config.FrontendAppConfig
-import connector.EacdConnector
 import play.api.libs.json.Json
 import play.api.mvc._
 import services._
@@ -38,12 +37,13 @@ class RouterController @Inject()(val authConnector: AuthConnector,
                                  authAction: AuthAction,
                                  appConfig: FrontendAppConfig,
                                  val messagesControllerComponents: MessagesControllerComponents,
-                                 eacd: EacdConnector,
                                  auditService: AuditService)
                                 (implicit val ec: ExecutionContext)
   extends FrontendController(messagesControllerComponents) with AuthorisedFunctions with Logging {
 
   private val saEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT", "HMRC-NI")
+  private val mtdOrSAEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT")
+  private val nonBusinessEnrolmentSet: Set[String] = Set("HMRC-CGT-PD", "IR-SA", "HMRC-MTD-IT", "HMRC-SBI-ORG", "HMRC-NI", "HMRC-PT")
 
   private def route(reason: String, location: String, userProfile: UserProfile)(implicit e: Set[Enrolment], hc: HeaderCarrier, request: Request[_]): Future[Result] = {
     val data = Json.parse(
@@ -87,18 +87,21 @@ class RouterController @Inject()(val authConnector: AuthConnector,
         def isNotGateway: Boolean = user.credentials.exists(_.providerType == "Verify")
 
         def isVerified: Boolean = user.confidenceLevel >= L200
+        def isLessThan200: Boolean = user.confidenceLevel < L200
 
         def isAdmin: Boolean = user.credentialRole.contains(User)
 
         def hasOnlySAenrolments: Boolean = enrolments.nonEmpty && enrolments.map(_.key).forall(e => saEnrolmentSet(e))
-
-        def hasNoGroupEnrolments: Future[Boolean] = eacd.checkGroupEnrolments(user.groupId)
 
         def isAffinity(a: AffinityGroup): Boolean = user.affinityGroup.contains(a)
 
         def activeAgent: Boolean = enrolments.map(_.key).contains("HMRC-AS-AGENT")
 
         def hasNonSAenrolments = enrolments.collect { case e if e.key != "HMRC-AS-AGENT" => e.key }.exists(e => !saEnrolmentSet(e))
+
+        def hasNonIndenrolments = enrolments.collect { case e => e.key }.exists(e => !nonBusinessEnrolmentSet(e))
+
+        def hasMtdItORSA = enrolments.collect { case e => e.key }.exists(e => mtdOrSAEnrolmentSet(e))
 
         def hasPTEnrolment: Boolean = enrolments.nonEmpty && enrolments.map(_.key).contains("HMRC-PT")
 
@@ -124,21 +127,17 @@ class RouterController @Inject()(val authConnector: AuthConnector,
           } else {
             AgentClassic(user)
           }
-        } else if (hasPTEnrolment) {
-          PTA("PT-enrolment-user", user)
-        } else if (isNotGateway) PTA("verify-user", user) else if (isAdmin) {
-          if (hasOnlySAenrolments) {
-            if (isVerified) PTA("user-with-sa-enrolments-and-cl250", user) else BTA("user-with-sa-enrolments-and-not-cl250", user)
-          } else if (hasNonSAenrolments) {
-            BTA("no-sa-enrolments", user)
-          } else {
-            hasNoGroupEnrolments flatMap { noEnrolments =>
-              if (noEnrolments) {
-                  PTA("individual-account", user)
-              } else BTA("group-credential", user)
+        } else if (isAffinity(Individual)) {
+            if(hasNonIndenrolments) {
+              BTA("has-business-enrolment", user)
+          } else if(isLessThan200 && hasMtdItORSA) {
+              BTA("verified-with-SA", user)
+            } else {
+              PTA("individuals-not-verified-doesnt-have-business-enrolments", user)
             }
-          }
-        } else BTA("assistant-credential", user)
+        } else {
+          BTA("Everyone else - SHOULD NOT GET HERE", user)
+        }
       }
     }
   }
