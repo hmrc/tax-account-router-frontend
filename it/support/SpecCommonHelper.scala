@@ -7,14 +7,18 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}
+import play.api.test.FakeRequest
+import play.api.test.Helpers.AUTHORIZATION
 import support.WireMockConstants.{stubHost, stubPort}
 
 trait SpecCommonHelper extends PlaySpec with GuiceOneServerPerSuite with WireMockMocks with BeforeAndAfterAll with BeforeAndAfterEach {
 
   lazy val wireMock = new WireMock
 
+  val fakeRequest = FakeRequest().withSession("sessionId" -> "123456789", "authToken" -> "token")
+
   def buildClient(path: String): WSRequest = {
-    app.injector.instanceOf[WSClient].url(s"http://localhost:$port/$path")
+    app.injector.instanceOf[WSClient].url(s"http://localhost:$port/$path").withHttpHeaders((AUTHORIZATION, "bearer 123"))
   }
 
   val extraConfig: Map[String, Any] = {
