@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} [%.-5level] - %msg%n%rEx</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/new_service.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%date{ISO8601} level=[%level] logger=[%logger] thread=[%thread] message=[%message] %replace(exception=[%xException]){'^exception=\[\]$',''}%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CONNECTOR_LOG_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/connectors.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%message%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.google.inject" level="OFF"/>
+    <logger name="org.asynchttpclient.netty" level="OFF"/>
+    <logger name="io.netty.buffer" level="OFF"/>
+    <logger name="play.core.netty" level="OFF"/>
+    <logger name="org.mongodb" level="OFF"/>
+
+    <logger name="org.eclipse.jetty" level="ERROR"/>
+    <logger name="com.typesafe.sslconfig" level="ERROR"/>
+    <logger name="akka" level="WARN"/>
+    <logger name="com.google.inject" level="ERROR"/>
+    <logger name="io.netty" level="ERROR"/>
+    <logger name="javax.management" level="ERROR"/>
+    <logger name="org.asynchttpclient.netty" level="ERROR"/>
+    <logger name="org.apache" level="ERROR"/>
+    <logger name="org.openqa.selenium" level="ERROR"/>
+    <logger name="play" level="WARN"/>
+    <logger name="play.core.netty" level="ERROR"/>
+    <logger name="play.shaded.ahc.org.asynchttpclient.netty.channel.DefaultChannelPool" level="ERROR"/>
+    <logger name="play.shaded.ahc.org.asynchttpclient.netty.handler.HttpHandler" level="ERROR"/>
+
+    <logger name="io.netty.buffer" level="INFO"/>
+    <logger name="io.netty" level="INFO"/>
+    <logger name="org.webjars" level="INFO"/>
+
+    <logger name="uk.gov" level="OFF"/>
+    <logger name="connector" level="ERROR">
+        <appender-ref ref="CONNECTOR_LOG_FILE"/>
+    </logger>
+    <logger name="application" level="DEBUG"/>
+
+
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

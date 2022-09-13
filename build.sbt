@@ -10,7 +10,6 @@ import uk.gov.hmrc.sbtsettingkeys.Keys.isPublicArtefact
 val appName = "tax-account-router-frontend"
 
 
-
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.*;.*(AuthService|BuildInfo|Routes).*;.*views.html*;.*ErrorHandler*;",
   ScoverageKeys.coverageMinimumStmtTotal := 95,
@@ -19,7 +18,7 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(play.sbt.PlayScala, SbtDistributablesPlugin) : _*)
+  .enablePlugins(Seq(play.sbt.PlayScala, SbtDistributablesPlugin): _*)
   .settings(majorVersion := 1)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
@@ -30,7 +29,7 @@ lazy val microservice = Project(appName, file("."))
     scalaVersion := "2.12.15",
     libraryDependencies ++= AppDependencies(),
     parallelExecution in Test := false,
-    fork in Test := false,
+    fork in Test := true,
     retrieveManaged := true,
     evictionWarningOptions in update :=
       EvictionWarningOptions.default.withWarnScalaVersionEviction(true),
@@ -39,14 +38,17 @@ lazy val microservice = Project(appName, file("."))
     isPublicArtefact := true
   )
   .configs(IntegrationTest extend Test)
-  .settings(inConfig(IntegrationTest)(Defaults.testSettings) : _*)
+  .settings(inConfig(IntegrationTest)(Defaults.testSettings): _*)
   .settings(
-    fork in IntegrationTest := false,
-    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
-    unmanagedResourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it" / "resources")).value,
+    fork in IntegrationTest := true,
+    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it")).value,
+    unmanagedResourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it" / "resources")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := DefaultBuildSettings.oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    parallelExecution in IntegrationTest := false
+    parallelExecution in IntegrationTest := false,
+    javaOptions ++= Seq(
+      "-Dlogger.resource=logback-test.xml"
+    )
   )
 
   .disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
