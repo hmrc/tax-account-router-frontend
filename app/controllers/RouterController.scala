@@ -18,6 +18,7 @@ package controllers
 
 import actions.AuthAction
 import config.FrontendAppConfig
+import model.UserProfile
 import play.api.libs.json.Json
 import play.api.mvc._
 import services._
@@ -26,10 +27,9 @@ import uk.gov.hmrc.auth.core.ConfidenceLevel.L200
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
-import javax.inject.{Inject, Singleton}
-import model.UserProfile
-import play.api.Logging
+import utils.LoggingUtil
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -39,7 +39,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
                                  val messagesControllerComponents: MessagesControllerComponents,
                                  auditService: AuditService)
                                 (implicit val ec: ExecutionContext)
-  extends FrontendController(messagesControllerComponents) with AuthorisedFunctions with Logging {
+  extends FrontendController(messagesControllerComponents) with AuthorisedFunctions with LoggingUtil {
 
   private val saEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT", "HMRC-NI")
   private val mtdOrSAEnrolmentSet: Set[String] = Set("IR-SA", "HMRC-MTD-IT")
@@ -59,7 +59,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
     )
 
     auditService.audit(AuditModel(reason, data))
-    logger.info(s"[RouterController][route] $location $reason")
+    infoLog(s"[RouterController][route] $location $reason")
     Future {
       location match {
         case "PTA" => Redirect(appConfig.pta)
@@ -87,6 +87,7 @@ class RouterController @Inject()(val authConnector: AuthConnector,
         def isNotGateway: Boolean = user.credentials.exists(_.providerType == "Verify")
 
         def isVerified: Boolean = user.confidenceLevel >= L200
+
         def isLessThan200: Boolean = user.confidenceLevel < L200
 
         def isAdmin: Boolean = user.credentialRole.contains(User)
@@ -128,13 +129,13 @@ class RouterController @Inject()(val authConnector: AuthConnector,
             AgentClassic(user)
           }
         } else if (isAffinity(Individual)) {
-            if(hasNonIndenrolments) {
-              BTA("has-business-enrolment", user)
-          } else if(isLessThan200 && hasMtdItORSA) {
-              BTA("verified-with-SA", user)
-            } else {
-              PTA("individuals-not-verified-doesnt-have-business-enrolments", user)
-            }
+          if (hasNonIndenrolments) {
+            BTA("has-business-enrolment", user)
+          } else if (isLessThan200 && hasMtdItORSA) {
+            BTA("verified-with-SA", user)
+          } else {
+            PTA("individuals-not-verified-doesnt-have-business-enrolments", user)
+          }
         } else {
           BTA("Everyone else - SHOULD NOT GET HERE", user)
         }
