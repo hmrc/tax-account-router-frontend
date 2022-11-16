@@ -12,7 +12,7 @@ val appName = "tax-account-router-frontend"
 
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.*;.*(AuthService|BuildInfo|Routes).*;.*views.html*;.*ErrorHandler*;",
-  ScoverageKeys.coverageMinimumStmtTotal := 95,
+  ScoverageKeys.coverageMinimumStmtTotal := 94,
   ScoverageKeys.coverageFailOnMinimum := true,
   ScoverageKeys.coverageHighlighting := true
 )
@@ -26,7 +26,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(playDefaultPort := 9280)
   .settings(scoverageSettings: _*)
   .settings(
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.13.8",
     libraryDependencies ++= AppDependencies(),
     parallelExecution in Test := false,
     fork in Test := true,

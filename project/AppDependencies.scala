@@ -4,7 +4,7 @@ object AppDependencies {
 
   import play.core.PlayVersion
 
-  val boostrapVersion = "6.3.0"
+  val boostrapVersion = "7.11.0"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                  %% "bootstrap-frontend-play-28"   % boostrapVersion,
