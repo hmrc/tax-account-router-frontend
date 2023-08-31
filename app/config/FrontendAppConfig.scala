@@ -54,10 +54,10 @@ class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration,
 
   lazy override val config: Configuration = runModeConfiguration
 
-  lazy val companyAuthHost: String = getConfigurationStringOption("company-auth.host").getOrElse("")
+  lazy val basGatewayFrontend: String = getConfigurationStringOption("bas-gateway-frontend.host").getOrElse("")
   lazy val taxAccountRouterHost: String = getConfigurationStringOption("tax-account-router.host").getOrElse("")
 
-  lazy val signIn = s"$companyAuthHost/gg/sign-in?continue=$taxAccountRouterHost/account"
+  lazy val signIn = s"$basGatewayFrontend/bas-gateway/sign-in?continue_url=$taxAccountRouterHost/account"
 
   lazy val extendedLoggingEnabled: Boolean = runModeConfiguration
     .getOptional[Boolean]("extended-logging-enabled").getOrElse(false)
