@@ -4,7 +4,7 @@ resolvers += Resolver.url(
   "HMRC Private Sbt Plugin Releases",
   url("https://artefacts.tax.service.gov.uk/artifactory/hmrc-sbt-plugin-releases-local"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "3.8.0")
+addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "3.20.0")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-distributables" % "2.1.0")
 

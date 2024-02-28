@@ -8,7 +8,7 @@ object AppDependencies {
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                  %% "bootstrap-frontend-play-28"   % boostrapVersion,
-    "uk.gov.hmrc"                  %% "play-frontend-hmrc"           % "6.2.0-play-28"
+    "uk.gov.hmrc"                  %% "play-frontend-hmrc-play-28"           % "8.5.0"
   )
 
   abstract class TestDependencies(scope: String) {
