@@ -1,1 +1,6 @@
 repoVisibility: public_0C3F0CE3E6E6448FAD341E7BFA50FCD333E06A20CFF05FCACE61154DDBBADF71
+test-repositories:
+  - gateway-performance-tests
+  - platform-performance-tests
+  - tar-performance-tests
+  - tar-acceptance-tests
