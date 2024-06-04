@@ -16,12 +16,13 @@
 
 package support
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import  org.scalatest.matchers.must.Matchers
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-trait UnitSpec extends WordSpec with Matchers {
+trait UnitSpec extends AnyWordSpec with Matchers {
   implicit val timeout : Duration = 10.seconds
   def await[A](future: Future[A])(implicit timeout: Duration): A = Await.result(future, timeout)
 }

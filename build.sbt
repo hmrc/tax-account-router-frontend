@@ -26,16 +26,8 @@ lazy val microservice = Project(appName, file("."))
   .settings(playDefaultPort := 9280)
   .settings(scoverageSettings: _*)
   .settings(
-    scalaVersion := "2.13.8",
-    libraryDependencies ++= AppDependencies(),
-    parallelExecution in Test := false,
-    fork in Test := true,
-    retrieveManaged := true,
-    evictionWarningOptions in update :=
-      EvictionWarningOptions.default.withWarnScalaVersionEviction(true),
-    scalacOptions += "-feature",
-    scalacOptions += "-language:implicitConversions",
-    isPublicArtefact := true
+    scalaVersion := "2.13.12",
+    libraryDependencies ++= AppDependencies()
   )
   .configs(IntegrationTest extend Test)
   .settings(inConfig(IntegrationTest)(Defaults.testSettings): _*)
