@@ -24,7 +24,6 @@ trait SpecCommonHelper extends PlaySpec with GuiceOneServerPerSuite with WireMoc
   val extraConfig: Map[String, Any] = {
     Map[String, Any](
       "metrics.enabled" -> false,
-      "play.http.router" -> "testOnlyDoNotUseInAppConf.Routes",
       "auditing.consumer.baseUri.host" -> stubHost,
       "auditing.consumer.baseUri.port" -> stubPort,
       "microservice.services.auth.host" -> stubHost,
