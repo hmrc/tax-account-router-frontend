@@ -15,7 +15,7 @@ sbt 'run 9280'
 To test the application execute:
 
 ```
-sbt test it:test 
+sbt clean compile coverage test it/test coverageReport
 ```
 
 There is also a 'sa-data-import' folder containing scripts to upload SA data from csv files.
