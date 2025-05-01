@@ -1,11 +1,16 @@
 import play.sbt.PlayImport.PlayKeys.playDefaultPort
-import sbt._
+import sbt.{Test, *}
 import scoverage.ScoverageKeys
-import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, defaultSettings, scalaSettings}
 import uk.gov.hmrc.DefaultBuildSettings
+import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, scalaSettings}
 
 val appName = "tax-account-router-frontend"
 
+ThisBuild / majorVersion := 1
+ThisBuild / scalaVersion := "2.13.16"
+
+lazy val appDependencies : Seq[ModuleID] = AppDependencies()
+lazy val plugins : Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
 
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.*;.*(AuthService|BuildInfo|Routes).*;.*views.html*;.*ErrorHandler*;",
@@ -15,30 +20,25 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(play.sbt.PlayScala, SbtDistributablesPlugin): _*)
-  .settings(majorVersion := 1)
-  .settings(scalaSettings: _*)
-  .settings(defaultSettings(): _*)
-  .settings(playDefaultPort := 9280)
-  .settings(scoverageSettings: _*)
+  .enablePlugins(Seq(play.sbt.PlayScala, SbtDistributablesPlugin) *)
+  .settings(defaultSettings(), scalaSettings, scoverageSettings)
   .settings(
-    scalaVersion := "2.13.12",
-    libraryDependencies ++= AppDependencies()
+      playDefaultPort := 9280,
+      libraryDependencies ++= AppDependencies.apply()
   )
-  .configs(IntegrationTest extend Test)
-  .settings(inConfig(IntegrationTest)(Defaults.testSettings): _*)
   .settings(
-    fork in IntegrationTest := true,
-    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it")).value,
-    unmanagedResourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it" / "resources")).value,
-    addTestReportOption(IntegrationTest, "int-test-reports"),
-    parallelExecution in IntegrationTest := false,
-    javaOptions ++= Seq(
-      "-Dlogger.resource=logback-test.xml"
-    )
+    Test / fork              := true,
+    Test / parallelExecution := false
   )
+  .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
 
-  .disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
+lazy val it = project
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test") // the "test->test" allows reusing test code and test dependencies
+  .settings(DefaultBuildSettings.itSettings())
+  .settings(libraryDependencies ++= AppDependencies.test)
+
+Test / javaOptions += "-Dlogger.resource=logback-test.xml"
 
 
 
