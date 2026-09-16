@@ -7,7 +7,7 @@ import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, scalaSettings}
 val appName = "tax-account-router-frontend"
 
 ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "2.13.18"
 
 lazy val appDependencies : Seq[ModuleID] = AppDependencies()
 lazy val plugins : Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
