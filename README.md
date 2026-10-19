@@ -17,5 +17,10 @@ To test the application execute:
 ```
 sbt clean compile coverage test it/test coverageReport
 ```
+or
+run
+```
+./run-all-tests.sh
+```
 
 There is also a 'sa-data-import' folder containing scripts to upload SA data from csv files.
