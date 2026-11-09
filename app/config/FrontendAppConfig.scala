@@ -68,11 +68,17 @@ class FrontendAppConfig @Inject()(val runModeConfiguration: Configuration,
   lazy val paServiceUrl: String = servicesConfig.baseUrl("platform-analytics")
   lazy val saServiceUrl: String = servicesConfig.baseUrl("sa")
 
+  lazy val loginUrl: String = config.get[String]("settings.loginUrl")
+  lazy val continueParameter: String = config.get[String]("settings.continueParameter")
+
   lazy val enrolmentStore: String = servicesConfig.getString("enrolment-store.host")
   lazy val bta: String = servicesConfig.getString("business-tax-account.host") + servicesConfig.getString("business-tax-account.path")
   lazy val pta: String = servicesConfig.getString("personal-tax-account.host") + servicesConfig.getString("personal-tax-account.path")
   lazy val agents: String = servicesConfig.getString("agents.host") + servicesConfig.getString("agents.path")
   lazy val agentsClassic: String = servicesConfig.getString("agents-classic.host") + servicesConfig.getString("agents-classic.path")
+  lazy val redirectAllowlist: Seq[String] = config.get[Seq[String]]("settings.redirectUrlAllowlist")
+  lazy val agentRedirectUrl: String = config.get[String]("settings.agentRedirectUrl")
+  lazy val redirectUrl: String = config.get[String]("settings.redirectUrl")
 
   lazy val useNewRules: Boolean = servicesConfig.getBoolean("new-rules")
 }
