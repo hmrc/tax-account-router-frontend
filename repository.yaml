@@ -4,3 +4,4 @@ test-repositories:
   - platform-performance-tests
   - tar-performance-tests
   - tar-acceptance-tests
+serviceNowMapping: SNSVC0005304
