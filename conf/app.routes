@@ -2,6 +2,3 @@
 
 GET        /                               controllers.RouterController.redirectUser
 
-GET        /profile-management             controllers.AccountManagementController.redirectToProfileManagement(redirect_uri: Option[String])
-GET        /group-profile-management       controllers.AccountManagementController.redirectToGroupProfileManagement(redirect_uri: Option[String])
-
