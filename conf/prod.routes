@@ -1,5 +1,6 @@
 # Add all the application routes to the app.routes file
 
 ->         /account              app.Routes
+->         /account-manage       account_management.Routes
 ->         /                     health.Routes
 
